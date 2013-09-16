@@ -20,13 +20,14 @@ public class Graph {
     private boolean connectTheDots = true;
     private boolean inScaleX = false;
     private boolean inScaleY = false;
+
     private int minX = Integer.MAX_VALUE;
     private int maxX = Integer.MIN_VALUE;
     private int minY = Integer.MAX_VALUE;
     private int maxY = Integer.MIN_VALUE;
-    private final ColoredDataSet[] dataSets;
 
     private final AnnotatableImage img;
+    private final ColoredDataSet[] dataSets;
 
     public Graph(int width, int height, int bkColor, int numDataSets) {
         Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
