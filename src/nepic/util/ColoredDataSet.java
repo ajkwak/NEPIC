@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ColoredDataSet implements Iterable<Point> {
-    private final int rgb;
+    private int rgb;
     private int minX = Integer.MAX_VALUE;
     private int maxX = Integer.MIN_VALUE;
     private int minY = Integer.MAX_VALUE;
@@ -51,6 +51,10 @@ public class ColoredDataSet implements Iterable<Point> {
 
     public int getRgb() {
         return rgb;
+    }
+
+    public void setRgb(int rgb) {
+        this.rgb = rgb;
     }
 
     private void adjustMinimaAndMaxima(int x, int y) {
