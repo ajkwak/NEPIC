@@ -6,7 +6,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class DataSet implements Iterable<Point> {
-    private int minX, maxX, minY, maxY;
+    private int minX = Integer.MAX_VALUE;
+    private int maxX = Integer.MIN_VALUE;
+    private int minY = Integer.MAX_VALUE;
+    private int maxY = Integer.MIN_VALUE;
     List<Point> data;
 
     public DataSet() {
@@ -62,6 +65,10 @@ public class DataSet implements Iterable<Point> {
         if (y > maxY) {
             maxY = y;
         }
+    }
+
+    public int size() {
+        return data.size();
     }
 
     @Override

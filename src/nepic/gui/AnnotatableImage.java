@@ -307,11 +307,11 @@ public class AnnotatableImage {
         @Override
         public String toString() {
             return new StringBuilder()
-                    .append("0x")
-                    .append(Integer.toHexString(rgb))
-                    .append(": ")
-                    .append(pixels)
-                    .toString();
+            .append("0x")
+            .append(Integer.toHexString(rgb))
+            .append(": ")
+            .append(pixels)
+            .toString();
         }
     }
 
@@ -368,6 +368,20 @@ public class AnnotatableImage {
             }
         }
         return zoomedImg;
+    }
+
+    /**
+     * Returns the width of the image being annotated.
+     */
+    public int getWidth() {
+        return img.getWidth();
+    }
+
+    /**
+     * Returns the height of the image being annotated.
+     */
+    public int getHeight() {
+        return img.getHeight();
     }
 
     public static void main(String[] args) {
