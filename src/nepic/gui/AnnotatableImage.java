@@ -307,11 +307,11 @@ public class AnnotatableImage {
         @Override
         public String toString() {
             return new StringBuilder()
-            .append("0x")
-            .append(Integer.toHexString(rgb))
-            .append(": ")
-            .append(pixels)
-            .toString();
+                    .append("0x")
+                    .append(Integer.toHexString(rgb))
+                    .append(": ")
+                    .append(pixels)
+                    .toString();
         }
     }
 

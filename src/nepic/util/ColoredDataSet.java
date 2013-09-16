@@ -5,23 +5,20 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DataSet implements Iterable<Point> {
+public class ColoredDataSet implements Iterable<Point> {
+    private final int rgb;
     private int minX = Integer.MAX_VALUE;
     private int maxX = Integer.MIN_VALUE;
     private int minY = Integer.MAX_VALUE;
     private int maxY = Integer.MIN_VALUE;
     List<Point> data;
 
-    public DataSet() {
+    public ColoredDataSet(int rgb) {
         data = new LinkedList<Point>();
+        this.rgb = rgb;
     }
 
-    public DataSet(Iterable<? extends Point> pts) {
-        this();
-        addPoints(pts);
-    }
-
-    public DataSet addPoint(Point pt) {
+    public ColoredDataSet addPoint(Point pt) {
         int x = pt.x;
         int y = pt.y;
         data.add(new Point(x, y));
@@ -29,7 +26,7 @@ public class DataSet implements Iterable<Point> {
         return this;
     }
 
-    public DataSet addPoints(Iterable<? extends Point> pts) {
+    public ColoredDataSet addPoints(Iterable<? extends Point> pts) {
         for (Point pt : pts) {
             addPoint(pt);
         }
@@ -50,6 +47,10 @@ public class DataSet implements Iterable<Point> {
 
     public int getMaxY() {
         return maxY;
+    }
+
+    public int getRgb() {
+        return rgb;
     }
 
     private void adjustMinimaAndMaxima(int x, int y) {
