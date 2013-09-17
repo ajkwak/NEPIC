@@ -14,6 +14,7 @@ import nepic.roi.model.LineSegment.IncludeEnd;
 import nepic.roi.model.LineSegment.IncludeStart;
 import nepic.util.ColoredDataSet;
 import nepic.util.ColoredPointList;
+import nepic.util.Lists;
 import nepic.util.Verify;
 
 public class Graph {
@@ -246,17 +247,37 @@ public class Graph {
         if (dataSet == null) { // Then no need to redraw the data set.
             return;
         }
+
+        // Determine the maxima and minima for graphing this data set.
         int minX = inScaleX ? this.minX : dataSet.getMinX();
         int maxX = inScaleX ? this.maxX : dataSet.getMaxX();
         int minY = inScaleY ? this.minY : dataSet.getMinY();
         int maxY = inScaleY ? this.maxY : dataSet.getMaxY();
-        // TODO: what if minX == maxX or minY == maxY?? : just put the data set in the MIDDLE of the
-        // screen for that direction
+
+        // Determine the multiplier and offset to graph this data set properly in the x direction.
+        double ratioX;
+        long offsetX;
+        if (minX == maxX) {
+            ratioX = 1;
+            offsetX = img.getWidth() / 2;
+        } else {
+            ratioX = (double) (img.getWidth() - 1) / (maxX - minX);
+            offsetX = 0 - Math.round(ratioX * minX);
+        }
+
+        // Determine the multiplier and offset to graph this data set properly in the y direction.
         int imgMaxY = img.getHeight() - 1;
-        double ratioX = (double) (img.getWidth() - 1) / (maxX - minX);
-        long offsetX = 0 - Math.round(ratioX * minX);
-        double ratioY = (double) imgMaxY / (maxY - minY);
-        long offsetY = 0 - Math.round(ratioY * minY);
+        double ratioY;
+        long offsetY;
+        if (minY == maxY) {
+            ratioY = 1;
+            offsetY = img.getHeight() / 2;
+        } else {
+            ratioY = (double) imgMaxY / (maxY - minY);
+            offsetY = 0 - Math.round(ratioY * minY);
+        }
+
+        // Convolve the actual data set to fit on the graph when drawn.
         List<Point> convolvedData = new ArrayList<Point>(dataSet.size());
         Point startPt = null;
         for (Point datum : dataSet) {
@@ -299,10 +320,11 @@ public class Graph {
 
     public static void main(String[] args) {
         Graph graph = new Graph(300, 300, 0xcc99ff, 5);
-        int dataId1 = graph.addDataSet(testData(TEST_DATA_1, 13), 0x000000);
+        int dataId1 = graph.addDataSet(Lists.newArrayList(new Point(0, 0), new Point(1, 0)),
+                0x000000);
         // graph.redrawDataSet(dataId, testData(TEST_DATA_2, -13), 0xffffff);
         int dataId2 = graph.addDataSet(testData(TEST_DATA_2, -15), 0xffffff);
-        graph.recolorDataSet(dataId2, 0xff0000);
+        // graph.recolorDataSet(dataId2, 0xff0000);
         // graph.removeDataSet(dataId1);
         // graph.redraw(true, true /* inScaleX */, true /* inScaleY */);
         JLabel picLabel = new JLabel(new ImageIcon(graph.img.getImage()));
