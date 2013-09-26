@@ -1,12 +1,28 @@
 package nepic.util;
 
-import java.util.List;
+import java.util.Collection;
 
+/**
+ * A collection of static methods that verify certain conditions about their parameters, otherwise
+ * throwing exceptions.
+ *
+ * @author AJ Parmidge
+ *
+ */
 public class Verify {
 
     /**
-     * @param toCheck
-     * @throws NullPointerException if toCheck is null
+     * This class is uninstantiable.
+     */
+    private Verify() {
+        throw new IllegalArgumentException();
+    }
+
+    /**
+     * Verifies that the given object is not {@code null}.
+     *
+     * @param toCheck the object to check
+     * @throws NullPointerException if the given object is {@code null}
      */
     public static void notNull(Object toCheck) {
         if (toCheck == null) {
@@ -15,9 +31,11 @@ public class Verify {
     }
 
     /**
-     * @param toCheck
-     * @param message message to display in NullPointerException thrown if toCheck is null
-     * @throws NullPointerException if toCheck is null
+     * Verifies that the given object is not {@code null}.
+     *
+     * @param toCheck the object to check
+     * @param message the {@link Exception} message to display if {@code toCheck} is {@code null}
+     * @throws NullPointerException if toCheck is {@code null}
      */
     public static void notNull(Object toCheck, String message) {
         if (toCheck == null) {
@@ -26,8 +44,10 @@ public class Verify {
     }
 
     /**
-     * @param toCheck
-     * @throws IllegalArgumentException if toCheck is false
+     * Verifies that the given argument is {@code true}.
+     *
+     * @param toCheck the argument to check
+     * @throws IllegalArgumentException if {@code toCheck} is {@code false}
      */
     public static void argument(boolean toCheck) {
         if (!toCheck) {
@@ -36,9 +56,11 @@ public class Verify {
     }
 
     /**
-     * @param toCheck
-     * @param message message to display in exception if argument fails
-     * @throws IllegalArgumentException if toCheck is false
+     * Verifies that the given argument is {@code true}.
+     *
+     * @param toCheck the argument to check
+     * @param message the {@link Exception} message to display if {@code toCheck} is {@code false}
+     * @throws IllegalArgumentException if {@code toCheck} is {@code false}
      */
     public static void argument(boolean toCheck, String message) {
         if (!toCheck) {
@@ -47,8 +69,10 @@ public class Verify {
     }
 
     /**
-     * @param toCheck
-     * @throws IllegalStateException if toCheck is false
+     * Verifies that the given state is {@code true}.
+     *
+     * @param toCheck the state to check
+     * @throws IllegalStateException if the given state is {@code false}
      */
     public static void state(boolean toCheck) {
         if (!toCheck) {
@@ -57,9 +81,11 @@ public class Verify {
     }
 
     /**
-     * @param toCheck
-     * @param message message to display in exception if argument fails
-     * @throws IllegalStateException if toCheck is false
+     * Verifies that the given state is {@code true}.
+     *
+     * @param toCheck the state to check
+     * @param message the {@link Exception} message to display if the givens state is {@code false}
+     * @throws IllegalStateException if the given state is {@code false}
      */
     public static void state(boolean toCheck, String message) {
         if (!toCheck) {
@@ -67,16 +93,57 @@ public class Verify {
         }
     }
 
-    public static void nonEmpty(List<?> toCheck) {
-        if (toCheck == null || toCheck.isEmpty()) {
-            throw new IllegalArgumentException("The given list was null or empty.");
+    /**
+     * Verifies that the given {@link Iterable} is non-empty.
+     *
+     * @param toCheck the iterable to check.
+     * @throws NullPointerException if the given iterable is {@code null}
+     * @throws IllegalArgumentException if the given iterable is empty
+     */
+    public static void nonEmpty(Iterable<?> toCheck) {
+        Verify.nonEmpty(toCheck, "given iterable");
+    }
+
+    /**
+     * Verifies that the given {@link Iterable} is non-empty.
+     *
+     * @param toCheck the iterable to check.
+     * @param item the name of the iterable variable
+     * @throws NullPointerException if the given iterable is {@code null}
+     * @throws IllegalArgumentException if the given iterable is empty
+     */
+    public static void nonEmpty(Iterable<?> toCheck, String item) {
+        String msg = "Expected " + item + " to be non-empty.  Instead got " + item;
+        Verify.notNull(toCheck, msg);
+        if (toCheck instanceof Collection) {
+            Verify.argument(!((Collection<?>) toCheck).isEmpty(), msg);
+        } else {
+            Verify.argument(toCheck.iterator().hasNext(), msg);
         }
     }
 
-    public static void nonEmpty(List<?> toCheck, String message) {
-        if (toCheck == null || toCheck.isEmpty()) {
-            throw new IllegalArgumentException(message);
-        }
+    /**
+     * Verifies that the given {@link String} is non-empty.
+     * 
+     * @param toCheck the string to check.
+     * @throws NullPointerException if the given string is {@code null}
+     * @throws IllegalArgumentException if the given string is empty
+     */
+    public static void nonEmpty(String toCheck) {
+        Verify.nonEmpty(toCheck, "given String");
     }
 
+    /**
+     * Verifies that the given {@link String} is non-empty.
+     * 
+     * @param toCheck the string to check.
+     * @message the name of the string variable
+     * @throws NullPointerException if the given string is {@code null}
+     * @throws IllegalArgumentException if the given string is empty
+     */
+    public static void nonEmpty(String toCheck, String item) {
+        String msg = "Expected " + item + " to be non-empty string.";
+        Verify.notNull(toCheck, msg);
+        Verify.argument(!toCheck.isEmpty(), msg);
+    }
 }
