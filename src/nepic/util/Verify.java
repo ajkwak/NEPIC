@@ -124,7 +124,7 @@ public class Verify {
 
     /**
      * Verifies that the given {@link String} is non-empty.
-     * 
+     *
      * @param toCheck the string to check.
      * @throws NullPointerException if the given string is {@code null}
      * @throws IllegalArgumentException if the given string is empty
@@ -137,7 +137,7 @@ public class Verify {
      * Verifies that the given {@link String} is non-empty.
      * 
      * @param toCheck the string to check.
-     * @message the name of the string variable
+     * @param item the name of the string variable
      * @throws NullPointerException if the given string is {@code null}
      * @throws IllegalArgumentException if the given string is empty
      */
@@ -145,5 +145,32 @@ public class Verify {
         String msg = "Expected " + item + " to be non-empty string.";
         Verify.notNull(toCheck, msg);
         Verify.argument(!toCheck.isEmpty(), msg);
+    }
+
+    /**
+     * Verifies that the given {@Collection} has no null elements.
+     *
+     * @param toCheck the collection to check
+     * @throws NullPointerException if the given {@Collection} or any of its elements
+     *         are {@code null}.
+     */
+    public static void noNullElements(Collection<?> toCheck) {
+        Verify.noNullElements(toCheck, "given collection");
+    }
+
+    /**
+     * Verifies that the given {@Collection} has no null elements.
+     *
+     * @param toCheck the collection to check
+     * @param the name of the collection variable
+     * @throws NullPointerException if the given {@Collection} or any of its elements
+     *         are {@code null}.
+     */
+    public static void noNullElements(Collection<?> toCheck, String item) {
+        Verify.notNull(toCheck, item);
+        int i = 0;
+        for (Object element : toCheck) {
+            Verify.notNull(element, "Element " + i + " of " + item);
+        }
     }
 }
