@@ -131,6 +131,21 @@ public class VerifyTest {
         Verify.nonEmpty("Hello world!");
     }
 
+    @Test(expected = NullPointerException.class)
+    public void noNullElements_NullCollection_Throws() {
+        Verify.noNullElements((List<Point>) null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void noNullElements_NullElement_Throws() {
+        Verify.noNullElements(Lists.newArrayList("Hello", "World", null));
+    }
+
+    @Test
+    public void noNullElements_Succeeds() {
+        Verify.noNullElements(Lists.newArrayList("Hello", "World", ""));
+    }
+
     private <T> Iterable<T> newIterable(final T... elements) {
         return new Iterable<T>(){
             List<T> list = Lists.newArrayList(elements);
