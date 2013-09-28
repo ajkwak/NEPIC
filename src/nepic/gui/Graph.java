@@ -3,6 +3,7 @@ package nepic.gui;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.ImageIcon;
@@ -12,9 +13,9 @@ import javax.swing.JOptionPane;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.LineSegment.IncludeEnd;
 import nepic.roi.model.LineSegment.IncludeStart;
-import nepic.util.ColoredDataSet;
+import nepic.util.DataSet;
 import nepic.util.ColoredPointList;
-import nepic.util.Lists;
+import nepic.util.GraphData;
 import nepic.util.Verify;
 
 public class Graph {
@@ -32,24 +33,6 @@ public class Graph {
      * y-axis.
      */
     private boolean inScaleY = false;
-
-    /**
-     * The global minimum x-value of all the data sets being graphed.
-     */
-    private int minX = Integer.MAX_VALUE;
-    /**
-     * The global maximum x-value of all the data sets being graphed.
-     */
-    private int maxX = Integer.MIN_VALUE;
-    /**
-     * The global minimum y-value of all the data sets being graphed.
-     */
-    private int minY = Integer.MAX_VALUE;
-    /**
-     * The global maximum y-value of all the data sets being graphed.
-     */
-    private int maxY = Integer.MIN_VALUE;
-
     /**
      * The image upon which all of the data sets are being graphed.
      */
@@ -57,89 +40,88 @@ public class Graph {
     /**
      * The collection of all the data sets being graphed.
      */
-    private final ColoredDataSet[] dataSets;
+    private final GraphData data;
 
     /**
      * Creates a {@link Graph} of the given width, height, and background color that can handle and
      * graph the given number of distinct data sets.
-     * 
+     *
      * @param width the desired width of the graph
      * @param height the desired height of the graph
      * @param bkColor the desired background color of the graph
      * @param numDataSets the number of distinct data sets that must be handled by this
      *        {@link Graph}
      */
-    public Graph(int width, int height, int bkColor, int numDataSets) {
+    public Graph(int width, int height, int bkColor, GraphData data) {
         Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
-        Verify.argument(numDataSets > 0,
-                "The number of data sets expected in the graph must be greater than zero");
-        dataSets = new ColoredDataSet[numDataSets];
-        img = new AnnotatableImage(numDataSets).setImage(newMonochromeImg(width, height, bkColor));
+        Verify.notNull(data, "GraphData");
+        this.data = data.copy();
+        img = new AnnotatableImage(data.getMaxNumDataSetsSupported() + 2 /* Include axes, grid */)
+                .setImage(newMonochromeImg(width, height, bkColor));
     }
 
     /**
      * Adds the given values as a new data set on the graph.
-     * 
+     *
      * @param newVals the data values to add
      * @param rgb the color in which to draw the new data set on the graph
      * @return the unique ID number of the newly added data set
      */
-    public int addDataSet(List<? extends Point> newVals, int rgb) {
-        Verify.nonEmpty(newVals);
+    public int addDataSet(String name, List<? extends Point> values, int rgb) {
+        Verify.nonEmpty(values, "List<Point>");
 
         // Make a DataSet out of the newVals
-        int id = findNextAvailableDataSetId();
-        redrawDataSet(id, newVals, rgb);
+        int id = data.addDataSet(name, values, rgb);
+        redrawDataSet(id);
         return id;
     }
 
     /**
-     * Redraws the data set with the given {@code id} to the given list of points and color.
-     * 
-     * @param id the ID of the data set to redraw
-     * @param newVals the new values of the data set
-     * @param rgb the RGB color in which to draw the given data set
+     * Removes the data set with the given {@code id}.
+     *
+     * @param id the ID of the data set to remove
      */
-    public void redrawDataSet(int id, List<? extends Point> newVals, int rgb) {
-        ColoredDataSet replacedDataSet = dataSets[id];
-        ColoredDataSet newDataSet = new ColoredDataSet(rgb).addPoints(newVals);
-        dataSets[id] = newDataSet;
-        adjustGlobalBounds(newDataSet);
-        if (replacedDataSet != null) {
-            reviseGlobalBoundsAfterRemoval(replacedDataSet);
+    public void removeDataSet(int id) {
+        int initMinX = data.getMinX();
+        int initMaxX = data.getMaxX();
+        int initMinY = data.getMinY();
+        int initMaxY = data.getMaxY();
+
+        // Remove the data set.
+        data.removeDataSet(id);
+        img.erase(id);
+
+        // Determine if need to redraw entire image due to bounds change.
+        if ((inScaleX && (initMinX != data.getMinX() || initMaxX != data.getMaxX()))
+                || (inScaleY && (initMinY != data.getMinY() || initMaxY != data.getMaxY()))) {
+            redraw(connectTheDots, inScaleX, inScaleY);
         }
-        redrawDataSet(id);
     }
 
     /**
-     * Recolors the dataset with the given {@code id} to the given RGB color.
-     * 
+     * Renames the data set with the given {@code id} to the given value.
+     *
+     * @param id the ID of the data set to rename
+     * @param name the new name for the specified data set
+     */
+    public void renameDataSet(int id, String name) {
+        data.redefineDataSetName(id, name);
+    }
+
+    /**
+     * Recolors the dat aset with the given {@code id} to the given RGB color.
+     *
      * @param id the ID of the data set to recolor
      * @param rgb the RGB color in which to recolor the specified data set
      */
     public void recolorDataSet(int id, int rgb) {
-        ColoredDataSet recoloredDataSet = dataSets[id];
-        recoloredDataSet.setRgb(rgb);
+        data.redefineDataSetColor(id, rgb);
         redrawDataSet(id);
     }
 
     /**
-     * Removes the data set with the given {@code id}.
-     * 
-     * @param id the ID of the data set to remove.
-     */
-    public void removeDataSet(int id) {
-        ColoredDataSet removedDataSet = dataSets[id];
-        dataSets[id] = null;
-        if (removedDataSet != null) {
-            reviseGlobalBoundsAfterRemoval(removedDataSet);
-        }
-        img.erase(id);
-    }
-
-    /**
      * Redraws the graph with the given conditions.
-     * 
+     *
      * @param connectTheDots whether or not the data points in the data sets should be connected
      * @param inScaleX whether or not to draw the graph in-scale in the x direction (if
      *        {@code false}, then all data sets will cover the entirety of the x-axis)
@@ -150,14 +132,14 @@ public class Graph {
         this.connectTheDots = connectTheDots;
         this.inScaleX = inScaleX;
         this.inScaleY = inScaleY;
-        for (int i = 0; i < dataSets.length; i++) {
-            redrawDataSet(i);
+        for (int id : data.getValidIds()) {
+            redrawDataSet(id);
         }
     }
 
     /**
      * Creates a monochromatic {@link BufferedImage} of the given dimensions and color.
-     * 
+     *
      * @param width the width of the image to create
      * @param height the height of the image to create
      * @param rgb the color of the monochromatic image to create
@@ -173,86 +155,12 @@ public class Graph {
         return graphImage;
     }
 
-    /**
-     * Gets a currently-unused unique ID for a data set to be graphed.
-     * 
-     * @return a currently unused unique data set ID
-     * @throws IllegalStateException if all of the unique data set IDs available in the graph are in
-     *         use.
-     */
-    private int findNextAvailableDataSetId() {
-        for (int i = 0; i < dataSets.length; i++) {
-            if (dataSets[i] == null) { // i.e. if this position is free
-                return i;
-            }
-        }
-        throw new IllegalStateException("There are no free data set IDs available.");
-    }
-
-    /**
-     * Modifies the global bounds of this {@link Graph} to include the given data set.
-     * 
-     * <p>
-     * i.e. if the given data set has a max x-value of 13, but the current bounds max out at 10 in
-     * the x-direction, this method modifies the global max x-value to 13 (so that the global bounds
-     * now include the bounds of the given data set).
-     * 
-     * @param dataSet the data set to include in the graph bounds
-     */
-    private void adjustGlobalBounds(ColoredDataSet dataSet) {
-        if (dataSet.getMinX() < minX) {
-            minX = dataSet.getMinX();
-        }
-        if (dataSet.getMaxX() > maxX) {
-            maxX = dataSet.getMaxX();
-        }
-        if (dataSet.getMinY() < minY) {
-            minY = dataSet.getMinY();
-        }
-        if (dataSet.getMaxY() > maxY) {
-            maxY = dataSet.getMaxY();
-        }
-    }
-
-    /**
-     * Revises the global bounds of this {@link Graph}, assuming that the given data set has been
-     * previously removed from the graph.
-     * 
-     * @param removedDataSet the data set that has been removed from the graph
-     */
-    private void reviseGlobalBoundsAfterRemoval(ColoredDataSet removedDataSet) {
-        if (removedDataSet.getMinX() == minX || removedDataSet.getMaxX() == maxX
-                || removedDataSet.getMinY() == minY || removedDataSet.getMaxY() == maxY) {
-            // Then need to adjust the global bounds.
-            minX = Integer.MAX_VALUE;
-            maxX = Integer.MIN_VALUE;
-            minY = Integer.MAX_VALUE;
-            maxY = Integer.MIN_VALUE;
-            for (int i = 0; i < dataSets.length; i++) {
-                ColoredDataSet dataSet = dataSets[i];
-                if (dataSet != null) {
-                    adjustGlobalBounds(dataSet);
-                }
-            }
-        }
-    }
-
-    /**
-     * Redraws (graphs) the ColoredDataSet at the given unique ID on the actual graph image.
-     * 
-     * @param id the ID of the data set to graph
-     */
-    private void redrawDataSet(int id) {
-        ColoredDataSet dataSet = dataSets[id];
-        if (dataSet == null) { // Then no need to redraw the data set.
-            return;
-        }
-
+    private List<Point> convolveDatasetForDrawing(DataSet dataSet) {
         // Determine the maxima and minima for graphing this data set.
-        int minX = inScaleX ? this.minX : dataSet.getMinX();
-        int maxX = inScaleX ? this.maxX : dataSet.getMaxX();
-        int minY = inScaleY ? this.minY : dataSet.getMinY();
-        int maxY = inScaleY ? this.maxY : dataSet.getMaxY();
+        int minX = inScaleX ? data.getMinX() : dataSet.getMinX();
+        int maxX = inScaleX ? data.getMaxX() : dataSet.getMaxX();
+        int minY = inScaleY ? data.getMinY() : dataSet.getMinY();
+        int maxY = inScaleY ? data.getMaxX() : dataSet.getMaxY();
 
         // Determine the multiplier and offset to graph this data set properly in the x direction.
         double ratioX;
@@ -279,23 +187,42 @@ public class Graph {
 
         // Convolve the actual data set to fit on the graph when drawn.
         List<Point> convolvedData = new ArrayList<Point>(dataSet.size());
-        Point startPt = null;
         for (Point datum : dataSet) {
-            Point endPt = new Point(
+            Point convolvedDatum = new Point(
                     (int) Math.round(ratioX * datum.x + offsetX),
                     imgMaxY - (int) Math.round(ratioY * datum.y + offsetY));
-            if (startPt != null) {
-                if (connectTheDots) {
-                    convolvedData.addAll(new LineSegment(startPt, endPt).draw(IncludeStart.YES,
-                            IncludeEnd.NO));
-                } else {
-                    convolvedData.add(startPt);
-                }
-            }
-            startPt = endPt;
+            convolvedData.add(convolvedDatum);
         }
-        convolvedData.add(startPt); // add the end point
-        img.redraw(id, new ColoredPointList(convolvedData, dataSet.getRgb()));
+        return convolvedData;
+    }
+
+    /**
+     * Redraws (graphs) the ColoredDataSet at the given unique ID on the actual graph image.
+     *
+     * @param id the ID of the data set to graph
+     */
+    private void redrawDataSet(int id) { // TODO: doesn't remove data sets
+        DataSet dataSet = data.getDataSet(id);
+        if (dataSet == null || dataSet.isEmpty()) { // Then no need to redraw the data set.
+            return;
+        }
+        List<Point> convolvedData = convolveDatasetForDrawing(dataSet);
+        if (connectTheDots) {
+            List<Point> connectedData = new LinkedList<Point>();
+            Point startPt = null;
+            for(Point datum : convolvedData){
+                Point endPt = datum;
+                if(startPt != null){
+                    connectedData.addAll(
+                            new LineSegment(startPt, endPt).draw(IncludeStart.YES, IncludeEnd.NO));
+                }
+                startPt = endPt;
+            }
+            connectedData.add(startPt); // Adds the last point in the convolved data.
+            img.redraw(id, new ColoredPointList(connectedData, dataSet.getRgb()));
+        } else {
+            img.redraw(id, new ColoredPointList(convolvedData, dataSet.getRgb()));
+        }
     }
 
     /* TEST STUFF */
@@ -319,14 +246,16 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        Graph graph = new Graph(300, 300, 0xcc99ff, 5);
-        int dataId1 = graph.addDataSet(Lists.newArrayList(new Point(0, 0), new Point(1, 0)),
-                0x000000);
-        // graph.redrawDataSet(dataId, testData(TEST_DATA_2, -13), 0xffffff);
-        int dataId2 = graph.addDataSet(testData(TEST_DATA_2, -15), 0xffffff);
+        Graph graph = new Graph(300, 300, 0xcc99ff, new GraphData(5));
+        int dataId1 = graph.addDataSet("Hello", testData(TEST_DATA_2, -13), 0x000000);
+        // // graph.redrawDataSet(dataId, testData(TEST_DATA_2, -13), 0xffffff);
+        int dataId2 = graph.addDataSet("World", testData(TEST_DATA_1, -15), 0xffffff);
+        graph.recolorDataSet(dataId2, 0xff0000);
+        // graph.recolorDataSet(dataId1, 0x008800);
+        // graph.redraw(true, true, true);
         // graph.recolorDataSet(dataId2, 0xff0000);
         // graph.removeDataSet(dataId1);
-        // graph.redraw(true, true /* inScaleX */, true /* inScaleY */);
+        // // graph.redraw(true, true /* inScaleX */, true /* inScaleY */);
         JLabel picLabel = new JLabel(new ImageIcon(graph.img.getImage()));
         JOptionPane.showMessageDialog(null, picLabel, "About", JOptionPane.PLAIN_MESSAGE, null);
     }
