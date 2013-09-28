@@ -201,7 +201,7 @@ public class Graph {
      *
      * @param id the ID of the data set to graph
      */
-    private void redrawDataSet(int id) { // TODO: doesn't remove data sets
+    private void redrawDataSet(int id) {
         DataSet dataSet = data.getDataSet(id);
         if (dataSet == null || dataSet.isEmpty()) { // Then no need to redraw the data set.
             return;
@@ -251,6 +251,8 @@ public class Graph {
         // // graph.redrawDataSet(dataId, testData(TEST_DATA_2, -13), 0xffffff);
         int dataId2 = graph.addDataSet("World", testData(TEST_DATA_1, -15), 0xffffff);
         graph.recolorDataSet(dataId2, 0xff0000);
+        graph.redraw(true, true, true);
+        graph.removeDataSet(dataId1);
         // graph.recolorDataSet(dataId1, 0x008800);
         // graph.redraw(true, true, true);
         // graph.recolorDataSet(dataId2, 0xff0000);

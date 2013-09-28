@@ -188,10 +188,10 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
     public void removeDataSet(int id) {
         verifyValidDataSetId(id);
         DataSet removedDataSet = dataSets[id];
+        dataSets[id] = null;
         if (removedDataSet != null) {
             reviseGlobalBoundsAfterRemoval(removedDataSet);
         }
-        dataSets[id] = null;
     }
 
     private void verifyContainsDataSets() {
