@@ -9,6 +9,7 @@ import java.util.List;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.LineSegment.IncludeEnd;
@@ -18,7 +19,11 @@ import nepic.util.ColoredPointList;
 import nepic.util.GraphData;
 import nepic.util.Verify;
 
-public class Graph {
+public class Graph extends JPanel {
+    /**
+     * Generated serialVersionUID.
+     */
+    private static final long serialVersionUID = -7635043290129019626L;
     /**
      * Whether or not to draw lines between all the data points in each data set.
      */
@@ -55,7 +60,30 @@ public class Graph {
     public Graph(int width, int height, int bkColor, GraphData data) {
         Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
         Verify.notNull(data, "GraphData");
+
         this.data = data.copy();
+        img = new AnnotatableImage(data.getMaxNumDataSetsSupported() + 2 /* Include axes, grid */)
+                .setImage(newMonochromeImg(width, height, bkColor));
+
+        JLabel imgLabel = new JLabel();
+        imgLabel.setIcon(new ImageIcon(img.getImage()));
+        add(imgLabel);
+        imgLabel.setLocation(0, 0);
+        imgLabel.setSize(width, height);
+        imgLabel.setVisible(true);
+
+        setLayout(null);
+        setSize(width, height);
+        setMinimumSize(getSize());
+        setPreferredSize(getSize());
+        setVisible(true);
+    }
+
+    public Graph(int width, int height, int bkColor, int maxNumDataSets) {
+        Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
+        Verify.argument(maxNumDataSets > 0, "Graph must support 1 or more data sets");
+
+        this.data = new GraphData(maxNumDataSets);
         img = new AnnotatableImage(data.getMaxNumDataSetsSupported() + 2 /* Include axes, grid */)
                 .setImage(newMonochromeImg(width, height, bkColor));
     }
@@ -258,7 +286,7 @@ public class Graph {
         // graph.recolorDataSet(dataId2, 0xff0000);
         // graph.removeDataSet(dataId1);
         // // graph.redraw(true, true /* inScaleX */, true /* inScaleY */);
-        JLabel picLabel = new JLabel(new ImageIcon(graph.img.getImage()));
-        JOptionPane.showMessageDialog(null, picLabel, "About", JOptionPane.PLAIN_MESSAGE, null);
+        // JLabel picLabel = new JLabel(new ImageIcon(graph.img.getImage()));
+        JOptionPane.showMessageDialog(null, graph, "About", JOptionPane.PLAIN_MESSAGE, null);
     }
 }
