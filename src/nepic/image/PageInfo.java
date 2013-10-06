@@ -4,17 +4,17 @@ import nepic.io.ComplexLabel;
 import nepic.io.Label;
 import nepic.roi.Background;
 import nepic.roi.CellBody;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.util.CsvFormattable;
 import nepic.util.Validatable;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-9_2013-01-08
  * @version AutoCBFinder_Alpha_v0-9_2013-01-08
- * 
+ *
  */
 public class PageInfo implements CsvFormattable, Validatable {
     // Page-specific info
@@ -73,7 +73,7 @@ public class PageInfo implements CsvFormattable, Validatable {
 
     public double getPiRatio() {
         Verify.state(cb != null && bk != null);
-        return cb.getPiHist().getAverage() / bk.getPiHist().getAverage();
+        return cb.getPiHist().getMean() / bk.getPiHist().getMean();
     }
 
     public static Label[] getCsvLabels() {

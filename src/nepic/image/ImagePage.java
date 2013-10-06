@@ -3,24 +3,24 @@ package nepic.image;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import nepic.roi.model.BoundingBox;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.util.BoundedRegion;
 import nepic.util.Pixel;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-6_093012 (Called ImgMatrix until AutoCBFinder_Alpha_v0-9-2013-01-29)
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
+ *
  */
 // assumes 32-bit processor
 public class ImagePage implements IdTaggedImage {
 
     /*
      * Pixel Properties in imgToAnal: ASSUMING BIT 0 IS LEAST SIGNIFICANT BIT
-     * 
+     *
      * Bit 00-07 = RL in original image Bit 08-15 = RL in gaussian image Bit 16 = Dirty bit for
      * Gaussian image Bit 17-26 = Sobel gradient Bit 27 = Dirty bit for Sobel gradient Bit 28-31 =
      * CandNum
@@ -33,7 +33,7 @@ public class ImagePage implements IdTaggedImage {
 
     /**
      * Creates an empty ImageModel object
-     * 
+     *
      * @param thePgWidth
      * @param thePgHeight
      */
@@ -44,7 +44,7 @@ public class ImagePage implements IdTaggedImage {
     }// PictureModel constructor
 
     /**
-     * 
+     *
      * @param x
      * @param y
      * @return true if the specified coordinate is within the boundaries of the image; otherwise
@@ -398,13 +398,14 @@ public class ImagePage implements IdTaggedImage {
     }// setCandNum
 
     public Histogram makeHistogram() {
-        Histogram imgHist = Histogram.newPixelIntensityHistogram();
+        Histogram.Builder histBuilder =
+                new Histogram.Builder(0 /* Lower Bound */, 255 /* Upper Bound */);
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                imgHist.addData(getPixelIntensity(x, y));
+                histBuilder.addValues(getPixelIntensity(x, y));
             }
         }
-        return imgHist;
+        return histBuilder.build();
     }
 
     public int[] getDimensions() {

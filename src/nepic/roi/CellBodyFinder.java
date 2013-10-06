@@ -14,8 +14,9 @@ import nepic.image.Roi;
 import nepic.image.RoiFinder;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
+import nepic.roi.CellBody.GraphDataAngle;
 import nepic.roi.model.Blob;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.roi.model.Line;
 import nepic.roi.model.Polygon;
 import nepic.util.DoubleLinkRing;
@@ -24,11 +25,11 @@ import nepic.util.Pixel;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_ALpha_v0-9_122212
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
+ *
  */
 public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
@@ -51,17 +52,21 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         // Determine if CellBody can be found in this area
         Point seedPixel = roi.getSeedPixel();
 
-        System.out.println("img width = " + img.width + ", height  = " + img.height);
+        // System.out.println("img width = " + img.width + ", height  = " + img.height);
 
-        System.out.print("pi/2");
-        OneDimensionalScanner scanner = new OneDimensionalScanner(img, new Line(seedPixel,
-                -Math.PI / 2));
-        System.out.print("-pi/4");
+        // System.out.print("pi/2");
+        OneDimensionalScanner scanner = new OneDimensionalScanner(
+                img, new Line(seedPixel, -Math.PI / 2));
+        roi.setGraphData(GraphDataAngle.PI_OVER_TWO, scanner.getGraphData());
+        // System.out.print("-pi/4");
         scanner = new OneDimensionalScanner(img, new Line(seedPixel, -Math.PI / 4));
-        System.out.print("zero");
+        roi.setGraphData(GraphDataAngle.NEGATIVE_PI_OVER_FOUR, scanner.getGraphData());
+        // System.out.print("zero");
         scanner = new OneDimensionalScanner(img, new Line(seedPixel, 0));
-        System.out.print("pi/4");
+        roi.setGraphData(GraphDataAngle.ZERO, scanner.getGraphData());
+        // System.out.print("pi/4");
         scanner = new OneDimensionalScanner(img, new Line(seedPixel, Math.PI / 4));
+        roi.setGraphData(GraphDataAngle.PI_OVER_FOUR, scanner.getGraphData());
 
         List<Point> edges = new LinkedList<Point>();
         edges.add(seedPixel);
@@ -144,7 +149,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
     /**
      * Adjusts the size of the ROI to be as close to the indicated desired size as possible
-     * 
+     *
      * @param roi the ROI to adjust
      * @param desiredSize the desired size of the ROI
      */
@@ -264,7 +269,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
     /**
      * Sets the edges of the ROI to the specified {@link Blob}, and initializes the histograms of
      * the ROI based upon the pixels contained in the {@link Blob}.
-     * 
+     *
      * @param roi the ROI whose edges need to e set
      * @param newEdges the new edges of the ROI
      */
@@ -272,18 +277,18 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         roi.setEdges(newEdges);
 
         // Make histogram for cb
-        Histogram cbPiHist = Histogram.newPixelIntensityHistogram();
+        Histogram.Builder piHistBuilder = new Histogram.Builder(0, 255);
         for (Point cbPt : newEdges.getInnards()) {
             // For all points in the cell body
-            cbPiHist.addData(img.getPixelIntensity(cbPt.x, cbPt.y));
+            piHistBuilder.addValues(img.getPixelIntensity(cbPt.x, cbPt.y));
         }
-        roi.setPiHist(cbPiHist);
+        roi.setPiHist(piHistBuilder.build());
     }
 
     /**
      * Clears the specified ROI from the image. More specifically, clears the ROI number from all
      * pixels in the image previously in the ROI.
-     * 
+     *
      * @param roiNum the ID number of the ROI to remove from the image
      * @param roiEdges the blob indicating the location of the ROI in the image
      */
@@ -308,7 +313,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
     /**
      * Finds the most intense pixel in the innards of the {@link Polygon} parameter.
-     * 
+     *
      * @param secCorners the polygon in which to find the most intense pixel
      * @return the most intense pixel in the innards of the polygon
      */
@@ -341,7 +346,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
     }// findMostIntensePixClump
 
     /**
-     * 
+     *
      * @param threshVals
      * @return
      * @throws NoSuchFieldException
@@ -380,7 +385,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
     /**
      * Finds the threshold value in a single direction away from the seed pixel.
-     * 
+     *
      * @param seedPixel the seed pixel from which to search for the ROI threshold
      * @param eThresh the edge threshold used to search for the pixel intensity threshold
      * @param changeX the x direction to go from the seed pixel in search of the threshold value

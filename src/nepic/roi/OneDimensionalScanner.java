@@ -7,11 +7,17 @@ import java.util.Iterator;
 import java.util.List;
 
 import nepic.image.ImagePage;
+import nepic.data.Histogram;
 import nepic.roi.model.Line;
-import nepic.roi.model.LineSegment;
+import nepic.util.GraphData;
 import nepic.util.Verify;
 
 public class OneDimensionalScanner {
+    private final GraphData data; // For displaying all intermediate steps of 'scanning' the line.
+    private int rawDataId;
+    private int smoothedDataId;
+    private int slopesId;
+    private int edgeCategoriesId;
 
     public OneDimensionalScanner(ImagePage pg, Line scanline) {
         Verify.notNull(pg, "Page on which to scan the line cannot be null!");
@@ -19,53 +25,70 @@ public class OneDimensionalScanner {
         // TODO: verify line crosses image page, so when bound and draw, dont't get
         // NullPointerException
 
-        LineSegment segment = scanline.boundTo(pg);
-        List<Point> scanlinePoints = segment.draw();
-        List<Integer> smoothedScanLine = preprocessScanLine(pg, scanlinePoints);
+        Histogram hist = pg.makeHistogram();
+        System.out.println("BK bound = " + hist.getPercentile(50));
+        System.out.println("ROI bound = " + hist.getPercentile(99.99));
 
+        data = new GraphData(4);
+        List<Point> scanlinePoints = scanline.boundTo(pg).draw();
+        List<Point> rawData = new ArrayList<Point>(scanlinePoints.size());
+        int i = 0;
+        for (Point pt : scanlinePoints) {
+            rawData.add(new Point(i, pg.getPixelIntensity(pt.x, pt.y)));
+            i++;
+        }
+        rawDataId = data.addDataSet("Raw Data", rawData, 0x0000ff /* Blue */);
+        List<Point> smoothedData = smoothData(rawData);
+        smoothedDataId = data.addDataSet("Smoothed Data", smoothedData, 0x00cc00 /* Green */);
+        List<Point> dataSlopes = getSlopesOfDataPoints(smoothedData);
+        slopesId = data.addDataSet("Slopes at Data Points", dataSlopes, 0x8800ff /* Purple */);
+        List<Point> edgeCategories = getEdgeCategories(dataSlopes);
+        edgeCategoriesId = data.addDataSet("Edge Categories", edgeCategories, 0xff0000 /* Red */);
     }
 
-    private List<Integer> preprocessScanLine(ImagePage img, List<Point> scanlinePts) {
-        // TODO: eventually want this to be based on the histogram
-        int medianGroupingSize = 20; // Note: For now, must be even
-        int groupSize = medianGroupingSize / 2;
+    public GraphData getGraphData() {
+        Verify.argument(data.getValidIds().size() > 0);
+        return data;
+    }
+
+    // Does the initial smoothing / simplifying of the data to get rid of most of the noise.
+    private List<Point> smoothData(List<Point> rawData) {
+        int groupSize = 5; // TODO: For now must be even. Eventually should be based on histogram.
 
         // Break into groups
-        int numPts = scanlinePts.size();
+        int numPts = rawData.size();
         int numGroups = numPts / groupSize;
+        ArrayList<Point> medians = new ArrayList<Point>(2 * numGroups - 1); // TODO: verify size
 
         // Now need to decide where to start the groups so that the number of pixels on each side of
         // the groups (at the ends of the scanline) is minimized
         int startPos = (numPts % groupSize) / 2;
-        Iterator<Point> scanlineItr = scanlinePts.iterator();
+        Iterator<Point> scanlineItr = rawData.iterator();
         for (int i = 0; i < startPos; i++) {
             scanlineItr.next(); // ignore all points before the start point
         }
 
-        // Make all of the groups
-        ArrayList<int[]> groups = new ArrayList<int[]>(numGroups);
-        for (int i = 0; i < numGroups; i++) { // for each group
+        // Find the median of each group.
+        int currentPos = startPos;
+        int[] prevGroup = null;
+        for (int groupNum = 0; groupNum < numGroups; groupNum++) { // for each group
             int[] group = new int[groupSize];
-            for (int j = 0; j < groupSize; j++) {
+            int medianPos = 0;
+            for (int groupIdx = 0; groupIdx < groupSize; groupIdx++) {
+                medianPos += currentPos;
                 Point pt = scanlineItr.next();
-                group[j] = img.getPixelIntensity(pt.x, pt.y);
+                currentPos++;
+                group[groupIdx] = pt.y;
             }
             Arrays.sort(group);
-            groups.add(group);
+            medianPos = medianPos / groupSize;
+            if (prevGroup != null) {
+                // Then find the median of the two groups.
+                int dblMed = getDblMedian(prevGroup, group);
+                medians.add(new Point(medianPos, dblMed));
+            }
+            prevGroup = group;
         }
-
-        // Now find all of the medians
-        ArrayList<Integer> medians = new ArrayList<Integer>(groups.size() - 1);
-        for (int i = 1; i < groups.size(); i++) {
-            int dblMed = getDblMedian(groups.get(i - 1), groups.get(i));
-            medians.add(dblMed);
-        }
-        // System.out.println(medians);
-        // System.out.println();
-        for (Integer median : medians) {
-            System.out.print("\t" + median);
-        }
-        System.out.println();
         return medians;
     }
 
@@ -102,30 +125,54 @@ public class OneDimensionalScanner {
         // System.out.println("med2 = " + med2);
     }
 
-    // public static void main(String[] args) {
-    // int[] list1 = new int[] { 1, 2, 3, 4 };
-    // int[] list2 = new int[] { 5, 6, 7, 8 };
-    // int[] sortedOverallList = new int[list1.length + list2.length];
-    // for (int i = 0; i < list1.length; i++) {
-    // sortedOverallList[i] = list1[i];
-    // }
-    // for (int i = 0; i < list2.length; i++) {
-    // sortedOverallList[i + list1.length] = list2[i];
-    // }
-    // Arrays.sort(sortedOverallList);
-    // System.out.print("[");
-    // for (int i = 0; i < sortedOverallList.length; i++) {
-    // if (i == sortedOverallList.length / 2 - 1) {
-    // System.out.print("*** ");
-    // }
-    // System.out.print(sortedOverallList[i] + ", ");
-    // if (i == sortedOverallList.length / 2) {
-    // System.out.print("*** ");
-    // }
-    // }
-    // System.out.println("]");
-    //
-    // System.out.print(getDblMedian(list1, list2));
-    // }
+    // Gets the slope at each data point.
+    private List<Point> getSlopesOfDataPoints(List<Point> smoothedData) { // TODO: better name!!!
+        int numDataPoints = smoothedData.size();
+        int[] x = new int[numDataPoints];
+        int[] y = new int[numDataPoints];
+        int[] xSquared = new int[numDataPoints];
+        int[] xy = new int[numDataPoints];
 
+        // Find all of the intermediate values (used to calculate the slopes).
+        int i = 0;
+        for (Point datum : smoothedData) {
+            int xVal = datum.x;
+            int yVal = datum.y;
+            x[i] = xVal;
+            y[i] = yVal;
+            xSquared[i] = xVal * xVal;
+            xy[i] = xVal * yVal;
+            i++;
+        }
+
+        int n = 5; // Needs to be odd (actually, can't be changed until change the next lines)
+        List<Point> slopes = new ArrayList<Point>(numDataPoints - 4);
+        for (i = 2; i < numDataPoints - 2; i++) {
+            int sumX = 0, sumY = 0, sumXSquared = 0, sumXY = 0;
+
+            // Calculate all the above sums.
+            for (int delta = -2; delta <= 2; delta++) {
+                sumX += x[i + delta];
+                sumY += y[i + delta];
+                sumXSquared += xSquared[i + delta];
+                sumXY += xy[i + delta];
+            }
+
+            // Calculate the slope of the line at x[i]
+            double m = ((double) (n * sumXY - sumX * sumY)) / (n * sumXSquared - sumX * sumX);
+            int slope_x100 = (int) Math.round(100 * m);
+            slopes.add(new Point(x[i], slope_x100));
+        }
+        return slopes;
+    }
+
+    private List<Point> getEdgeCategories(List<Point> dataSlopes) {
+        List<Point> edgeCats = new ArrayList<Point>(dataSlopes.size());
+        for (Point slopePt : dataSlopes) {
+            int slope = slopePt.y;
+            int edgeCategory = slope >= 200 ? 1 : slope <= -200 ? -1 : 0;
+            edgeCats.add(new Point(slopePt.x, edgeCategory));
+        }
+        return edgeCats;
+    }
 }

@@ -15,6 +15,7 @@ import java.io.IOException;
 
 import javax.swing.JOptionPane;
 
+import nepic.gui.Graph;
 import nepic.gui.HistogramViewPanel;
 import nepic.gui.Interface;
 import nepic.image.ConstraintMap;
@@ -29,17 +30,19 @@ import nepic.roi.Background;
 import nepic.roi.BackgroundConstraint;
 import nepic.roi.BackgroundFinder;
 import nepic.roi.CellBody;
+import nepic.roi.CellBody.GraphDataAngle;
 import nepic.roi.CellBodyConstraint;
 import nepic.roi.CellBodyFinder;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.Polygon;
 import nepic.util.ColoredPointList;
+import nepic.util.GraphData;
 import nepic.util.Pair;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-9_2013-01-08
  * @version Nepic_Alpha_v1-1-2013-03-13; Merged with Controller in Nepic_Alpha_v1-1-2013-03-13
@@ -188,7 +191,7 @@ public class Tracker {
     }
 
     /**
-     * 
+     *
      * @param numPgsSearch the number of pages before the previous page to go back and search for
      *        for a valid {@link PageInfo} with valid ROI candidates.
      * @return
@@ -304,7 +307,7 @@ public class Tracker {
     }// ChooseFileHandler
 
     /**
-     * 
+     *
      * @return true if background updated, otherwise false
      */
     public boolean findCB() {
@@ -317,7 +320,7 @@ public class Tracker {
     }
 
     /**
-     * 
+     *
      * @param corners
      * @return true if background updated, otherwise false
      */
@@ -529,7 +532,7 @@ public class Tracker {
     // *********************************************************************************************
 
     /**
-     * 
+     *
      * @return true if the previous page had valid ROIs; otherwise false
      */
     public boolean canTrackFromPrevPage() {
@@ -542,7 +545,7 @@ public class Tracker {
      * NOTE: It is recommended that {@link Tracker#canTrackFromPrevPage()} is called (and returns
      * true) before this method to avoid throwing an {@link IllegalStateException}
      * </p>
-     * 
+     *
      * @return true if the CellBody was successfully tracked from the last page; otherwise false
      * @throws IllegalStateException if the previous page did not have valid ROIs
      */
@@ -642,7 +645,22 @@ public class Tracker {
         public void actionPerformed(ActionEvent arg0) {
             JOptionPane.showMessageDialog(myGUI, new HistogramViewPanel(hist, 350, 2));
         }
+    }
 
+    public class ViewGraphHandler extends ButtonHandler {
+        private GraphData data;
+
+        public ViewGraphHandler(String name, GraphData data) {
+            super(name);
+            this.data = data;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent arg0) {
+            Graph graph = new Graph(600, 400, 0x000000, data);
+            graph.redraw(true /* connectTheDots */, true /* inScaleX */, false /* inScaleY */);
+            JOptionPane.showMessageDialog(myGUI, graph);
+        }
     }
 
     // *********************************************************************************************
@@ -715,7 +733,16 @@ public class Tracker {
                     if (ImagePage.candNumLegal(roiId)) {
                         if (cbCand != null && roiId == cbCand.getId()) {
                             myGUI.openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
-                                    new ViewHistHandler("View CB Hist", cbCand.getPiHist()));
+                                    new ViewHistHandler("View CB Hist", cbCand.getPiHist()),
+                                    new ViewGraphHandler("View Scanline Data: pi/2",
+                                            cbCand.getGraphData(GraphDataAngle.PI_OVER_TWO)),
+                                    new ViewGraphHandler("View Scanline Data: pi/4",
+                                            cbCand.getGraphData(GraphDataAngle.PI_OVER_FOUR)),
+                                    new ViewGraphHandler("View Scanline Data: zero",
+                                            cbCand.getGraphData(GraphDataAngle.ZERO)),
+                                    new ViewGraphHandler("View Scanline Data: -pi/4",
+                                            cbCand.getGraphData(
+                                                    GraphDataAngle.NEGATIVE_PI_OVER_FOUR)));
                         } else if (bkCand != null && roiId == bkCand.getId()) {
                             myGUI.openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
                                     new ViewHistHandler("View BK Hist", bkCand.getPiHist()),

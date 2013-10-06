@@ -8,26 +8,43 @@ import nepic.image.Roi;
 import nepic.io.ComplexLabel;
 import nepic.io.Label;
 import nepic.roi.model.Blob;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
+import nepic.util.GraphData;
 import nepic.util.Pixel;
+import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_ALpha_v0-9-122212 (Called CellBody3 until AutoCBFinder_Alpha_v0-9_122212)
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
- * 
+ *
  */
 public class CellBody extends Roi<CellBodyConstraint<?>> {
     private Pixel seedPixel;
     private Blob cbArea;
     private Histogram piHist;
+    private GraphData[] graphData;
+
+    public enum GraphDataAngle {
+        ZERO(0),
+        PI_OVER_FOUR(1),
+        PI_OVER_TWO(2),
+        NEGATIVE_PI_OVER_FOUR(3);
+
+        private final int id;
+
+        private GraphDataAngle(int id) {
+            this.id = id;
+        }
+    }
 
     private int minPi;
     private int eThresh;
 
     CellBody(ImagePage img) {
         super(img);
+        graphData = new GraphData[4];
     }
 
     @Override
@@ -81,6 +98,17 @@ public class CellBody extends Roi<CellBodyConstraint<?>> {
 
     public void setEdgeThresh(Integer newVal) {
         eThresh = newVal;
+    }
+
+    public void setGraphData(GraphDataAngle angle, GraphData data) {
+        Verify.notNull(angle, "GraphDataAngle");
+        Verify.notNull(data, "GraphData");
+        graphData[angle.id] = data;
+    }
+
+    public GraphData getGraphData(GraphDataAngle angle) {
+        Verify.notNull(angle, "GraphDataAngle");
+        return graphData[angle.id];
     }
 
     @Override

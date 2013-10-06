@@ -7,11 +7,11 @@ import nepic.image.ImagePage;
 import nepic.image.Roi;
 import nepic.io.ComplexLabel;
 import nepic.io.Label;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.roi.model.Polygon;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_ALpha_v0-9_122212
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
@@ -83,11 +83,11 @@ public class Background extends Roi<BackgroundConstraint<?>> {
     // thresh used for edges; any edge magnitude less than or equal to this is considered to be
     // 'flat'
     public int getEdgeThresh() {
-        int threshElPos = edgeHist.getNumDataPoints() * 99 / 100;// == 99th percentile element
+        int threshElPos = edgeHist.getPercentile(99);// == 99th percentile element
         int elNum = 0;
         int eThresh = edgeHist.getMin();
         while (elNum < threshElPos) {
-            elNum += edgeHist.numDataAt(eThresh);
+            elNum += edgeHist.getMagnitudeAt(eThresh);
             eThresh++;
         }// while
         return eThresh;

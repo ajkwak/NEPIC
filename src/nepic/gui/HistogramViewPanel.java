@@ -8,15 +8,15 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
 import nepic.io.Label;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since Nepic_Alpha_v1-0-2013-03-05
  * @version Nepic_Alpha_v1-1-2013-03-13
- * 
+ *
  */
 public class HistogramViewPanel extends JPanel {
     private static final long serialVersionUID = 1L; // Default
@@ -36,7 +36,7 @@ public class HistogramViewPanel extends JPanel {
         histHeight = desiredHistHeight;
         columnWidth = desiredColumnWidth;
 
-        int width = columnWidth * hist.getSize();
+        int width = columnWidth * hist.getDomainSize();
         histImg = new BufferedImage(width, histHeight, BufferedImage.TYPE_INT_RGB);
         histImgL = new JLabel(new ImageIcon(histImg));
         histImgL.setSize(width, histHeight);
@@ -45,10 +45,10 @@ public class HistogramViewPanel extends JPanel {
         histImgL.setVisible(true);
 
         int xPos = 0;
-        int maxNumDataPtsInColumn = hist.numDataAt(hist.getMode());
+        int maxNumDataPtsInColumn = hist.getMagnitudeAt(hist.getMode());
         // System.out.println("Print histogram.");
-        for (int i = hist.getLowerBound(); i <= hist.getUpperBound(); i++) {
-            int columnHeight = hist.numDataAt(i) * histHeight / maxNumDataPtsInColumn;
+        for (int i = hist.getMin(); i <= hist.getMax(); i++) {
+            int columnHeight = hist.getMagnitudeAt(i) * histHeight / maxNumDataPtsInColumn;
             // System.out.println(i + "\t" + hist.numDataAt(i));
             for (int x = xPos; x < xPos + columnWidth; x++) {
                 for (int y = histHeight - 1; y > (histHeight - columnHeight); y--) {
