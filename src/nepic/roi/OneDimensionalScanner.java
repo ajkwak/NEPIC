@@ -7,17 +7,19 @@ import java.util.Iterator;
 import java.util.List;
 
 import nepic.image.ImagePage;
+import nepic.data.DataSet;
+import nepic.data.GraphData;
 import nepic.data.Histogram;
 import nepic.roi.model.Line;
-import nepic.util.GraphData;
 import nepic.util.Verify;
 
 public class OneDimensionalScanner {
     private final GraphData data; // For displaying all intermediate steps of 'scanning' the line.
-    private int rawDataId;
-    private int smoothedDataId;
-    private int slopesId;
-    private int edgeCategoriesId;
+    private int rawDataId = -1;
+    private int smoothedDataId = -1;
+    private int slopesId = -1;
+
+    // private int edgeCategoriesId = -1;
 
     public OneDimensionalScanner(ImagePage pg, Line scanline) {
         Verify.notNull(pg, "Page on which to scan the line cannot be null!");
@@ -38,22 +40,11 @@ public class OneDimensionalScanner {
             i++;
         }
         rawDataId = data.addDataSet("Raw Data", rawData, 0x0000ff /* Blue */);
-        List<Point> smoothedData = smoothData(rawData);
-        smoothedDataId = data.addDataSet("Smoothed Data", smoothedData, 0x00cc00 /* Green */);
-        List<Point> dataSlopes = getSlopesOfDataPoints(smoothedData);
-        slopesId = data.addDataSet("Slopes at Data Points", dataSlopes, 0x8800ff /* Purple */);
-        List<Point> edgeCategories = getEdgeCategories(dataSlopes);
-        edgeCategoriesId = data.addDataSet("Edge Categories", edgeCategories, 0xff0000 /* Red */);
-    }
-
-    public GraphData getGraphData() {
-        Verify.argument(data.getValidIds().size() > 0);
-        return data;
     }
 
     // Does the initial smoothing / simplifying of the data to get rid of most of the noise.
-    private List<Point> smoothData(List<Point> rawData) {
-        int groupSize = 5; // TODO: For now must be even. Eventually should be based on histogram.
+    public void smoothData(int groupSize) {
+        DataSet rawData = data.getDataSet(rawDataId);
 
         // Break into groups
         int numPts = rawData.size();
@@ -89,7 +80,24 @@ public class OneDimensionalScanner {
             }
             prevGroup = group;
         }
-        return medians;
+
+        // Set the smoothed data to this new value.
+        if (data.datasetExists(smoothedDataId)) {
+            data.redefineDataSetValues(smoothedDataId, medians);
+        } else {
+            smoothedDataId = data.addDataSet("Smoothed Data", medians, 0x00cc00 /* Green */);
+        }
+        List<Point> dataSlopes = getFirstDerivative(medians);
+        if (data.datasetExists(slopesId)) {
+            data.redefineDataSetValues(slopesId, dataSlopes);
+        } else {
+            slopesId = data.addDataSet("Slopes at Data Points", dataSlopes, 0x8800ff /* Purple */);
+        }
+    }
+
+    public GraphData getGraphData() {
+        Verify.argument(data.getValidIds().size() > 0);
+        return data;
     }
 
     private static int getDblMedian(int[] sortedList1, int[] sortedList2) {
@@ -126,8 +134,8 @@ public class OneDimensionalScanner {
     }
 
     // Gets the slope at each data point.
-    private List<Point> getSlopesOfDataPoints(List<Point> smoothedData) { // TODO: better name!!!
-        int numDataPoints = smoothedData.size();
+    private List<Point> getFirstDerivative(List<Point> data) {
+        int numDataPoints = data.size();
         int[] x = new int[numDataPoints];
         int[] y = new int[numDataPoints];
         int[] xSquared = new int[numDataPoints];
@@ -135,7 +143,7 @@ public class OneDimensionalScanner {
 
         // Find all of the intermediate values (used to calculate the slopes).
         int i = 0;
-        for (Point datum : smoothedData) {
+        for (Point datum : data) {
             int xVal = datum.x;
             int yVal = datum.y;
             x[i] = xVal;
@@ -166,13 +174,13 @@ public class OneDimensionalScanner {
         return slopes;
     }
 
-    private List<Point> getEdgeCategories(List<Point> dataSlopes) {
-        List<Point> edgeCats = new ArrayList<Point>(dataSlopes.size());
-        for (Point slopePt : dataSlopes) {
-            int slope = slopePt.y;
-            int edgeCategory = slope >= 200 ? 1 : slope <= -200 ? -1 : 0;
-            edgeCats.add(new Point(slopePt.x, edgeCategory));
-        }
-        return edgeCats;
-    }
+    // private List<Point> getEdgeCategories(List<Point> dataSlopes) {
+    // List<Point> edgeCats = new ArrayList<Point>(dataSlopes.size());
+    // for (Point slopePt : dataSlopes) {
+    // int slope = slopePt.y;
+    // int edgeCategory = slope >= 200 ? 1 : slope <= -200 ? -1 : 0;
+    // edgeCats.add(new Point(slopePt.x, edgeCategory));
+    // }
+    // return edgeCats;
+    // }
 }

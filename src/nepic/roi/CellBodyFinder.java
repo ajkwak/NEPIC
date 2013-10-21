@@ -3,7 +3,6 @@ package nepic.roi;
 // Need methods from CBIdentifier.java from AutoCBFinder_Alpha_v0-3
 
 import java.awt.Point;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -70,23 +69,17 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
         List<Point> edges = new LinkedList<Point>();
         edges.add(seedPixel);
-        try {
-            int minPi = determinePiThreshold(eThresh, seedPixel);
+        int minPi = determinePiThreshold(eThresh, seedPixel);
 
-            // Extend edges to MinPi
-            edges = extendEdges(edges, roi, minPi);
-            roi.setMinPi(minPi);
-            setRoiEdges(roi, new Blob(edges));
+        // Extend edges to MinPi
+        edges = extendEdges(edges, roi, minPi);
+        roi.setMinPi(minPi);
+        setRoiEdges(roi, new Blob(edges));
 
-            // DesiredSize constraint
-            Pair<Integer, SizeEdgeCase> desiredSize = constraints.getConstraint(DesiredSize.class);
-            if (desiredSize != null) {
-                adjustToDesiredSize(roi, desiredSize.first, desiredSize.second);
-            }
-        } catch (NoSuchFieldException e) {
-            Nepic.log(EventType.WARNING, "Edges of CellBody not found.");
-            // TODO: in future, simply return null, but for now, have this workaround
-            roi.setEdges(new Blob(edges)); // Does NOT make a valid CellBody object
+        // DesiredSize constraint
+        Pair<Integer, SizeEdgeCase> desiredSize = constraints.getConstraint(DesiredSize.class);
+        if (desiredSize != null) {
+            adjustToDesiredSize(roi, desiredSize.first, desiredSize.second);
         }
         return roi;
     }
@@ -122,10 +115,20 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         validRoi.revalidate(img); // Give valid ROI an Id handle for this image
         Blob roiArea = validRoi.getArea();
         for (Point edgePt : roiArea.getEdges()) {
-            img.setId(edgePt.x, edgePt.y, validRoi);
+            try {
+                img.setId(edgePt.x, edgePt.y, validRoi);
+            } catch (IllegalAccessException e) {
+                Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, e, "Unable to restore edge point "
+                        + edgePt);
+            }
         }
         for (Point innardPt : roiArea.getInnards()) {
-            img.setId(innardPt.x, innardPt.y, validRoi);
+            try {
+                img.setId(innardPt.x, innardPt.y, validRoi);
+            } catch (IllegalAccessException e) {
+                Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, e,
+                        "Unable to restore innard point " + innardPt);
+            }
         }
     }
 
@@ -133,7 +136,12 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         Pixel seedPixel = getMostIntensePixel(seedPolygon);
 
         // Set seed pixel
-        img.setId(seedPixel.x, seedPixel.y, roi);
+        try {
+            img.setId(seedPixel.x, seedPixel.y, roi);
+        } catch (IllegalAccessException e) {
+            Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, e, "Unable to set seed pixel "
+                    + seedPixel);
+        }
         roi.setSeedPixel(seedPixel);
         roi.setMinPi(seedPixel.relLum);
 
@@ -204,7 +212,12 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             edges.clear();
             Point seedPix = roi.getSeedPixel();
             edges.add(seedPix);
-            img.setId(seedPix.x, seedPix.y, roi);
+            try {
+                img.setId(seedPix.x, seedPix.y, roi);
+            } catch (IllegalAccessException e) {
+                Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, e, "Unable to set seed pixel "
+                        + seedPix);
+            }
             if (prevSize > 1) {
                 edges = extendEdges(edges, roi, minPi);
                 cb = new Blob(edges);
@@ -236,7 +249,12 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             removeFeatureFromImage(roiNum, cb);
             edges.clear();
             edges.add(seedPix);
-            img.setId(seedPix.x, seedPix.y, roi);
+            try {
+                img.setId(seedPix.x, seedPix.y, roi);
+            } catch (IllegalAccessException e) {
+                Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, e, "Unable to set seed pixel "
+                        + seedPix);
+            }
 
             // Extend cell body edges to a higher minPi (net shrink action)
             prevSize = size;
@@ -345,152 +363,10 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         return new Pixel(xPos, yPos, maxLum);
     }// findMostIntensePixClump
 
-    /**
-     *
-     * @param threshVals
-     * @return
-     * @throws NoSuchFieldException
-     */
-    private int determinePiThreshold(int eThresh, Point seedPix) throws NoSuchFieldException {
-        // Generate possible threshold values.
-        int numThreshVals = 8;
-        List<Point> threshVals = new ArrayList<Point>(numThreshVals);
-        Point threshPix;
-        for (int changeX = -1; changeX <= 1; changeX++) {// find thresh every 45 degrees
-            for (int changeY = -1; changeY <= 1; changeY++) {
-                threshPix = findThresh(seedPix, eThresh, changeX, changeY);// seed pixel is maxX in
-                                                                           // clump,
-                // move right
-                if (threshPix != null) {
-                    threshVals.add(threshPix);
-                }
-            }// for y
-        }// for x
-
-        // Determines the actual pixel intensity threshold
-        if (threshVals.size() < numThreshVals / 2) {
-            throw new NoSuchFieldException("No CellBody found.  Unable to find PI threshold.");
-        }
-        int minRL = 256;
-        int secMin = 256;
-        for (Point threshPt : threshVals) {
-            int threshLum = img.getPixelIntensity(threshPt.x, threshPt.y);
-            if (threshLum < minRL)
-                minRL = threshLum;
-            else if (threshLum > minRL && threshLum < secMin)
-                secMin = threshLum;
-        }// while
-        return secMin;
+    // NOTE: THIS WILL BE REPLACED (CURRENTLY CONVERTED TO DUMMY METHOD).
+    private int determinePiThreshold(int eThresh, Point seedPix) {
+        return Math.min(100, img.getPixelIntensity(seedPix.x, seedPix.y) - 3);
     }// determineThreshold
-
-    /**
-     * Finds the threshold value in a single direction away from the seed pixel.
-     *
-     * @param seedPixel the seed pixel from which to search for the ROI threshold
-     * @param eThresh the edge threshold used to search for the pixel intensity threshold
-     * @param changeX the x direction to go from the seed pixel in search of the threshold value
-     * @param changeY the y direction to go from the seed pixel in search of the threshold value
-     * @return the threshold point
-     */
-    private Point findThresh(Point seedPixel, int eThresh, int changeX, int changeY) {
-        if (changeX == 0 && changeY == 0)
-            return null;
-        // IDEA: keep going until get to downward gradient followed by flat section (~10 pixels).
-        // ThreshPix is the last local max downward gradient before the flat section
-        int numDown = 0;// must always be at least two pixels before start looking for flat section
-        int totalDrop = 0;// use in combo with numDown. Drop must 1) long, or 2) large
-        Pixel maxDownPix = null;// threshPix
-        int numUp = 0;
-
-        int xToCheck = seedPixel.x + changeX;
-        int yToCheck = seedPixel.y + changeY;
-        int currentRelLum = img.getPixelIntensity(seedPixel.x, seedPixel.y);
-        int currentEdgeMag = img.getEdgeMag(seedPixel.x, seedPixel.y);
-
-        try {
-            // FIRST: find first significant edge
-            int newRelLum = img.getPixelIntensity(xToCheck, yToCheck);
-            int newEdgeMag = img.getEdgeMag(xToCheck, yToCheck);
-            boolean possEdgeFound = false;
-            while (!possEdgeFound) {
-                if (numUp > 1) {
-                    numDown = 0;
-                    totalDrop = 0;
-                    numUp = 1;
-                }// if haven't found actual downward edge (because went up again in a
-                 // not-insignificant manner)
-                if (newRelLum < currentRelLum) {
-                    numDown++;
-                    totalDrop = totalDrop + (currentRelLum - newRelLum);
-                    // if edgeMag > maxDownPix.relLum
-                    if (newEdgeMag > eThresh && newEdgeMag >= currentEdgeMag
-                            && newEdgeMag >= img.getEdgeMag(xToCheck + changeX, yToCheck + changeY)) {
-                        maxDownPix = new Pixel(xToCheck, yToCheck, newEdgeMag);
-                    }// if edge is a local maximum
-                } else if (newRelLum > currentRelLum) {
-                    totalDrop = totalDrop + (currentRelLum - newRelLum);
-                    numUp++;
-                }// else if went up instead of down TODO: what if is equal???
-                xToCheck = xToCheck + changeX;
-                yToCheck = yToCheck + changeY;
-                currentRelLum = newRelLum;
-                currentEdgeMag = newEdgeMag;
-                newRelLum = img.getPixelIntensity(xToCheck, yToCheck);
-                newEdgeMag = img.getEdgeMag(xToCheck, yToCheck);
-                if (numDown > 2 && totalDrop > 30 && maxDownPix != null)
-                    possEdgeFound = true;
-            }// while
-
-            // THEN begin trying to find flat section; if find new significant edge b4 flat section,
-            // replace current significant edge
-            int numFlat = 0;// want 10 of these before accept
-            int numInterveningUnflat = 0;
-            boolean foundFlatSec = false;
-            while (!foundFlatSec) {
-                if (numInterveningUnflat > 1)
-                    numFlat = 0;
-                if (newEdgeMag < eThresh) {
-                    numFlat++;
-                    numInterveningUnflat = 0;
-                } else {
-                    numInterveningUnflat++;
-                    if (numUp > 1) {
-                        numDown = 0;
-                        totalDrop = 0;
-                        numUp = 1;
-                    }// if haven't found actual downward edge (because went up again in a
-                     // not-insignificant manner)
-                    if (newRelLum < currentRelLum) {
-                        numDown++;
-                        totalDrop = totalDrop + (currentRelLum - newRelLum);
-                        if (newEdgeMag > eThresh
-                                && newEdgeMag > (maxDownPix.relLum * 3 / 4)
-                                && newEdgeMag >= currentEdgeMag
-                                && newEdgeMag >= img.getEdgeMag(xToCheck + changeX, yToCheck
-                                        + changeY)) {// edgeMag > maxDownPix.relLum
-                            maxDownPix = new Pixel(xToCheck, yToCheck, newEdgeMag);
-                        }// if edge is a local maximum
-                    } else if (newRelLum > currentRelLum) {
-                        totalDrop = totalDrop + (currentRelLum - newRelLum);
-                        numUp++;
-                    }// else if went up instead of down TODO: what if is equal???
-                    xToCheck = xToCheck + changeX;
-                    yToCheck = yToCheck + changeY;
-                    currentRelLum = newRelLum;
-                    currentEdgeMag = newEdgeMag;
-                    newRelLum = img.getPixelIntensity(xToCheck, yToCheck);
-                    newEdgeMag = img.getEdgeMag(xToCheck, yToCheck);
-                }// else: a significant edgePix has been found
-                if (numFlat > 9)
-                    foundFlatSec = true;
-            }// while
-            return maxDownPix;
-        } catch (ArrayIndexOutOfBoundsException oob) {
-            Nepic.log(EventType.WARNING, EventLogger.LOG_ONLY, "NO CB FOUND: changeX =", changeX,
-                    ", changeY =", changeY);
-            return null;
-        }// if CB hits the edge of the pic
-    }// findThresh
 
     // returns maxXPoint
     private List<Point> extendEdges(List<Point> outerEdges, Roi<?> roi, int minPi) {
@@ -574,7 +450,12 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "CB Cand already contains", toAdd);
             numErrors += 1;
         } else {
-            img.setId(toAdd.x, toAdd.y, roi);
+            try {
+                img.setId(toAdd.x, toAdd.y, roi);
+            } catch (IllegalAccessException e) {
+                Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, e, "Unable to add pixel "
+                        + toAdd);
+            }
         }
 
         if (candEdges.contains(toAdd)) {

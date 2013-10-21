@@ -1,7 +1,9 @@
-package nepic.util;
+package nepic.data;
 
 import java.awt.Point;
 import java.util.Collection;
+
+import nepic.util.BoundedRegion;
 
 /**
  * Interface representing a named set of {@link Point} values bounded in physical (Cartesian) space.

@@ -6,6 +6,7 @@ import java.util.List;
 import nepic.Nepic;
 import nepic.image.ConstraintMap;
 import nepic.image.RoiFinder;
+import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.data.Histogram;
 import nepic.roi.model.Polygon;
@@ -159,7 +160,13 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         Verify.argument(validRoi.isValid(), "ROI to restore must be valid");
         validRoi.revalidate(img); // Give valid ROI an Id handle for this image
         for (Point innardPt : validRoi.getArea().getInnards()) {
-            img.setId(innardPt.x, innardPt.y, validRoi);
+            try {
+                img.setId(innardPt.x, innardPt.y, validRoi);
+            } catch (IllegalAccessException e) {
+                Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, e,
+                        "Unable to fully restore background.  Point (" + innardPt.getX() + ", "
+                                + innardPt.getY() + ") could not be restored.");
+            }
         }
     }
 
@@ -199,7 +206,13 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
                 edgeHistBuilder.addValues(
                         rl - img.getPixelIntensity(x + 1, y), rl - img.getPixelIntensity(x, y + 1));
 
-                img.setId(x, y, roi);
+                try {
+                    img.setId(x, y, roi);
+                } catch (IllegalAccessException e) {
+                    Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, e,
+                            "Unable to fully set background.  Point (", x + ", "
+                                    + y + ") could not be set as background.");
+                }
             } catch (ArrayIndexOutOfBoundsException e) {
                 removeFeatureFromImage(roi);
                 roi.setArea(null);

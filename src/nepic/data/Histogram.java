@@ -43,7 +43,7 @@ public class Histogram implements CsvFormattable {
      * @param maxPos the maximum position in the histogram data at which there is at least one value
      */
     private Histogram(int[] hist, int n, int offset, int sum, int minPos, int maxPos) {
-        Verify.argument(minPos >= maxPos, "Invalid bounds given.  maxPos (= " + maxPos
+        Verify.argument(minPos <= maxPos, "Invalid bounds given.  maxPos (= " + maxPos
                 + ") < minPos (= " + minPos + ")");
         this.n = n;
         this.offset = offset;
@@ -89,7 +89,6 @@ public class Histogram implements CsvFormattable {
                 getNumValuesBetween(
                         (int) Math.ceil(mean - 2 * stDev), (int) Math.floor(mean + 2 * stDev)) };
     }
-
 
     /**
      * Get the size of the domain of this histogram (the range of values over which this histogram

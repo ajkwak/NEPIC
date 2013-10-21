@@ -1,15 +1,11 @@
 package nepic.io;
 
-import java.awt.Desktop;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import nepic.Nepic;
 import nepic.logging.EventLogger;
@@ -22,14 +18,14 @@ import nepic.util.Verify;
  * @since AutoCBFinder_Alpha_v0-8_NewLogger
  * @version AutoCBFinder_Alpha_v0-9_2013-01-11
  */
-public class DataWriter_orig {
-    public final List<String> labelList;
-    public final List<ArrayList<Object>> dataList;
+public class DataWriter {
+    private final List<String> labelList;
+    private final List<ArrayList<String>> dataList;
 
-    public DataWriter_orig(Label[] labels) {
+    public DataWriter(Label[] labels) {
         Verify.notNull(labels);
         labelList = new ArrayList<String>();
-        dataList = new LinkedList<ArrayList<Object>>();
+        dataList = new LinkedList<ArrayList<String>>();
         flattenLabels("", labels);
     }
 
@@ -44,9 +40,9 @@ public class DataWriter_orig {
         }
     }
 
-    public boolean addData(Object[] data) {
+    public boolean addDataRow(Object[] data) {
         Verify.notNull(data);
-        ArrayList<Object> dataRow = new ArrayList<Object>(labelList.size());
+        ArrayList<String> dataRow = new ArrayList<String>(labelList.size());
         flattenData(data, dataRow);
         if (dataRow.size() == labelList.size()) {
             dataList.add(dataRow);
@@ -58,12 +54,22 @@ public class DataWriter_orig {
         return false;
     }
 
-    public void flattenData(Object[] data, ArrayList<Object> dataRow) {
+    public boolean addDataRows(List<Object[]> data) { // TODO: keep???
+        Verify.notNull(data);
+        for (Object[] row : data) {
+            if (!addDataRow(row)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void flattenData(Object[] data, ArrayList<String> dataRow) {
         for (int i = 0; i < data.length; i++) {
             if (data[i] instanceof Object[]) {
                 flattenData((Object[]) data[i], dataRow);
             } else {
-                dataRow.add(data[i]);
+                dataRow.add(data[i].toString());
             }
         }
     }
@@ -72,31 +78,12 @@ public class DataWriter_orig {
         return !dataList.isEmpty();
     }
 
-    public boolean canSaveData(JFrame gui, File file) {
+    public boolean canSaveData(File file) {
         Verify.notNull(file);
-        if (!EventLogger.getFileExtention(file.getAbsolutePath()).equals("csv")) {
-            return false;
-        }
-
-        // if (!file.canWrite()) {
-        boolean writeFile = !file.exists();
-        if (!writeFile) {
-            int overwrite = JOptionPane.showConfirmDialog(gui,
-                    "The indicated file already exists.  Would you like to overwrite it?",
-                    "Overwrite File?", JOptionPane.YES_NO_OPTION);
-            if (overwrite == JOptionPane.YES_OPTION) {
-                writeFile = true;
-            }
-        }
-        return writeFile;
-        // } else {
-        // JOptionPane.showMessageDialog(gui, "Unable to write to the selected file.",
-        // "Unable to Save File", JOptionPane.ERROR_MESSAGE);
-        // }
-        // return false;
+        return EventLogger.getFileExtention(file.getAbsolutePath()).equals("csv");
     }
 
-    public boolean saveData(JFrame gui, File file) {
+    public boolean saveData(File file) {
         Verify.notNull(file);
         String classpath = file.getAbsolutePath();
         Verify
@@ -106,23 +93,12 @@ public class DataWriter_orig {
         try {
             PrintStream writer = new PrintStream(new FileOutputStream(classpath));
             writer.println(writeCsvLine(labelList));
-            for (ArrayList<Object> dataRow : dataList) {
+            for (ArrayList<String> dataRow : dataList) {
                 writer.println(writeCsvLine(dataRow));
             }
             writer.flush();
             writer.close();
             dataList.clear();
-            if (file.exists()) {
-                int open = JOptionPane.showConfirmDialog(gui,
-                        "Would you like to open the data file you just saved?", "Open Data File?",
-                        JOptionPane.YES_NO_OPTION);
-                if (open == JOptionPane.YES_OPTION) {
-                    Desktop.getDesktop().open(file);
-                }
-            } else {
-                Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "After saving, file", classpath,
-                        "does not exist");
-            }
             return true;
         } catch (Exception e) {
             Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "Unable to save log to", classpath,

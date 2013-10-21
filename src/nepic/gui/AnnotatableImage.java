@@ -2,19 +2,14 @@ package nepic.gui;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-
-import nepic.util.ColoredPointList;
+import nepic.data.DataSet;
 import nepic.util.DoubleLinkRing;
-import nepic.util.ForTestingOnly;
-import nepic.util.Lists;
 import nepic.util.Pixel;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-9-2013-01-29 (called DrawableImage until
  *        AutoCBFinder_Alpha_v0-9-2013-02-10)
@@ -29,7 +24,7 @@ public class AnnotatableImage {
      * Creates an {@code AnnotatableImage} which can support the given number of annotations. Each
      * annotation in the resulting {@code AnnotatableImage} is uniquely keyed by a number of the
      * range [0, {@code maxNumAnnotations}).
-     * 
+     *
      * @param maxNumAnnotations the maximum number of annotations that should be supported for this
      *        image
      */
@@ -44,7 +39,7 @@ public class AnnotatableImage {
     /**
      * Sets the image of the {@link AnnotatableImage}. All annotations are automatically cleared
      * when the image is reset.
-     * 
+     *
      * @param img the image to set
      * @return <code>this</code>, for chaining
      */
@@ -61,7 +56,7 @@ public class AnnotatableImage {
 
     /**
      * Determines if the given number is a valid ID number for an annotation in this image.
-     * 
+     *
      * @param id the id number to test
      * @return true if the given ID number is valid for this image; otherwise false
      */
@@ -98,7 +93,7 @@ public class AnnotatableImage {
 
     /**
      * Recolors the annotation with the given ID to the given color (in RGB format).
-     * 
+     *
      * @param id the unique id of the annotation to recolor.
      * @param rgb the color (in RGB format) to paint the annotation.
      * @throws IllegalStateException if the annotation to recolor is empty (i.e. if there is nothing
@@ -117,14 +112,14 @@ public class AnnotatableImage {
      * Annotates the image with the given {@link ColoredPointList} information. If the annotation
      * specified by the given ID already contains any values, the annotation is erased before these
      * new values are applied.
-     * 
+     *
      * In other words, draws or re-draws the annotation on the image.
-     * 
+     *
      * @param id the unique ID of the annotation
      * @param newVals the pixels with which to annotate the image, and the colors to paint those
      *        pixels on the image
      */
-    public void redraw(int id, ColoredPointList... newVals) {
+    public void redraw(int id, DataSet... newVals) {
         Verify.argument(isValidId(id), "Cannot restore category with invalid ID " + id);
         Verify.argument(newVals != null && newVals.length > 0,
                 "The given set of ColoredPixelLists must be non-empty");
@@ -135,19 +130,17 @@ public class AnnotatableImage {
         // Clear the annotation and re-draw it with the given values.
         Annotation toRedraw = stack[stackTop];
         toRedraw.clear();
-        for (ColoredPointList toAdd : newVals) {
-            List<? extends Point> newPixels = toAdd.points;
-
+        for (DataSet toAdd : newVals) {
             // Draw the given MonochromePixelSet.
-            MonochromePixelSet pixSet = new MonochromePixelSet(toAdd.rgb);
-            for (Point toDraw : newPixels) { // Draws in order
+            MonochromePixelSet pixSet = new MonochromePixelSet(toAdd.getRgb());
+            for (Point toDraw : toAdd) { // Draws in order
                 pixSet.addPoint(toDraw); // In place
             }
             toRedraw.addPixelSet(pixSet);
         }
     }
 
-    public void addPoints(int id, ColoredPointList... newVals) {
+    public void addPoints(int id, DataSet... newVals) {
         Verify.argument(isValidId(id));
         Verify.argument(newVals != null && newVals.length > 0,
                 "The given set of ColoredPixelLists must be non-empty");
@@ -156,10 +149,10 @@ public class AnnotatableImage {
         workWithAnnotationAtPos(findPosOfAnnotation(id));
 
         Annotation addTo = stack[stackTop];
-        for (ColoredPointList toAdd : newVals) {
+        for (DataSet toAdd : newVals) {
             // Draw the given MonochromePixelSet.
-            MonochromePixelSet pixSet = new MonochromePixelSet(toAdd.rgb);
-            for (Point toDraw : toAdd.points) { // Draws in order
+            MonochromePixelSet pixSet = new MonochromePixelSet(toAdd.getRgb());
+            for (Point toDraw : toAdd) { // Draws in order
                 pixSet.addPoint(toDraw); // In place
             }
             addTo.addPixelSet(pixSet);
@@ -326,31 +319,6 @@ public class AnnotatableImage {
         return builder.toString();
     }
 
-    @ForTestingOnly
-    int getNumberOfAnnotations() {
-        return stackTop + 1;
-    }
-
-    @ForTestingOnly
-    int getIdOfTopAnnotation() {
-        return stack[stackTop].id;
-    }
-
-    @ForTestingOnly
-    List<ColoredPointList> getIterableCopyOfTopAnnotation() {
-        Annotation annotation = stack[stackTop];
-        List<ColoredPointList> annotationCopy = new ArrayList<ColoredPointList>(
-                annotation.pixelLists.size());
-        for (MonochromePixelSet list : annotation.pixelLists) {
-            List<Pixel> pixelListCopy = new ArrayList<Pixel>(list.pixels.size());
-            for (Pixel pixel : list.pixels) {
-                pixelListCopy.add(new Pixel(pixel.x, pixel.y, pixel.relLum));
-            }
-            annotationCopy.add(new ColoredPointList(pixelListCopy, list.rgb));
-        }
-        return annotationCopy;
-    }
-
     public BufferedImage zoom(int zoomFactor) {
         int origWidth = img.getWidth();
         int origHeight = img.getHeight();
@@ -384,21 +352,21 @@ public class AnnotatableImage {
         return img.getHeight();
     }
 
-    public static void main(String[] args) {
-        AnnotatableImage ai = new AnnotatableImage(5);
-        ai.setImage(new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB));
-        ai.redraw(2, new ColoredPointList(Lists.newArrayList(new Point(0, 0), new Point(1, 1)),
-                0xffffff));
-        ai.redraw(4, new ColoredPointList(Lists.newArrayList(new Point(0, 0)), 0xffffff));
-        ai.redraw(0, new ColoredPointList(Lists.newArrayList(new Point(1, 1)), 0xffffff));
-        ai.redraw(2, new ColoredPointList(Lists.newArrayList(new Point(15, 15)), 0x333333));
-        ai.erase(1);
-        ai.erase(1);
-        ai.erase(3);
-        ai.erase(2);
-        ai.erase(4);
-        ai.recolor(4, 0x333333);
-        System.out.println(ai);
-        System.out.println("stackTop = " + ai.stackTop);
-    }
+    // public static void main(String[] args) {
+    // AnnotatableImage ai = new AnnotatableImage(5);
+    // ai.setImage(new BufferedImage(20, 20, BufferedImage.TYPE_INT_RGB));
+    // ai.redraw(2, new ColoredPointList(Lists.newArrayList(new Point(0, 0), new Point(1, 1)),
+    // 0xffffff));
+    // ai.redraw(4, new ColoredPointList(Lists.newArrayList(new Point(0, 0)), 0xffffff));
+    // ai.redraw(0, new ColoredPointList(Lists.newArrayList(new Point(1, 1)), 0xffffff));
+    // ai.redraw(2, new ColoredPointList(Lists.newArrayList(new Point(15, 15)), 0x333333));
+    // ai.erase(1);
+    // ai.erase(1);
+    // ai.erase(3);
+    // ai.erase(2);
+    // ai.erase(4);
+    // ai.recolor(4, 0x333333);
+    // System.out.println(ai);
+    // System.out.println("stackTop = " + ai.stackTop);
+    // }
 }

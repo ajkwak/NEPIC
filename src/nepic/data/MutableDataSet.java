@@ -1,10 +1,13 @@
-package nepic.util;
+package nepic.data;
 
 import java.awt.Point;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
+import nepic.util.BoundedRegion;
+import nepic.util.Verify;
 
 /**
  * A mutable implementation of the the {@link DataSet} interface.
@@ -232,5 +235,10 @@ public class MutableDataSet implements DataSet {
         if (y > maxY) {
             maxY = y;
         }
+    }
+
+    @Override
+    public String toString() {
+        return name + "(0x" + Integer.toHexString(rgb) + "): " + data.toString();
     }
 }

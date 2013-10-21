@@ -1,11 +1,14 @@
-package nepic.util;
+package nepic.data;
 
 import java.awt.Point;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
 import nepic.gui.Graph;
+import nepic.util.BoundedRegion;
+import nepic.util.Verify;
 
 public class GraphData implements BoundedRegion, Iterable<DataSet> {
     /**
@@ -301,6 +304,18 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
         return ids;
     }
 
+    /**
+     * Determines if the given value is the ID of an existing {@link DataSet} in this
+     * {@link GraphData}.
+     *
+     * @param id the ID to check
+     * @return {@code true} if the given ID is for an existing {@link DataSet} in this
+     *         {@link GraphData}; otherwise {@code false}
+     */
+    public boolean datasetExists(int id) {
+        return id >= 0 && id < dataSets.length && dataSets[id] != null;
+    }
+
     @Override
     public Iterator<DataSet> iterator() {
         return new Iterator<DataSet>() {
@@ -336,5 +351,17 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
             copy.addDataSet(dataSet.getName(), dataSet, dataSet.getRgb());
         }
         return copy;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder()
+                .append("Independent Variable: ").append(independentVariable)
+                .append("\nDependent Variable: ").append(dependentVariable)
+                .append("\nData Sets:");
+        for (DataSet dataSet : this) {
+            builder.append("\n\t").append(dataSet);
+        }
+        return builder.toString();
     }
 }

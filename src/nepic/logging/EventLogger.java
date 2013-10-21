@@ -14,13 +14,12 @@ import nepic.Nepic;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-8_NewLogger
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
  */
 public class EventLogger {
-
     public static final String LOG_ONLY = null;
     private static final int NUM_EVENTS_BEFORE_SAVE = 100;
     private final List<Log> events;
@@ -118,13 +117,18 @@ public class EventLogger {
     }
 
     public EventLogger logEvent(EventType eventType, String messageForUser, Object... furtherInfo) {
+        return logEvent(eventType, messageForUser, null, furtherInfo);
+    }
+
+    public EventLogger logEvent(EventType eventType, String messageForUser, Throwable e,
+            Object... furtherInfo) {
         boolean haveLoggingFile = haveLoggingFile();
 
         if (haveLoggingFile && events.size() >= NUM_EVENTS_BEFORE_SAVE) {
             saveLog();
         }
 
-        Log currentEvent = new Log(eventType, messageForUser, furtherInfo);
+        Log currentEvent = new Log(eventType, messageForUser, e, furtherInfo);
         if (haveLoggingFile || observers.isEmpty()) {
             events.add(currentEvent);
         }
@@ -234,7 +238,7 @@ public class EventLogger {
         private final EventType type;
         private String message;
 
-        private Log(EventType type, String messageForUser, Object[] furtherInfo) {
+        private Log(EventType type, String messageForUser, Throwable e, Object[] furtherInfo) {
             // initial verification
             Verify.notNull(type);
             Verify.notNull(furtherInfo);
@@ -242,14 +246,16 @@ public class EventLogger {
             // Type of event being logged
             this.type = type;
 
-            createLogMessage(messageForUser, furtherInfo);
+            createLogMessage(messageForUser, e, furtherInfo);
         }
 
-        private void createLogMessage(String messageForUser, Object[] furtherInfo) {
+        private void createLogMessage(String messageForUser, Throwable e, Object[] furtherInfo) {
             StringBuilder builder = new StringBuilder(type.toString()).append(";\t");
 
             // Info about method generating message to be logged
-            appendMessage(builder, beginLog());
+            for (Object o : beginLog()) {
+                builder.append(separator).append(o);
+            }
             builder.append(" ::");
 
             // Include message to user, if necessary
@@ -259,15 +265,15 @@ public class EventLogger {
             }
 
             // Include all given further info
-            appendMessage(builder, furtherInfo);
+            for (Object o : furtherInfo) {
+                builder.append(separator).append(o);
+            }
+
+            if (e != null) { // If there is an exception associated with this log message
+                builder.append(separator).append("Error Trace = ").append(formatException(e));
+            }
 
             message = builder.toString();
-        }
-
-        private void appendMessage(StringBuilder messageBuilder, Object[] furtherInfo) {
-            for (Object o : furtherInfo) {
-                messageBuilder.append(separator).append(o);
-            }
         }
 
         private Object[] beginLog() {

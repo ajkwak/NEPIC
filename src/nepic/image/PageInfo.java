@@ -2,29 +2,23 @@ package nepic.image;
 
 import nepic.io.ComplexLabel;
 import nepic.io.Label;
-import nepic.roi.Background;
-import nepic.roi.CellBody;
 import nepic.data.Histogram;
 import nepic.util.CsvFormattable;
 import nepic.util.Validatable;
 import nepic.util.Verify;
 
 /**
- *
  * @author AJ Parmidge
- * @since AutoCBFinder_Alpha_v0-9_2013-01-08
- * @version AutoCBFinder_Alpha_v0-9_2013-01-08
- *
  */
 public class PageInfo implements CsvFormattable, Validatable {
     // Page-specific info
     private final String imgName;
     private final int pgNum;
     private final Histogram imgHist;
-
-    // Analysis-specific info
-    private CellBody cb = null;
-    private Background bk = null;
+    private Histogram calibrationBkHist;
+    private int minGroupSize = -1; // Initialize to invalid value
+    private int maxGroupSize = -1; // Initialize to invalid value
+    private int optimalGroupSize = -1; // Initialize to invalid value
 
     public PageInfo(String imgName, int pgNum, ImagePage img) {
         Verify.notNull(imgName, "Name of image cannot be null");
@@ -43,47 +37,23 @@ public class PageInfo implements CsvFormattable, Validatable {
         return pgNum;
     }
 
-    public CellBody getCB() {
-        return cb;
-    }
-
-    public boolean hasValidCB() {
-        return cb != null && cb.isValid();
-    }
-
-    public void setCB(CellBody cb) {
-        this.cb = cb;
-    }
-
-    public Background getBK() {
-        return bk;
-    }
-
-    public boolean hasValidBK() {
-        return bk != null && bk.isValid();
-    }
-
-    public void setBK(Background bk) {
-        this.bk = bk;
-    }
-
     public Histogram getPiHist() {
         return imgHist;
     }
 
-    public double getPiRatio() {
-        Verify.state(cb != null && bk != null);
-        return cb.getPiHist().getMean() / bk.getPiHist().getMean();
+    public void setCalibrationBkHist(Histogram hist) {
+        this.calibrationBkHist = hist;
     }
 
     public static Label[] getCsvLabels() {
         return new Label[] {
                 new Label("Name"),
                 new Label("Pg_Num"),
-                new Label("PI Ratio (Cell Body/Background)"),
-                new ComplexLabel("ImgHist", Histogram.getCsvLabels()),
-                new ComplexLabel("Cell Body", CellBody.getCsvLabels()),
-                new ComplexLabel("Background", Background.getCsvLabels()), };
+                new ComplexLabel("Img Hist", Histogram.getCsvLabels()),
+                new ComplexLabel("Calibration BK Hist", Histogram.getCsvLabels()),
+                new Label("Min Group Size"),
+                new Label("Max Group Size"),
+                new Label("Optimal Group Size") };
     }
 
     @Override
@@ -91,19 +61,15 @@ public class PageInfo implements CsvFormattable, Validatable {
         return new Object[] {
                 imgName,
                 pgNum,
-                getPiRatio(),
                 imgHist.getCsvData(),
-                cb.getCsvData(),
-                bk.getCsvData() };
+                calibrationBkHist.getCsvData(),
+                minGroupSize,
+                maxGroupSize,
+                optimalGroupSize, };
     }
 
     @Override
     public boolean isValid() {
-        return cb != null && bk != null; // TODO: check if cb and bk are valid???
+        return calibrationBkHist != null;
     }
-
-    public boolean hasValidRois() {
-        return hasValidBK() && hasValidCB();
-    }
-
 }

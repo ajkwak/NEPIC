@@ -8,8 +8,8 @@ import nepic.image.Roi;
 import nepic.io.ComplexLabel;
 import nepic.io.Label;
 import nepic.roi.model.Blob;
+import nepic.data.GraphData;
 import nepic.data.Histogram;
-import nepic.util.GraphData;
 import nepic.util.Pixel;
 import nepic.util.Verify;
 

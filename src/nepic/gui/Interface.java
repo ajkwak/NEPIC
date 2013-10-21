@@ -12,15 +12,15 @@ import javax.swing.*;
 import nepic.ButtonHandler;
 import nepic.IniConstants;
 import nepic.Nepic;
+import nepic.data.DataSet;
 import nepic.io.TiffOpener;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.logging.LoggerObserver;
-import nepic.util.ColoredPointList;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since ManualCBFinder_v1-6
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
@@ -293,7 +293,7 @@ public class Interface extends JFrame implements LoggerObserver {
         add(imgSP);
     }
 
-    public void redraw(int categoryId, ColoredPointList... newVals) {
+    public void redraw(int categoryId, DataSet... newVals) {
         img.redraw(categoryId, newVals);
         repaint();
     }// drawPixels
@@ -404,7 +404,7 @@ public class Interface extends JFrame implements LoggerObserver {
     // **************************************************
 
     /**
-     * 
+     *
      * @author AJ Parmidge
      * @version AutoCBFinder_Alpha_v0-9-2013-02-10
      */
@@ -416,7 +416,7 @@ public class Interface extends JFrame implements LoggerObserver {
     }// ExitHandler
 
     /**
-     * 
+     *
      * @version AutoCBFinder_Alpha_v0-9-2013-02-10
      */
     private void displayProgramInfo() {
@@ -448,7 +448,7 @@ public class Interface extends JFrame implements LoggerObserver {
     }
 
     /**
-     * 
+     *
      * @author AJ Parmidge
      * @version AutoCBFinder_Alpha_v0-9-2013-02-10
      */

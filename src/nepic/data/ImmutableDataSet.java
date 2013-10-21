@@ -1,8 +1,11 @@
-package nepic.util;
+package nepic.data;
 
 import java.awt.Point;
 import java.util.Collection;
 import java.util.Iterator;
+
+import nepic.util.BoundedRegion;
+import nepic.util.Verify;
 
 /**
  * An immutable implementation of the {@link DataSet} interface.
@@ -159,5 +162,10 @@ public class ImmutableDataSet implements DataSet {
     @Override
     public <T> T[] toArray(T[] a) {
         return dataSet.toArray(a); // Returns a copy, therefore maintaining this class as immutable.
+    }
+
+    @Override
+    public String toString() {
+        return dataSet.toString();
     }
 }
