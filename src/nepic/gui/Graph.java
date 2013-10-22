@@ -56,10 +56,9 @@ public class Graph extends JPanel {
      */
     public Graph(int width, int height, int bkColor, GraphData data) {
         Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
-        Verify.notNull(data, "GraphData");
 
         this.data = data.copy();
-        img = new AnnotatableImage(data.getMaxNumDataSetsSupported() + 2 /* Include axes, grid */)
+        img = new AnnotatableImage()
                 .setImage(newMonochromeImg(width, height, bkColor));
         redraw(connectTheDots, inScaleX, inScaleY);
 
@@ -82,7 +81,7 @@ public class Graph extends JPanel {
         Verify.argument(maxNumDataSets > 0, "Graph must support 1 or more data sets");
 
         this.data = new GraphData(maxNumDataSets);
-        img = new AnnotatableImage(data.getMaxNumDataSetsSupported() + 2 /* Include axes, grid */)
+        img = new AnnotatableImage()
                 .setImage(newMonochromeImg(width, height, bkColor));
 
         JLabel imgLabel = new JLabel();

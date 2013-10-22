@@ -57,6 +57,8 @@ public class Tracker {
     private PageInfo currPgInfo = null;
     private int currPgNum = -1; // Start with invalid number!
 
+    private Integer mouseActionId = null;
+
     public Tracker() {
         Nepic.INI_CONSTANTS.initialize();
         myGUI = new Interface(ImagePage.MAX_CAND_ID, new ExitHandler(), new ChooseFileHandler(),
@@ -128,6 +130,7 @@ public class Tracker {
         updatePage(TiffOpener.getName(analFileClassPath), pgNum, imageBeingAnalyzed);
         myGUI.setPage(pgNum, pages.getNumPages(), currPg.displayImg());
         myGUI.clearDisplayedActions();
+        mouseActionId = null;
         Nepic.log(EventType.INFO, "Page " + (pgNum + 1) + " displayed.");
     }
 
@@ -161,7 +164,10 @@ public class Tracker {
                         new Point(clickLoc.x, dragLoc.y) });
                 clickLoc = null;
                 dragLoc = null;
-                myGUI.erase(Nepic.MOUSE_ACTION_ID);
+                if (mouseActionId != null) {
+                    myGUI.erase(mouseActionId);
+                    mouseActionId = null;
+                }
                 currPgInfo.setCalibrationBkHist(currPg.makeHistogram(bkArea));
                 myGUI.displayCurrentAction("Background information recorded.");
             } else {
@@ -328,9 +334,14 @@ public class Tracker {
                     DataSet mouseActionPixels = new MutableDataSet();
                     mouseActionPixels.addAll(newRec.getEdges());
                     mouseActionPixels.setRgb(Nepic.MOUSE_ACTION_COLOR);
-                    myGUI.redraw(Nepic.MOUSE_ACTION_ID, mouseActionPixels);
-                } else {
-                    myGUI.erase(Nepic.MOUSE_ACTION_ID);
+                    if (mouseActionId == null) {
+                        mouseActionId = myGUI.draw(mouseActionPixels);
+                    } else {
+                        myGUI.redraw(mouseActionId, mouseActionPixels);
+                    }
+                } else if (mouseActionId != null) {
+                    myGUI.erase(mouseActionId);
+                    mouseActionId = null;
                 }
             }// if pic exists
         }// mouseDragged

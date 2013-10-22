@@ -71,7 +71,7 @@ public class Interface extends JFrame implements LoggerObserver {
         setJMenuBar(myMainMenu);
 
         // Image Display
-        img = new AnnotatableImage(maxNumRois);
+        img = new AnnotatableImage();
         imgL = new JLabel();
         imgSP = new JScrollPane(imgL, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -293,8 +293,14 @@ public class Interface extends JFrame implements LoggerObserver {
         add(imgSP);
     }
 
-    public void redraw(int categoryId, DataSet... newVals) {
-        img.redraw(categoryId, newVals);
+    public int draw(DataSet first, DataSet... rest) {
+        int id = img.draw(first, rest);
+        repaint();
+        return id;
+    }
+
+    public void redraw(int categoryId, DataSet first, DataSet... rest) {
+        img.redraw(categoryId, first, rest);
         repaint();
     }// drawPixels
 
@@ -309,7 +315,7 @@ public class Interface extends JFrame implements LoggerObserver {
     }
 
     public void restoreImg() {
-        img.eraseAll();
+        img.clear();
         repaint();
     }// restoreImg
 
