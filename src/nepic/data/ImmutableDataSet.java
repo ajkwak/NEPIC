@@ -34,7 +34,7 @@ public class ImmutableDataSet implements DataSet {
      * @throws UnsupportedOperationException always (this implementation is immutable)
      */
     @Override
-    public void setName(String name) {
+    public DataSet setName(String name) {
         throw new UnsupportedOperationException();
     }
 
@@ -47,7 +47,23 @@ public class ImmutableDataSet implements DataSet {
      * @throws UnsupportedOperationException always (this implementation is immutable)
      */
     @Override
-    public void setRgb(int rgb) {
+    public DataSet setRgb(int rgb) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * @throws UnsupportedOperationException always (this implementation is immutable)
+     */
+    @Override
+    public DataSet setData(Point... data) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * @throws UnsupportedOperationException always (this implementation is immutable)
+     */
+    @Override
+    public DataSet setData(Collection<Point> data) {
         throw new UnsupportedOperationException();
     }
 

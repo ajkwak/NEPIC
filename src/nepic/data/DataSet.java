@@ -22,7 +22,7 @@ public interface DataSet extends BoundedRegion, Collection<Point> {
      *
      * @param name the name to set
      */
-    public void setName(String name);
+    public DataSet setName(String name);
 
     /**
      * Returns the color of this data set, in RGB format.
@@ -34,5 +34,9 @@ public interface DataSet extends BoundedRegion, Collection<Point> {
      *
      * @param rgb the color to set
      */
-    public void setRgb(int rgb);
+    public DataSet setRgb(int rgb);
+
+    public DataSet setData(Point... data);
+
+    public DataSet setData(Collection<Point> data);
 }

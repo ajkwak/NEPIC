@@ -36,18 +36,14 @@ public class MutableDataSet implements DataSet {
         return name;
     }
 
-    /**
-     * Sets the name (label) of this data set to the given value.
-     *
-     * @param rgb the color to set
-     */
     @Override
-    public void setName(String name) {
+    public DataSet setName(String name) {
         if (name != null) {
             this.name = name;
         } else {
             this.name = ""; // Reset to empty if given a null string
         }
+        return this;
     }
 
     @Override
@@ -56,8 +52,23 @@ public class MutableDataSet implements DataSet {
     }
 
     @Override
-    public void setRgb(int rgb) {
+    public DataSet setRgb(int rgb) {
         this.rgb = rgb;
+        return this;
+    }
+
+    @Override
+    public DataSet setData(Point... data) {
+        for (Point datum : data) {
+            add(datum);
+        }
+        return this;
+    }
+
+    @Override
+    public DataSet setData(Collection<Point> data) {
+        addAll(data);
+        return this;
     }
 
     @Override
