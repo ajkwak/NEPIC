@@ -3,6 +3,7 @@ package nepic.gui;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Stack;
 
 import nepic.data.DataSet;
@@ -134,9 +135,12 @@ public class AnnotatableImage {
     private Annotation pop() {
         Annotation poppedAnnotation = annotationStack.pop();
 
-        // Erase the popped annotation from the image.
-        for (MonochromePixelSet pixelSet : poppedAnnotation.data) {
-            for (Pixel pixToRestore : pixelSet.pixels) {
+        // Erase the popped annotation from the image (iterate BACKWARDS)
+        Iterator<MonochromePixelSet> annotationItr = poppedAnnotation.data.reverseIterator();
+        while (annotationItr.hasNext()) {
+            Iterator<Pixel> reversePixItr = annotationItr.next().pixels.reverseIterator();
+            while (reversePixItr.hasNext()) {
+                Pixel pixToRestore = reversePixItr.next();
                 img.setRGB(pixToRestore.x, pixToRestore.y, pixToRestore.relLum);
             }
         }
@@ -216,9 +220,14 @@ public class AnnotatableImage {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
+        Stack<Annotation> otherStack = new Stack<Annotation>();
         while (!annotationStack.empty()) {
             Annotation a = annotationStack.pop();
+            otherStack.push(a);
             builder.append(a.id).append(" ").append(a.data).append('\n');
+        }
+        while (!otherStack.empty()) {
+            annotationStack.push(otherStack.pop());
         }
         return builder.toString();
     }

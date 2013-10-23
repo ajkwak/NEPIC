@@ -172,7 +172,7 @@ public class GraphData implements BoundedRegion, Iterable<Pair<String, ? extends
     }
 
     private DataSet removeAndAdjustBounds(String name) {
-        DataSet removedDataSet = dataSetMap.get(name);
+        DataSet removedDataSet = dataSetMap.remove(name);
         if (removedDataSet != null) {
             reviseGlobalBoundsAfterRemoval(removedDataSet);
         }

@@ -18,6 +18,7 @@ import javax.swing.JOptionPane;
 import nepic.gui.Graph;
 import nepic.gui.HistogramViewPanel;
 import nepic.gui.Interface;
+import nepic.gui.ScannerGroupSizeVarierPanel;
 import nepic.image.ImagePage;
 import nepic.image.MultiPageImageInfo;
 import nepic.image.PageInfo;
@@ -37,8 +38,6 @@ import nepic.util.Verify;
 /**
  *
  * @author AJ Parmidge
- * @since AutoCBFinder_Alpha_v0-9_2013-01-08
- * @version Nepic_Alpha_v1-1-2013-03-13; Merged with Controller in Nepic_Alpha_v1-1-2013-03-13
  */
 public class Tracker {
     private TiffOpener myOpener;
@@ -282,14 +281,10 @@ public class Tracker {
                     OneDimensionalScanner scanner =
                             new OneDimensionalScanner(currPg, new Line(clickPt, 0));
 
-                    Graph scanlineGraph = new Graph(600, 400, 0x000000)
-                            .setData(scanner.getGraphData());
-
                     // TODO: make a panel where can vary the medianGroupSize in the scanner, and see
                     // directly on the graph.
-                    // TODO (#2): Convert Graph.java to being an implementation of
-                    // GraphDataListener.
-                    JOptionPane.showMessageDialog(myGUI, scanlineGraph, "Scanline Graph",
+                    JOptionPane.showMessageDialog(myGUI, new ScannerGroupSizeVarierPanel(scanner),
+                            "Scanline Graph",
                             JOptionPane.PLAIN_MESSAGE, null);
                 }
             }

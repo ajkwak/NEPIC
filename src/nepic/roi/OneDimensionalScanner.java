@@ -75,7 +75,7 @@ public class OneDimensionalScanner {
             if (prevGroup != null) {
                 // Then find the median of the two groups.
                 int dblMed = getDblMedian(prevGroup, group);
-                medians.add(new Point(medianPos, dblMed));
+                medians.add(new Point(medianPos, dblMed / 2)); // TODO: stop dividing by 2!!
             }
             prevGroup = group;
         }

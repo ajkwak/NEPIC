@@ -1,3 +1,4 @@
+
 package nepic.gui;
 
 import java.awt.Point;
@@ -163,7 +164,7 @@ public class Graph extends JPanel {
         int minX = inScaleX ? data.getMinX() : dataSet.getMinX();
         int maxX = inScaleX ? data.getMaxX() : dataSet.getMaxX();
         int minY = inScaleY ? data.getMinY() : dataSet.getMinY();
-        int maxY = inScaleY ? data.getMaxX() : dataSet.getMaxY();
+        int maxY = inScaleY ? data.getMaxY() : dataSet.getMaxY();
 
         // Determine the multiplier and offset to graph this data set properly in the x direction.
         double ratioX;
