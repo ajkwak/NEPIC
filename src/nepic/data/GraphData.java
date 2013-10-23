@@ -3,14 +3,16 @@ package nepic.data;
 import java.awt.Point;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import nepic.gui.Graph;
 import nepic.util.BoundedRegion;
+import nepic.util.Pair;
 import nepic.util.Verify;
 
-public class GraphData implements BoundedRegion, Iterable<DataSet> {
+public class GraphData implements BoundedRegion, Iterable<Pair<String, ? extends DataSet>> {
     /**
      * The name of the independent variable for all the included data sets.
      */
@@ -36,9 +38,10 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
      */
     private int maxY = Integer.MIN_VALUE;
     /**
-     * The collection of all the data sets included in this {@link GraphData}.
+     * The collection of all the data sets included in this {@link GraphData}. Maps the name of the
+     * {@link DataSet} to the set of data itself.
      */
-    private final DataSet[] dataSets;
+    private Map<String, DataSet> dataSetMap;
 
     /**
      * Creates an empty {@link GraphData} with the ability to handle the given number of data sets.
@@ -46,16 +49,8 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
      * @param numDataSets the maximum number of data sets this {@link GraphData} object is expected
      *        to handle.
      */
-    public GraphData(int numDataSets) {
-        Verify.argument(numDataSets > 0, "The maximum number of supported data sets must be >= 1");
-        dataSets = new MutableDataSet[numDataSets];
-    }
-
-    /**
-     * Returns the maximum number of data sets this {@link GraphData} can handle.
-     */
-    public int getMaxNumDataSetsSupported() {
-        return dataSets.length;
+    public GraphData() {
+        dataSetMap = new TreeMap<String, DataSet>();
     }
 
     /**
@@ -81,6 +76,14 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
         }
         this.independentVariable = independentVariable;
         return this;
+    }
+
+    public boolean isEmpty() {
+        return dataSetMap.isEmpty();
+    }
+
+    public int size() {
+        return dataSetMap.size();
     }
 
     public String getDependentVariable() {
@@ -131,56 +134,73 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
         return minX <= x && maxX >= x && minY <= y && maxY >= y;
     }
 
-    /**
-     * Adds the given values as a new data set on the graph.
-     *
-     * @param name the name of the data set to add
-     * @param values the data values to add
-     * @param rgb the color in which to draw the new data set on the graph
-     * @return the unique ID number of the newly added data set
-     */
-    public int addDataSet(String name, Collection<? extends Point> values, int rgb) {
-        Verify.nonEmpty(name, "label");
+    public void setDataSet(String name, Collection<? extends Point> values, int rgb) {
+        Verify.nonEmpty(name, "name");
         Verify.nonEmpty(values, "values");
 
-        // Make a DataSet out of the newVals
-        int id = findNextAvailableDataSetId();
-        MutableDataSet newDataSet = new MutableDataSet();
-        newDataSet.setName(name);
-        newDataSet.setRgb(rgb);
-        newDataSet.addAll(values);
-        dataSets[id] = newDataSet;
-        adjustGlobalBounds(newDataSet);
-        return id;
+        removeAndAdjustBounds(name);
+        putAndAdjustBounds(name, new MutableDataSet().setRgb(rgb).setData(values));
     }
 
-    public void redefineDataSetName(int id, String newName) {
-        verifyValidDataSetId(id);
-        DataSet dataSet = dataSets[id];
-        Verify.argument(dataSet != null, "No data set with given id = " + id + " exists");
-        dataSet.setName(newName);
+    public void renameDataSet(String currentName, String newName) {
+        Verify.notNull(currentName, "currentName");
+        Verify.notNull(newName, "newName");
+        Verify.argument(dataSetMap.get(newName) == null,
+                "Cannot clobber existing DataSet with name '" + newName + "'");
+        DataSet toRename = dataSetMap.remove(currentName);
+        Verify.argument(toRename != null, "No data set with name '" + currentName + "' exists.");
+        dataSetMap.put(newName, toRename);
     }
 
-    public void redefineDataSetValues(int id, Collection<? extends Point> newValues) {
-        verifyValidDataSetId(id);
-        DataSet dataSet = dataSets[id];
-        Verify.argument(dataSet != null, "No data set with given id = " + id + " exists");
-        dataSet.clear();
-        dataSet.addAll(newValues);
+    public void revalueDataSet(String name, Collection<? extends Point> values) {
+        Verify.notNull(name);
+        Verify.nonEmpty(values, "values");
+        DataSet dataSet = removeAndAdjustBounds(name);
+        Verify.argument(dataSet != null, "No data set with name '" + name + "' exists.");
+        dataSet.setData(values);
+        putAndAdjustBounds(name, dataSet);
     }
 
-    public void redefineDataSetColor(int id, int newRgb) {
-        verifyValidDataSetId(id);
-        DataSet dataSet = dataSets[id];
-        Verify.argument(dataSet != null, "No data set with given id = " + id + " exists");
-        dataSet.setRgb(newRgb);
+    public void recolorDataSet(String name, int rgb) {
+        get(name).setRgb(rgb);
     }
 
-    public DataSet getDataSet(int id) {
-        verifyValidDataSetId(id);
-        DataSet dataSet = dataSets[id];
-        Verify.argument(dataSet != null, "No data set with given id = " + id + " exists");
+    private DataSet get(String name) {
+        DataSet dataSet = dataSetMap.get(name);
+        Verify.argument(dataSet != null, "No data set with name '" + name + "' exists.");
+        return dataSet;
+    }
+
+    private DataSet removeAndAdjustBounds(String name) {
+        DataSet removedDataSet = dataSetMap.get(name);
+        if (removedDataSet != null) {
+            reviseGlobalBoundsAfterRemoval(removedDataSet);
+        }
+        return removedDataSet;
+    }
+
+    private void putAndAdjustBounds(String name, DataSet dataSet) {
+        dataSetMap.put(name, dataSet);
+        adjustGlobalBounds(dataSet);
+    }
+
+    /**
+     *
+     * @param name
+     * @return
+     * @throws IllegalArgumentException if no {@link DataSet} with the given {@code name} exists in
+     *         this {@link GraphData}
+     */
+    public DataSet getDataSet(String name) {
+        Verify.notNull(name, "name");
+        DataSet dataSet = dataSetMap.get(name);
+        Verify.argument(dataSet != null, "No data set with name '" + name + "' exists.");
         return new ImmutableDataSet(dataSet);
+    }
+
+    public boolean containsDataSet(String name) {
+        Verify.notNull(name, "name");
+        return dataSetMap.get(name) != null;
     }
 
     /**
@@ -188,46 +208,16 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
      *
      * @param id the ID of the data set to remove.
      */
-    public void removeDataSet(int id) {
-        verifyValidDataSetId(id);
-        DataSet removedDataSet = dataSets[id];
-        dataSets[id] = null;
-        if (removedDataSet != null) {
-            reviseGlobalBoundsAfterRemoval(removedDataSet);
-        }
+    public DataSet removeDataSet(String name) {
+        Verify.notNull(name, "name");
+        DataSet dataSet = dataSetMap.remove(name);
+        Verify.argument(dataSet != null, "No data set with name '" + name + "' exists.");
+        return dataSet;
     }
 
     private void verifyContainsDataSets() {
         Verify.state(maxX >= minX, /* This will only be true when there is 1+ data sets */
                 "There must be at least one data set in this graph data.");
-    }
-
-    /**
-     * Gets a currently-unused unique ID for a data set to be graphed.
-     *
-     * @return a currently unused unique data set ID
-     * @throws IllegalStateException if all of the unique data set IDs available in the graph are in
-     *         use.
-     */
-    private int findNextAvailableDataSetId() {
-        for (int i = 0; i < dataSets.length; i++) {
-            if (dataSets[i] == null) { // i.e. if this position is free
-                return i;
-            }
-        }
-        throw new IllegalStateException("There are no free data set IDs available.");
-    }
-
-    /**
-     * Verifies that the given ID is a valid data set ID.
-     *
-     * @param id the ID to check
-     * @throws IllegalArgumentException if the ID is not a valid data set ID
-     */
-    private void verifyValidDataSetId(int id) {
-        Verify.argument(id >= 0 && id < dataSets.length,
-                "Illegal data set ID.  Data set ID must be between 0 and " + (dataSets.length - 1)
-                + " inclusive.");
     }
 
     /**
@@ -280,56 +270,28 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
             minY = Integer.MAX_VALUE;
             maxY = Integer.MIN_VALUE;
             boolean boundsRevised = false;
-            for (int i = 0; i < dataSets.length; i++) {
-                DataSet dataSet = dataSets[i];
-                if (dataSet != null) {
-                    boundsRevised = adjustGlobalBounds(dataSet);
-                }
+            for (DataSet dataSet : dataSetMap.values()) {
+                adjustGlobalBounds(dataSet);
             }
             return boundsRevised;
         }
         return false;
     }
 
-    /**
-     * Returns all of the ID values of existing {@link DataSet}s in this {@link GraphData}.
-     */
-    public Collection<Integer> getValidIds() {
-        List<Integer> ids = new LinkedList<Integer>();
-        for (int id = 0; id < dataSets.length; id++) {
-            if (dataSets[id] != null) { // Then this is the ID of an existing DataSet
-                ids.add(id);
-            }
-        }
-        return ids;
-    }
-
-    /**
-     * Determines if the given value is the ID of an existing {@link DataSet} in this
-     * {@link GraphData}.
-     *
-     * @param id the ID to check
-     * @return {@code true} if the given ID is for an existing {@link DataSet} in this
-     *         {@link GraphData}; otherwise {@code false}
-     */
-    public boolean datasetExists(int id) {
-        return id >= 0 && id < dataSets.length && dataSets[id] != null;
-    }
-
     @Override
-    public Iterator<DataSet> iterator() {
-        return new Iterator<DataSet>() {
-            private Iterator<Integer> idItr = getValidIds().iterator();
+    public Iterator<Pair<String, ? extends DataSet>> iterator() {
+        return new Iterator<Pair<String, ? extends DataSet>>() {
+            private Iterator<Entry<String, DataSet>> entryItr = dataSetMap.entrySet().iterator();
 
             @Override
             public boolean hasNext() {
-                return idItr.hasNext();
+                return entryItr.hasNext();
             }
 
             @Override
-            public DataSet next() {
-                int id = idItr.next();
-                return new ImmutableDataSet(dataSets[id]);
+            public Pair<String, ? extends DataSet> next() {
+                Entry<String, DataSet> entry = entryItr.next();
+                return Pair.newPair(entry.getKey(), new ImmutableDataSet(entry.getValue()));
             }
 
             /**
@@ -343,24 +305,14 @@ public class GraphData implements BoundedRegion, Iterable<DataSet> {
         };
     }
 
-    public GraphData copy() {
-        GraphData copy = new GraphData(dataSets.length);
-        copy.setIndependentVariable(independentVariable);
-        copy.setDependentVariable(dependentVariable);
-        for (DataSet dataSet : this) {
-            copy.addDataSet(dataSet.getName(), dataSet, dataSet.getRgb());
-        }
-        return copy;
-    }
-
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder()
                 .append("Independent Variable: ").append(independentVariable)
                 .append("\nDependent Variable: ").append(dependentVariable)
                 .append("\nData Sets:");
-        for (DataSet dataSet : this) {
-            builder.append("\n\t").append(dataSet);
+        for (Pair<String, ? extends DataSet> entry : this) {
+            builder.append("\n\t").append(entry.first).append(": ").append(entry.second);
         }
         return builder.toString();
     }

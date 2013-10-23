@@ -11,24 +11,10 @@ import nepic.util.BoundedRegion;
  * @author AJ Parmidge
  */
 public interface DataSet extends BoundedRegion, Collection<Point> {
-
-    /**
-     * Returns the name of this data set.
-     */
-    public String getName();
-
-    /**
-     * Sets the name of this data set to the given value.
-     *
-     * @param name the name to set
-     */
-    public DataSet setName(String name);
-
     /**
      * Returns the color of this data set, in RGB format.
      */
     public int getRgb();
-
     /**
      * Sets the color of this data set to the given RGB value.
      *
@@ -38,5 +24,5 @@ public interface DataSet extends BoundedRegion, Collection<Point> {
 
     public DataSet setData(Point... data);
 
-    public DataSet setData(Collection<Point> data);
+    public DataSet setData(Collection<? extends Point> data);
 }

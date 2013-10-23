@@ -32,21 +32,6 @@ public class MutableDataSet implements DataSet {
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public DataSet setName(String name) {
-        if (name != null) {
-            this.name = name;
-        } else {
-            this.name = ""; // Reset to empty if given a null string
-        }
-        return this;
-    }
-
-    @Override
     public int getRgb() {
         return rgb;
     }
@@ -59,6 +44,7 @@ public class MutableDataSet implements DataSet {
 
     @Override
     public DataSet setData(Point... data) {
+        this.data.clear();
         for (Point datum : data) {
             add(datum);
         }
@@ -66,7 +52,8 @@ public class MutableDataSet implements DataSet {
     }
 
     @Override
-    public DataSet setData(Collection<Point> data) {
+    public DataSet setData(Collection<? extends Point> data) {
+        this.data.clear();
         addAll(data);
         return this;
     }

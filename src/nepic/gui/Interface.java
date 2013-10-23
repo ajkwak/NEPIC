@@ -71,7 +71,7 @@ public class Interface extends JFrame implements LoggerObserver {
         setJMenuBar(myMainMenu);
 
         // Image Display
-        img = new AnnotatableImage();
+        // img = new AnnotatableImage();
         imgL = new JLabel();
         imgSP = new JScrollPane(imgL, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -95,7 +95,6 @@ public class Interface extends JFrame implements LoggerObserver {
         int windowWidth = Nepic.INI_CONSTANTS.WINDOW_WIDTH.getValue();
         int windowHeight = Nepic.INI_CONSTANTS.WINDOW_HEIGHT.getValue();
         setMySize(windowWidth, windowHeight);
-
     }// Interface
 
     // **************************************************
@@ -169,7 +168,7 @@ public class Interface extends JFrame implements LoggerObserver {
         btnPanel.setPgNum(thePgNum, totNumPgs);
 
         imgL.setIcon(new ImageIcon(theImage));
-        img.setImage(theImage);
+        img = new AnnotatableImage(theImage);
         repaint();
     }// setPage
 
@@ -293,24 +292,18 @@ public class Interface extends JFrame implements LoggerObserver {
         add(imgSP);
     }
 
-    public int draw(DataSet first, DataSet... rest) {
-        int id = img.draw(first, rest);
-        repaint();
-        return id;
-    }
-
-    public void redraw(int categoryId, DataSet first, DataSet... rest) {
-        img.redraw(categoryId, first, rest);
+    public void draw(int categoryId, DataSet first, DataSet... rest) {
+        img.annotate(categoryId, first, rest);
         repaint();
     }// drawPixels
 
     public void recolor(int categoryId, int color) {
-        img.recolor(categoryId, color);
+        img.recolorAnnotation(categoryId, color);
         repaint();
     }// drawPixels
 
     public void erase(int categoryId) {
-        img.erase(categoryId);
+        img.eraseAnnotation(categoryId);
         repaint();
     }
 

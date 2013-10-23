@@ -16,51 +16,17 @@ import nepic.util.Verify;
 public class AnnotatableImage {
     private BufferedImage img; // The image being annotated.
     private final Stack<Annotation> annotationStack; // The stack of annotations to the image.
-    private int nextAnnotationId = 0;
 
     /**
      * Creates an empty {@code AnnotatableImage}.
      */
-    public AnnotatableImage() {
-        annotationStack = new Stack<Annotation>();
-    }
-
-    /**
-     * Sets the image of the {@link AnnotatableImage}. All annotations are automatically cleared
-     * when the image is reset.
-     *
-     * @param img the image to set
-     * @return <code>this</code>, for chaining
-     */
-    public AnnotatableImage setImage(BufferedImage img) {
-        Verify.notNull(img, "Image to set cannot be null");
-        clear();
+    public AnnotatableImage(BufferedImage img) {
         this.img = img;
-        return this;
+        annotationStack = new Stack<Annotation>();
     }
 
     public BufferedImage getImage() {
         return img;
-    }
-
-    /**
-     * Annotates the image with the given {@link DataSet} information.
-     *
-     * @param first
-     * @param rest
-     * @return the id of this newly created annotation
-     */
-    public int draw(DataSet first, DataSet... rest) {
-        Verify.notNull(first, "DataSet");
-
-        Annotation toDraw = new Annotation(nextAnnotationId++);
-        toDraw.add(new MonochromePixelSet(first.getRgb()).addAll(first));
-        for (DataSet dataSet : rest) {
-            Verify.notNull(dataSet, "DataSet");
-            toDraw.add(new MonochromePixelSet(dataSet.getRgb()).addAll(dataSet));
-        }
-        push(toDraw);
-        return toDraw.id;
     }
 
     /**
@@ -74,15 +40,19 @@ public class AnnotatableImage {
      * @param newVals the pixels with which to annotate the image, and the colors to paint those
      *        pixels on the image
      */
-    public void redraw(int id, DataSet first, DataSet... rest) {
+    public void annotate(int id, DataSet first, DataSet... rest) {
         Verify.notNull(first, "DataSet");
 
         // Preprocess stack so we're ready to work with the desired annotation.
         Annotation toRedraw = workWithAnnotation(id);
+        if (toRedraw == null) {
+            toRedraw = new Annotation(id);
+        } else {
+            toRedraw.clear();
+        }
         Verify.argument(toRedraw != null, "Cannot redraw annotation with invalid ID " + id);
 
-        // Clear the annotation and re-draw it with the given values.
-        toRedraw.clear();
+        // Clear draw it with the given values.
         toRedraw.add(new MonochromePixelSet(first.getRgb()).addAll(first));
         for (DataSet dataSet : rest) {
             Verify.notNull(dataSet, "DataSet");
@@ -99,7 +69,7 @@ public class AnnotatableImage {
      * @throws IllegalStateException if the annotation to recolor is empty (i.e. if there is nothing
      *         to recolor)
      */
-    public void recolor(int id, int rgb) {
+    public void recolorAnnotation(int id, int rgb) {
         // Preprocess stack so we're ready to work with the desired annotation.
         Annotation toRecolor = workWithAnnotation(id);
         Verify.argument(toRecolor != null, "Cannot recolor annotation with invalid ID " + id);
@@ -114,12 +84,14 @@ public class AnnotatableImage {
         push(toRecolor);
     }
 
-    public void addPoints(int id, DataSet first, DataSet... rest) {
+    public void appendAnnotation(int id, DataSet first, DataSet... rest) {
         Verify.notNull(first, "DataSet");
 
         // Preprocess stack so we're ready to work with the desired annotation.
         Annotation toRedraw = workWithAnnotation(id);
-        Verify.argument(toRedraw != null, "Cannot redraw annotation with invalid ID " + id);
+        if (toRedraw == null) { // Create annotation to append to, if it doesn't already exist.
+            toRedraw = new Annotation(id);
+        }
 
         // Add the given values to the current annotation.
         toRedraw.add(new MonochromePixelSet(first.getRgb()).addAll(first));
@@ -130,13 +102,8 @@ public class AnnotatableImage {
         push(toRedraw);
     }
 
-    public void erase(int id) {
-        // This method erases the given annotation and removes it from the stack.
-        Annotation erased = workWithAnnotation(id);
-
-        // Verify that the desired annotation was indeed erased (i.e. that the annotation was found
-        // in the stack).
-        Verify.argument(erased != null, "Unable to erase annotation with invalid ID " + id);
+    public void eraseAnnotation(int id) {
+        workWithAnnotation(id); // Erases the annotation, if it was there.
     }
 
     /**

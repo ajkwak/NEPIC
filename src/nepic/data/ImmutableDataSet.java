@@ -26,19 +26,6 @@ public class ImmutableDataSet implements DataSet {
     }
 
     @Override
-    public String getName() {
-        return dataSet.getName();
-    }
-
-    /**
-     * @throws UnsupportedOperationException always (this implementation is immutable)
-     */
-    @Override
-    public DataSet setName(String name) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public int getRgb() {
         return dataSet.getRgb();
     }
@@ -63,7 +50,7 @@ public class ImmutableDataSet implements DataSet {
      * @throws UnsupportedOperationException always (this implementation is immutable)
      */
     @Override
-    public DataSet setData(Collection<Point> data) {
+    public DataSet setData(Collection<? extends Point> data) {
         throw new UnsupportedOperationException();
     }
 

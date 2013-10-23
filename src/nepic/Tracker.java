@@ -57,8 +57,6 @@ public class Tracker {
     private PageInfo currPgInfo = null;
     private int currPgNum = -1; // Start with invalid number!
 
-    private Integer mouseActionId = null;
-
     public Tracker() {
         Nepic.INI_CONSTANTS.initialize();
         myGUI = new Interface(ImagePage.MAX_CAND_ID, new ExitHandler(), new ChooseFileHandler(),
@@ -130,7 +128,6 @@ public class Tracker {
         updatePage(TiffOpener.getName(analFileClassPath), pgNum, imageBeingAnalyzed);
         myGUI.setPage(pgNum, pages.getNumPages(), currPg.displayImg());
         myGUI.clearDisplayedActions();
-        mouseActionId = null;
         Nepic.log(EventType.INFO, "Page " + (pgNum + 1) + " displayed.");
     }
 
@@ -164,10 +161,7 @@ public class Tracker {
                         new Point(clickLoc.x, dragLoc.y) });
                 clickLoc = null;
                 dragLoc = null;
-                if (mouseActionId != null) {
-                    myGUI.erase(mouseActionId);
-                    mouseActionId = null;
-                }
+                myGUI.erase(Nepic.MOUSE_ACTION_ID);
                 currPgInfo.setCalibrationBkHist(currPg.makeHistogram(bkArea));
                 myGUI.displayCurrentAction("Background information recorded.");
             } else {
@@ -213,7 +207,7 @@ public class Tracker {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            Graph graph = new Graph(600, 400, 0x000000, data);
+            Graph graph = new Graph(600, 400, 0x000000).setData(data);
             graph.redraw(true /* connectTheDots */, true /* inScaleX */, false /* inScaleY */);
             JOptionPane.showMessageDialog(myGUI, graph);
         }
@@ -288,7 +282,8 @@ public class Tracker {
                     OneDimensionalScanner scanner =
                             new OneDimensionalScanner(currPg, new Line(clickPt, 0));
 
-                    Graph scanlineGraph = new Graph(600, 400, 0x000000, scanner.getGraphData());
+                    Graph scanlineGraph = new Graph(600, 400, 0x000000)
+                            .setData(scanner.getGraphData());
 
                     // TODO: make a panel where can vary the medianGroupSize in the scanner, and see
                     // directly on the graph.
@@ -334,14 +329,9 @@ public class Tracker {
                     DataSet mouseActionPixels = new MutableDataSet();
                     mouseActionPixels.addAll(newRec.getEdges());
                     mouseActionPixels.setRgb(Nepic.MOUSE_ACTION_COLOR);
-                    if (mouseActionId == null) {
-                        mouseActionId = myGUI.draw(mouseActionPixels);
-                    } else {
-                        myGUI.redraw(mouseActionId, mouseActionPixels);
-                    }
-                } else if (mouseActionId != null) {
-                    myGUI.erase(mouseActionId);
-                    mouseActionId = null;
+                    myGUI.draw(Nepic.MOUSE_ACTION_ID, mouseActionPixels);
+                } else {
+                    myGUI.erase(Nepic.MOUSE_ACTION_ID);
                 }
             }// if pic exists
         }// mouseDragged

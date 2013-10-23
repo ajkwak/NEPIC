@@ -9,15 +9,14 @@ import java.util.List;
 import nepic.image.ImagePage;
 import nepic.data.DataSet;
 import nepic.data.GraphData;
-import nepic.data.Histogram;
 import nepic.roi.model.Line;
 import nepic.util.Verify;
 
 public class OneDimensionalScanner {
     private final GraphData data; // For displaying all intermediate steps of 'scanning' the line.
-    private int rawDataId = -1;
-    private int smoothedDataId = -1;
-    private int slopesId = -1;
+    private static final String RAW_DATA_ID = "Raw Data";
+    private static final String SMOOTHED_DATA_ID = "Smoothed Data";
+    private static final String SLOPES_ID = "Slopes at Data Points";
 
     // private int edgeCategoriesId = -1;
 
@@ -27,11 +26,11 @@ public class OneDimensionalScanner {
         // TODO: verify line crosses image page, so when bound and draw, dont't get
         // NullPointerException
 
-        Histogram hist = pg.makeHistogram();
-        System.out.println("BK bound = " + hist.getPercentile(50));
-        System.out.println("ROI bound = " + hist.getPercentile(99.99));
+        // Histogram hist = pg.makeHistogram();
+        // System.out.println("BK bound = " + hist.getPercentile(50));
+        // System.out.println("ROI bound = " + hist.getPercentile(99.99));
 
-        data = new GraphData(4);
+        data = new GraphData();
         List<Point> scanlinePoints = scanline.boundTo(pg).draw();
         List<Point> rawData = new ArrayList<Point>(scanlinePoints.size());
         int i = 0;
@@ -39,12 +38,12 @@ public class OneDimensionalScanner {
             rawData.add(new Point(i, pg.getPixelIntensity(pt.x, pt.y)));
             i++;
         }
-        rawDataId = data.addDataSet("Raw Data", rawData, 0x0000ff /* Blue */);
+        data.setDataSet(RAW_DATA_ID, rawData, 0x0000ff /* Blue */);
     }
 
     // Does the initial smoothing / simplifying of the data to get rid of most of the noise.
     public void smoothData(int groupSize) {
-        DataSet rawData = data.getDataSet(rawDataId);
+        DataSet rawData = data.getDataSet(RAW_DATA_ID);
 
         // Break into groups
         int numPts = rawData.size();
@@ -82,21 +81,12 @@ public class OneDimensionalScanner {
         }
 
         // Set the smoothed data to this new value.
-        if (data.datasetExists(smoothedDataId)) {
-            data.redefineDataSetValues(smoothedDataId, medians);
-        } else {
-            smoothedDataId = data.addDataSet("Smoothed Data", medians, 0x00cc00 /* Green */);
-        }
+        data.setDataSet(SMOOTHED_DATA_ID, medians, 0x00cc00 /* Green */);
         List<Point> dataSlopes = getFirstDerivative(medians);
-        if (data.datasetExists(slopesId)) {
-            data.redefineDataSetValues(slopesId, dataSlopes);
-        } else {
-            slopesId = data.addDataSet("Slopes at Data Points", dataSlopes, 0x8800ff /* Purple */);
-        }
+        data.setDataSet(SLOPES_ID, dataSlopes, 0x8800ff /* Purple */);
     }
 
     public GraphData getGraphData() {
-        Verify.argument(data.getValidIds().size() > 0);
         return data;
     }
 

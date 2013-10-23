@@ -2,8 +2,6 @@ package nepic.gui;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.util.List;
-
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -14,6 +12,7 @@ import nepic.data.MutableDataSet;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.LineSegment.IncludeEnd;
 import nepic.roi.model.LineSegment.IncludeStart;
+import nepic.util.Pair;
 import nepic.util.Verify;
 
 public class Graph extends JPanel {
@@ -42,7 +41,11 @@ public class Graph extends JPanel {
     /**
      * The collection of all the data sets being graphed.
      */
-    private final GraphData data;
+    private GraphData data = null;
+    /**
+     * Maps the ID in the GraphData to the ID in the AnnotatableImage.
+     */
+    // private Map<String, Integer> map;
 
     /**
      * Creates a {@link Graph} of the given width, height, and background color that can handle and
@@ -54,13 +57,10 @@ public class Graph extends JPanel {
      * @param numDataSets the number of distinct data sets that must be handled by this
      *        {@link Graph}
      */
-    public Graph(int width, int height, int bkColor, GraphData data) {
+    public Graph(int width, int height, int bkColor) {
         Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
 
-        this.data = data.copy();
-        img = new AnnotatableImage()
-                .setImage(newMonochromeImg(width, height, bkColor));
-        redraw(connectTheDots, inScaleX, inScaleY);
+        img = new AnnotatableImage(newMonochromeImg(width, height, bkColor));
 
         JLabel imgLabel = new JLabel();
         imgLabel.setIcon(new ImageIcon(img.getImage()));
@@ -76,85 +76,22 @@ public class Graph extends JPanel {
         setVisible(true);
     }
 
-    public Graph(int width, int height, int bkColor, int maxNumDataSets) {
-        Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
-        Verify.argument(maxNumDataSets > 0, "Graph must support 1 or more data sets");
-
-        this.data = new GraphData(maxNumDataSets);
-        img = new AnnotatableImage()
-                .setImage(newMonochromeImg(width, height, bkColor));
-
-        JLabel imgLabel = new JLabel();
-        imgLabel.setIcon(new ImageIcon(img.getImage()));
-        add(imgLabel);
-        imgLabel.setLocation(0, 0);
-        imgLabel.setSize(width, height);
-        imgLabel.setVisible(true);
-
-        setLayout(null);
-        setSize(width, height);
-        setMinimumSize(getSize());
-        setPreferredSize(getSize());
-        setVisible(true);
-    }
-
-    /**
-     * Adds the given values as a new data set on the graph.
-     *
-     * @param newVals the data values to add
-     * @param rgb the color in which to draw the new data set on the graph
-     * @return the unique ID number of the newly added data set
-     */
-    public int addDataSet(String name, List<? extends Point> values, int rgb) {
-        Verify.nonEmpty(values, "List<Point>");
-
-        // Make a DataSet out of the newVals
-        int id = data.addDataSet(name, values, rgb);
-        redrawDataSet(id);
-        return id;
-    }
-
-    /**
-     * Removes the data set with the given {@code id}.
-     *
-     * @param id the ID of the data set to remove
-     */
-    public void removeDataSet(int id) {
-        int initMinX = data.getMinX();
-        int initMaxX = data.getMaxX();
-        int initMinY = data.getMinY();
-        int initMaxY = data.getMaxY();
-
-        // Remove the data set.
-        data.removeDataSet(id);
-        img.erase(id);
-
-        // Determine if need to redraw entire image due to bounds change.
-        if ((inScaleX && (initMinX != data.getMinX() || initMaxX != data.getMaxX()))
-                || (inScaleY && (initMinY != data.getMinY() || initMaxY != data.getMaxY()))) {
-            redraw(connectTheDots, inScaleX, inScaleY);
+    public Graph setData(GraphData data) {
+        // if (this.data != null) {
+        // data.removeChangeListener(this);
+        // }
+        //
+        // if (data == null) {
+        // img.clear();
+        // } else {
+        // this.data = data;
+        // data.addChangeListener(this);
+        // }
+        this.data = data;
+        if (data != null && !data.isEmpty()) {
+            refresh();
         }
-    }
-
-    /**
-     * Renames the data set with the given {@code id} to the given value.
-     *
-     * @param id the ID of the data set to rename
-     * @param name the new name for the specified data set
-     */
-    public void renameDataSet(int id, String name) {
-        data.redefineDataSetName(id, name);
-    }
-
-    /**
-     * Recolors the dat aset with the given {@code id} to the given RGB color.
-     *
-     * @param id the ID of the data set to recolor
-     * @param rgb the RGB color in which to recolor the specified data set
-     */
-    public void recolorDataSet(int id, int rgb) {
-        data.redefineDataSetColor(id, rgb);
-        redrawDataSet(id);
+        return this;
     }
 
     /**
@@ -170,9 +107,37 @@ public class Graph extends JPanel {
         this.connectTheDots = connectTheDots;
         this.inScaleX = inScaleX;
         this.inScaleY = inScaleY;
-        for (int id : data.getValidIds()) {
-            redrawDataSet(id);
+        img.clear();
+        if (data != null) {
+            int id = 0;
+            for (Pair<String, ? extends DataSet> dataEntry : data) {
+                // Redraws the data set.
+                DataSet convolvedData = convolveDatasetForDrawing(dataEntry.second);
+                if (connectTheDots) {
+                    DataSet connectedData = new MutableDataSet();
+                    connectedData.setRgb(convolvedData.getRgb());
+                    Point startPt = null;
+                    for (Point datum : convolvedData) {
+                        Point endPt = datum;
+                        if (startPt != null) {
+                            connectedData.addAll(
+                                    new LineSegment(startPt, endPt).draw(IncludeStart.YES,
+                                            IncludeEnd.NO));
+                        }
+                        startPt = endPt;
+                    }
+                    connectedData.add(startPt); // Adds the last point in the convolved data.
+                    img.annotate(id, connectedData);
+                } else {
+                    img.annotate(id, convolvedData);
+                }
+                id++;
+            }
         }
+    }
+
+    public void refresh() {
+        redraw(connectTheDots, inScaleX, inScaleY);
     }
 
     /**
@@ -233,36 +198,6 @@ public class Graph extends JPanel {
             convolvedData.add(convolvedDatum);
         }
         return convolvedData;
-    }
-
-    /**
-     * Redraws (graphs) the ColoredDataSet at the given unique ID on the actual graph image.
-     *
-     * @param id the ID of the data set to graph
-     */
-    private void redrawDataSet(int id) {
-        DataSet dataSet = data.getDataSet(id);
-        if (dataSet == null || dataSet.isEmpty()) { // Then no need to redraw the data set.
-            return;
-        }
-        DataSet convolvedData = convolveDatasetForDrawing(dataSet);
-        if (connectTheDots) {
-            DataSet connectedData = new MutableDataSet();
-            connectedData.setRgb(dataSet.getRgb());
-            Point startPt = null;
-            for(Point datum : convolvedData){
-                Point endPt = datum;
-                if(startPt != null){
-                    connectedData.addAll(
-                            new LineSegment(startPt, endPt).draw(IncludeStart.YES, IncludeEnd.NO));
-                }
-                startPt = endPt;
-            }
-            connectedData.add(startPt); // Adds the last point in the convolved data.
-            img.redraw(id, connectedData);
-        } else {
-            img.redraw(id, dataSet);
-        }
     }
 
     /* TEST STUFF */
