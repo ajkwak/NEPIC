@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import nepic.image.ImagePage;
@@ -15,7 +16,10 @@ import nepic.util.Verify;
 public class OneDimensionalScanner {
     private final GraphData data; // For displaying all intermediate steps of 'scanning' the line.
     private static final String RAW_DATA_ID = "Raw Data";
-    private static final String SMOOTHED_DATA_ID = "Smoothed Data";
+    private static final String SMOOTHED_DATA_5 = "Group Size = 5";
+    private static final String SMOOTHED_DATA_10 = "Group Size = 10";
+    private static final String SMOOTHED_DATA_15 = "Group Size = 15";
+    private static final String SMOOTHED_SUM = "Sum of Smoothed Data Sets";
     private static final String SLOPES_ID = "Slopes at Data Points";
 
     // private int edgeCategoriesId = -1;
@@ -39,10 +43,67 @@ public class OneDimensionalScanner {
             i++;
         }
         data.setDataSet(RAW_DATA_ID, rawData, 0x0000ff /* Blue */);
+        data.setDataSet(SMOOTHED_DATA_5, smoothData(5), 0x00ff00 /* Green */);
+        data.setDataSet(SMOOTHED_DATA_10, smoothData(10), 0xffff00 /* Yellow */);
+        data.setDataSet(SMOOTHED_DATA_15, smoothData(15), 0xff00ff /* Magenta */);
+        data.setDataSet(SMOOTHED_SUM, sumSmoothedDataSets(), 0xff0000 /* Red */);
+    }
+
+    private List<Point> sumSmoothedDataSets() {
+        DataSet smoothed5 = data.getDataSet(SMOOTHED_DATA_5);
+        DataSet smoothed10 = data.getDataSet(SMOOTHED_DATA_10);
+        DataSet smoothed15 = data.getDataSet(SMOOTHED_DATA_15);
+
+        List<Point> sumSmoothed = new LinkedList<Point>();
+
+        for (Point datum : smoothed5) {
+            try {
+                int x = datum.x;
+                int sum = datum.y;
+                sum = sum + (int) smoothed10.interpolateY(x) + (int) smoothed15.interpolateY(x);
+                sumSmoothed.add(new Point(x, sum));
+            } catch (IllegalArgumentException e) {
+                // Do nothing (CHANGE THIS)
+            }
+
+        }
+        return sumSmoothed;
+    }
+
+    // TODO: interpolate y-values for sum!!!
+
+    public void determineEdgeMagnitudes(int maxBkChange) {
+        DataSet rawData = data.getDataSet(RAW_DATA_ID);
+        List<Point> edgeData = new LinkedList<Point>();
+        Iterator<Point> rawDataItr = rawData.iterator();
+        if (rawDataItr.hasNext()) {
+            Point first = rawDataItr.next();
+            if (rawDataItr.hasNext()) {
+                Point center = rawDataItr.next();
+                while (rawDataItr.hasNext()) {
+                    Point last = rawDataItr.next();
+                    int edgeMag = last.y - first.y; // TODO: assumes one apart in the x direction.
+                                                    // CHANGE THIS:
+                    if (edgeMag > 2 * maxBkChange) {
+                        edgeMag -= 2 * maxBkChange;
+                    } else if (edgeMag < -2 * maxBkChange) {
+                        edgeMag += 2 * maxBkChange;
+                    } else {
+                        edgeMag = 0;
+                    }
+                    edgeData.add(new Point(center.x, edgeMag));
+                    first = center;
+                    center = last;
+                }
+            }
+        }
+        data.setDataSet(SLOPES_ID, edgeData, 0xff0000 /* red */);
+        // data.removeDataSet(SMOOTHED_DATA_ID);
     }
 
     // Does the initial smoothing / simplifying of the data to get rid of most of the noise.
-    public void smoothData(int groupSize) {
+    public List<Point> smoothData(int groupSize) {
+        System.out.println("\n\ngroupSize = " + groupSize);
         DataSet rawData = data.getDataSet(RAW_DATA_ID);
 
         // Break into groups
@@ -60,6 +121,7 @@ public class OneDimensionalScanner {
 
         // Find the median of each group.
         int currentPos = startPos;
+        System.out.println("startPos = " + startPos);
         int[] prevGroup = null;
         for (int groupNum = 0; groupNum < numGroups; groupNum++) { // for each group
             int[] group = new int[groupSize];
@@ -80,10 +142,7 @@ public class OneDimensionalScanner {
             prevGroup = group;
         }
 
-        // Set the smoothed data to this new value.
-        data.setDataSet(SMOOTHED_DATA_ID, medians, 0x00cc00 /* Green */);
-        List<Point> dataSlopes = getFirstDerivative(medians);
-        data.setDataSet(SLOPES_ID, dataSlopes, 0x8800ff /* Purple */);
+        return medians;
     }
 
     public GraphData getGraphData() {

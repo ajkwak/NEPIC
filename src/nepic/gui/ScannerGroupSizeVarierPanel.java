@@ -17,10 +17,13 @@ public class ScannerGroupSizeVarierPanel extends JPanel {
     public ScannerGroupSizeVarierPanel(OneDimensionalScanner scanner) {
         Verify.notNull(scanner, "OneDimensionalScanner");
         this.scanner = scanner;
-        int graphWidth = 800;
-        int graphHeight = 400;
 
-        graph = new Graph(800, 400, 0x000000 /* Black */).setData(scanner.getGraphData());
+        int graphWidth = 1500;
+        int graphHeight = 900;
+
+        graph = new Graph(graphWidth, graphHeight, 0x000000 /* Black */)
+                .setData(scanner.getGraphData());
+        graph.redraw(true, true, false);
         graph.setLocation(0, 0);
         graph.setVisible(true);
         add(graph);
@@ -46,9 +49,9 @@ public class ScannerGroupSizeVarierPanel extends JPanel {
         public void actionPerformed(ActionEvent e) {
             try {
                 int groupSize = Integer.parseInt(groupSizeTF.getText());
-                scanner.smoothData(groupSize);
-                graph.redraw(true, true, true);
-                repaint();
+                // scanner.smoothData(groupSize);
+                // graph.redraw(true, true, false);
+                // repaint();
             } catch (NumberFormatException nfe) {
                 groupSizeTF.setText("");
             }

@@ -139,7 +139,7 @@ public class GraphData implements BoundedRegion, Iterable<Pair<String, ? extends
         Verify.nonEmpty(values, "values");
 
         removeAndAdjustBounds(name);
-        putAndAdjustBounds(name, new MutableDataSet().setRgb(rgb).setData(values));
+        putAndAdjustBounds(name, new OrderedDataSet().setRgb(rgb).setData(values));
     }
 
     public void renameDataSet(String currentName, String newName) {
@@ -281,7 +281,8 @@ public class GraphData implements BoundedRegion, Iterable<Pair<String, ? extends
     @Override
     public Iterator<Pair<String, ? extends DataSet>> iterator() {
         return new Iterator<Pair<String, ? extends DataSet>>() {
-            private Iterator<Entry<String, DataSet>> entryItr = dataSetMap.entrySet().iterator();
+            private Iterator<Entry<String, DataSet>> entryItr =
+                    dataSetMap.entrySet().iterator();
 
             @Override
             public boolean hasNext() {

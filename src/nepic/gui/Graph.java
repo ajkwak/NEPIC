@@ -9,7 +9,7 @@ import javax.swing.JPanel;
 
 import nepic.data.DataSet;
 import nepic.data.GraphData;
-import nepic.data.MutableDataSet;
+import nepic.data.UnorderedDataSet;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.LineSegment.IncludeEnd;
 import nepic.roi.model.LineSegment.IncludeStart;
@@ -115,7 +115,7 @@ public class Graph extends JPanel {
                 // Redraws the data set.
                 DataSet convolvedData = convolveDatasetForDrawing(dataEntry.second);
                 if (connectTheDots) {
-                    DataSet connectedData = new MutableDataSet();
+                    DataSet connectedData = new UnorderedDataSet();
                     connectedData.setRgb(convolvedData.getRgb());
                     Point startPt = null;
                     for (Point datum : convolvedData) {
@@ -190,7 +190,7 @@ public class Graph extends JPanel {
         }
 
         // Convolve the actual data set to fit on the graph when drawn.
-        DataSet convolvedData = new MutableDataSet();
+        DataSet convolvedData = new UnorderedDataSet();
         convolvedData.setRgb(dataSet.getRgb());
         for (Point datum : dataSet) {
             Point convolvedDatum = new Point(

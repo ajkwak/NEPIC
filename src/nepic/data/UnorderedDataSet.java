@@ -14,7 +14,7 @@ import nepic.util.Verify;
  *
  * @author AJ Parmidge
  */
-public class MutableDataSet implements DataSet {
+public class UnorderedDataSet implements DataSet {
     private String name = ""; // Default is empty string.
     private final List<Point> data;
     private int rgb = 0x000000; // Default is black.
@@ -25,9 +25,9 @@ public class MutableDataSet implements DataSet {
     private int maxY = Integer.MIN_VALUE;
 
     /**
-     * Creates an empty {@link MutableDataSet}.
+     * Creates an empty {@link UnorderedDataSet}.
      */
-    public MutableDataSet() {
+    public UnorderedDataSet() {
         this.data = new LinkedList<Point>();
     }
 
@@ -238,5 +238,13 @@ public class MutableDataSet implements DataSet {
     @Override
     public String toString() {
         return name + "(0x" + Integer.toHexString(rgb) + "): " + data.toString();
+    }
+
+    /**
+     * @throws UnsupportedOperationException always
+     */
+    @Override
+    public double interpolateY(int x) {
+        throw new UnsupportedOperationException();
     }
 }

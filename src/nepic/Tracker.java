@@ -29,7 +29,7 @@ import nepic.logging.EventType;
 import nepic.data.DataSet;
 import nepic.data.GraphData;
 import nepic.data.Histogram;
-import nepic.data.MutableDataSet;
+import nepic.data.UnorderedDataSet;
 import nepic.roi.OneDimensionalScanner;
 import nepic.roi.model.Line;
 import nepic.roi.model.Polygon;
@@ -321,7 +321,7 @@ public class Tracker {
                             new Point(clickLoc.x, dragLoc.y),
                             dragLoc,
                             new Point(dragLoc.x, clickLoc.y) });
-                    DataSet mouseActionPixels = new MutableDataSet();
+                    DataSet mouseActionPixels = new UnorderedDataSet();
                     mouseActionPixels.addAll(newRec.getEdges());
                     mouseActionPixels.setRgb(Nepic.MOUSE_ACTION_COLOR);
                     myGUI.draw(Nepic.MOUSE_ACTION_ID, mouseActionPixels);
