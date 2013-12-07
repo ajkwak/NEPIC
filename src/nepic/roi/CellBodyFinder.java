@@ -54,17 +54,17 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         // System.out.println("img width = " + img.width + ", height  = " + img.height);
 
         // System.out.print("pi/2");
-        OneDimensionalScanner scanner = new OneDimensionalScanner(
+        DataScanner scanner = new DataScanner(
                 img, new Line(seedPixel, -Math.PI / 2));
         roi.setGraphData(GraphDataAngle.PI_OVER_TWO, scanner.getGraphData());
         // System.out.print("-pi/4");
-        scanner = new OneDimensionalScanner(img, new Line(seedPixel, -Math.PI / 4));
+        scanner = new DataScanner(img, new Line(seedPixel, -Math.PI / 4));
         roi.setGraphData(GraphDataAngle.NEGATIVE_PI_OVER_FOUR, scanner.getGraphData());
         // System.out.print("zero");
-        scanner = new OneDimensionalScanner(img, new Line(seedPixel, 0));
+        scanner = new DataScanner(img, new Line(seedPixel, 0));
         roi.setGraphData(GraphDataAngle.ZERO, scanner.getGraphData());
         // System.out.print("pi/4");
-        scanner = new OneDimensionalScanner(img, new Line(seedPixel, Math.PI / 4));
+        scanner = new DataScanner(img, new Line(seedPixel, Math.PI / 4));
         roi.setGraphData(GraphDataAngle.PI_OVER_FOUR, scanner.getGraphData());
 
         List<Point> edges = new LinkedList<Point>();

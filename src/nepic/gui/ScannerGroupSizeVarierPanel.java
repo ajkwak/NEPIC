@@ -5,25 +5,25 @@ import java.awt.event.ActionListener;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import nepic.roi.OneDimensionalScanner;
+import nepic.roi.DataScanner;
 import nepic.util.Verify;
 
 public class ScannerGroupSizeVarierPanel extends JPanel {
     private static final long serialVersionUID = 1L; // Default
     private Graph graph;
-    private OneDimensionalScanner scanner;
+    private DataScanner scanner;
     private JTextField groupSizeTF;
 
-    public ScannerGroupSizeVarierPanel(OneDimensionalScanner scanner) {
+    public ScannerGroupSizeVarierPanel(DataScanner scanner) {
         Verify.notNull(scanner, "OneDimensionalScanner");
         this.scanner = scanner;
 
-        int graphWidth = 1500;
-        int graphHeight = 900;
+        int graphWidth = 800;
+        int graphHeight = 400;
 
         graph = new Graph(graphWidth, graphHeight, 0x000000 /* Black */)
                 .setData(scanner.getGraphData());
-        graph.redraw(true, true, false);
+        graph.redraw(true, true, true);
         graph.setLocation(0, 0);
         graph.setVisible(true);
         add(graph);
@@ -50,7 +50,7 @@ public class ScannerGroupSizeVarierPanel extends JPanel {
             try {
                 int groupSize = Integer.parseInt(groupSizeTF.getText());
                 // scanner.smoothData(groupSize);
-                // graph.redraw(true, true, false);
+                graph.redraw(true, true, true);
                 // repaint();
             } catch (NumberFormatException nfe) {
                 groupSizeTF.setText("");

@@ -222,7 +222,6 @@ public class OrderedDataSet implements DataSet {
         return a;
     }
 
-    @Override
     public double interpolateY(int x) {
         Verify.argument(x >= minX && x <= maxX,
                 "Cannot interpolate for x that is out of bounds of this data set");

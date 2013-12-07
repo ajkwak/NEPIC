@@ -239,12 +239,4 @@ public class UnorderedDataSet implements DataSet {
     public String toString() {
         return name + "(0x" + Integer.toHexString(rgb) + "): " + data.toString();
     }
-
-    /**
-     * @throws UnsupportedOperationException always
-     */
-    @Override
-    public double interpolateY(int x) {
-        throw new UnsupportedOperationException();
-    }
 }

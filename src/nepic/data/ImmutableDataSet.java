@@ -171,9 +171,4 @@ public class ImmutableDataSet implements DataSet {
     public String toString() {
         return dataSet.toString();
     }
-
-    @Override
-    public double interpolateY(int x) {
-        return dataSet.interpolateY(x);
-    }
 }

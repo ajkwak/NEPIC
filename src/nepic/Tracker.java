@@ -30,7 +30,7 @@ import nepic.data.DataSet;
 import nepic.data.GraphData;
 import nepic.data.Histogram;
 import nepic.data.UnorderedDataSet;
-import nepic.roi.OneDimensionalScanner;
+import nepic.roi.DataScanner;
 import nepic.roi.model.Line;
 import nepic.roi.model.Polygon;
 import nepic.util.Verify;
@@ -278,8 +278,8 @@ public class Tracker {
             if (e.getButton() == MouseEvent.BUTTON3) {
                 Point clickPt = e.getPoint();
                 if (currPg != null && currPg.contains(clickPt)) {
-                    OneDimensionalScanner scanner =
-                            new OneDimensionalScanner(currPg, new Line(clickPt, 0));
+                    DataScanner scanner =
+                            new DataScanner(currPg, new Line(clickPt, 0));
 
                     // TODO: make a panel where can vary the medianGroupSize in the scanner, and see
                     // directly on the graph.

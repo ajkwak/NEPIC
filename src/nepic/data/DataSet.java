@@ -25,12 +25,4 @@ public interface DataSet extends BoundedRegion, Collection<Point> {
     public DataSet setData(Point... data);
 
     public DataSet setData(Collection<? extends Point> data);
-
-    /**
-     * Optional operation.
-     *
-     * @param x
-     * @return
-     */
-    public double interpolateY(int x);
 }

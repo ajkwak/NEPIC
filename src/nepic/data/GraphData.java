@@ -139,7 +139,7 @@ public class GraphData implements BoundedRegion, Iterable<Pair<String, ? extends
         Verify.nonEmpty(values, "values");
 
         removeAndAdjustBounds(name);
-        putAndAdjustBounds(name, new OrderedDataSet().setRgb(rgb).setData(values));
+        putAndAdjustBounds(name, new UnorderedDataSet().setRgb(rgb).setData(values));
     }
 
     public void renameDataSet(String currentName, String newName) {
