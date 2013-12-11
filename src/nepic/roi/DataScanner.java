@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import nepic.image.ImagePage;
@@ -16,8 +17,7 @@ public class DataScanner {
     // Bucketized Data.
     private int bucketOffset;
     private int halfBucketSize = 6;
-    private int[] bucketSet1;
-    private int[] bucketSet2;
+    private int[] bucketSet;
 
     // For graphing all the intermediate steps of processing the raw data.
     private final GraphData data = new GraphData();
@@ -68,11 +68,9 @@ public class DataScanner {
         int numPts = rawData.size();
         bucketOffset = (numPts % halfBucketSize) / 2; // Center the sets of buckets in the raw data.
         int numSemiGroups = numPts / halfBucketSize;
-        bucketSet1 = new int[numSemiGroups / 2];
-        bucketSet2 = new int[(numSemiGroups - 1) / 2];
+        bucketSet = new int[numSemiGroups - 1];
 
         int[] prevSemiGroup = null;
-        boolean addToMedians1 = true;
         Iterator<Integer> itr = getIteratorStartingAtPos(rawData, bucketOffset);
         for (int semiGroupNumber = 0; semiGroupNumber < numSemiGroups; semiGroupNumber++) {
             int[] semiGroup = new int[halfBucketSize];
@@ -81,18 +79,7 @@ public class DataScanner {
             }
             Arrays.sort(semiGroup);
             if (prevSemiGroup != null) {
-                int dblMed = getDblMedian(prevSemiGroup, semiGroup);
-                // int groupStartPos = (semiGroupNumber - 1) * halfBucketSize;
-                if (addToMedians1) {
-                    bucketSet1[(semiGroupNumber - 1) / 2] = dblMed;
-                    // medians1.add(new Point(groupStartPos, dblMed / 2));
-                    // medians1.add(new Point(groupStartPos + 2 * halfBucketSize - 1, dblMed / 2));
-                } else {
-                    bucketSet2[(semiGroupNumber - 1) / 2] = dblMed;
-                    // medians2.add(new Point(groupStartPos, dblMed / 2));
-                    // medians2.add(new Point(groupStartPos + 2 * halfBucketSize - 1, dblMed / 2));
-                }
-                addToMedians1 = !addToMedians1;
+                bucketSet[semiGroupNumber - 1] = getDblMedian(prevSemiGroup, semiGroup);
             }
             prevSemiGroup = semiGroup;
         }
@@ -101,26 +88,71 @@ public class DataScanner {
 
     private void graphBucketizedData(){
         // Graph the first bucketSet
-        int numBuckets = bucketSet1.length;
-        ArrayList<Point> bucketDataSet = new ArrayList<Point>(2 * numBuckets);
+        int numBuckets = bucketSet.length;
+        ArrayList<Point> bucketDataSet1 = new ArrayList<Point>(numBuckets); // TODO
+        ArrayList<Point> bucketDataSet2 = new ArrayList<Point>(numBuckets); // TODO
+        boolean isFirstBucketSet = true;
         for(int bucketIdx = 0; bucketIdx < numBuckets; bucketIdx++){
-            int bucketStartIdx = 2 * halfBucketSize * bucketIdx + bucketOffset;
-            int bucketPI = bucketSet1[bucketIdx] / 2;
-            bucketDataSet.add(new Point(bucketStartIdx, bucketPI));
-            bucketDataSet.add(new Point(bucketStartIdx + 2 * halfBucketSize - 1, bucketPI));
+            int bucketStartIdx = halfBucketSize * bucketIdx + bucketOffset;
+            int bucketPI = bucketSet[bucketIdx] / 2;
+            if (isFirstBucketSet) {
+                bucketDataSet1.add(new Point(bucketStartIdx, bucketPI));
+                bucketDataSet1.add(new Point(bucketStartIdx + 2 * halfBucketSize - 1, bucketPI));
+            } else {
+                bucketDataSet2.add(new Point(bucketStartIdx, bucketPI));
+                bucketDataSet2.add(new Point(bucketStartIdx + 2 * halfBucketSize - 1, bucketPI));
+            }
+            isFirstBucketSet = !isFirstBucketSet;
         }
-        data.setDataSet("Bucket Set 1", bucketDataSet, 0x008800 /* Dark Green */);
+        data.setDataSet("Bucket Set 1", bucketDataSet1, 0x008800 /* Dark Green */);
+        data.setDataSet("Bucket Set 2", bucketDataSet2, 0x00aa00 /* Green */);
+    }
 
-        // Graph the second bucketSet
-        numBuckets = bucketSet2.length;
-        bucketDataSet = new ArrayList<Point>(2 * numBuckets);
-        for (int bucketIdx = 0; bucketIdx < numBuckets; bucketIdx++) {
-            int bucketStartIdx = (2 * bucketIdx + 1) * halfBucketSize + bucketOffset;
-            int bucketPI = bucketSet2[bucketIdx] / 2;
-            bucketDataSet.add(new Point(bucketStartIdx, bucketPI));
-            bucketDataSet.add(new Point(bucketStartIdx + 2 * halfBucketSize - 1, bucketPI));
+    /**
+     * IDEA:
+     *
+     * There are 2 bucketized lists. Each 'bucket' overlaps 1/2 the previous 'bucket' and 1/2 the
+     * next 'bucket.' Thus, if noise were perfect and uniform, this means that for flat sections,
+     * the value (median) of each consecutive bucket would be the same.
+     *
+     * diff = 1 (same value) diff = 2-4 (probably same value)
+     *
+     */
+    private void processBucketizedData() {
+        //
+        int pos = 0;
+        int posPlus1 = 1;
+
+        int[] piOccurrenceMap = new int[256];
+        int numOccurrencesMode = 1;
+        List<Integer> modes = new LinkedList<Integer>();
+    }
+
+    private void determineCurrentRegionType(int startPos) {
+
+    }
+
+    // return endPos (also possibly include the 'type' of the next region)
+    private void processFlatRegion(int startPos) {
+        int pos = startPos;
+
+        int[] piOccurrenceMap = new int[256];
+        int numOccurrencesMode = 1;
+        List<Integer> modes = new LinkedList<Integer>();
+
+        while (true /* TODO */) {
+            int pi = bucketSet[pos];
         }
-        data.setDataSet("Bucket Set 2", bucketDataSet, 0x00aa00 /* Green */);
+    }
+
+    // return endPos (also possibly include the 'type' of the next region)
+    private void processRisingRegion(int startPos) {
+
+    }
+
+    // return endPos (also possibly include the 'type' of the next region)
+    private void processFallingRegion(int startPos) {
+
     }
 
     /**
