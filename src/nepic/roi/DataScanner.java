@@ -22,6 +22,7 @@ public class DataScanner {
     // For graphing all the intermediate steps of processing the raw data.
     private final GraphData data = new GraphData();
 
+    // TODO: convert to static method (probably in different class)????
     public DataScanner(ImagePage pg, Line scanline) {
         Verify.notNull(pg, "Page on which to scan the line cannot be null!");
         Verify.notNull(scanline, "line to scan cannot be null!");
@@ -41,6 +42,11 @@ public class DataScanner {
         bucketizeRawData(rawData);
     }
 
+    /**
+     * Adds the given raw data to this class's {@link GraphData} object.
+     *
+     * @param initialData the raw data to graph
+     */
     private void graphRawData(Collection<Integer> initialData) {
         List<Point> rawData = new ArrayList<Point>(initialData.size());
         int idx = 0;
@@ -51,15 +57,20 @@ public class DataScanner {
         data.setDataSet("Raw Data", rawData, 0x0000ff /* Blue */);
     }
 
+    /**
+     * Gets the {@link Iterator} of the given {@link Iterable}, starting at the given position.
+     *
+     * @param iterable the iterabble for which to return an iterator
+     * @param pos the position in the given iterable at which the returned iterator should start
+     * @return the iterator of the given iterable, starting at the specified position
+     * @throws NoSuchElementException if the given position is after the last element in the
+     *         iterable
+     */
     private <E> Iterator<E> getIteratorStartingAtPos(Iterable<E> iterable, int pos) {
         Iterator<E> itr = iterable.iterator();
-
-        // Note: this will throw an exception if the given 'pos' to which to iterate is PAST the
-        // last element of the iterable.
         for (int i = 0; i < pos - 1; i++) {
             itr.next();
         }
-
         return itr;
     }
 
@@ -120,12 +131,6 @@ public class DataScanner {
      */
     private void processBucketizedData() {
         //
-        int pos = 0;
-        int posPlus1 = 1;
-
-        int[] piOccurrenceMap = new int[256];
-        int numOccurrencesMode = 1;
-        List<Integer> modes = new LinkedList<Integer>();
     }
 
     private void determineCurrentRegionType(int startPos) {
@@ -136,14 +141,36 @@ public class DataScanner {
     private void processFlatRegion(int startPos) {
         int pos = startPos;
 
-        int[] piOccurrenceMap = new int[256];
-        int numOccurrencesMode = 1;
+        int[] histogram = new int[256];
+        int modeMagnitude = 1; // numOccurrencesMode
         List<Integer> modes = new LinkedList<Integer>();
 
         while (true /* TODO */) {
-            int pi = bucketSet[pos];
+            int dblPI = bucketSet[pos];
+            modeMagnitude = adjustMode(dblPI / 2, histogram, modes, modeMagnitude);
+            if (dblPI % 2 == 1) { // If the bucketized value is between two pixel intensities.
+                modeMagnitude = adjustMode(dblPI / 2, histogram, modes, modeMagnitude);
+            }
+
+            // TODO
+
+            pos++;
         }
     }
+
+    private int adjustMode(int pi, int[] histogram, List<Integer> modes, int modeMagnitude) {
+        int numOccurrences = histogram[pi] + 1;
+        histogram[pi] = numOccurrences;
+        if (numOccurrences >= modeMagnitude) {
+            if (numOccurrences > modeMagnitude) {
+                modes.clear();
+                modeMagnitude = numOccurrences;
+            }
+            modes.add(pi);
+        }
+        return modeMagnitude;
+    }
+
 
     // return endPos (also possibly include the 'type' of the next region)
     private void processRisingRegion(int startPos) {
