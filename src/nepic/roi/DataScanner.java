@@ -130,11 +130,65 @@ public class DataScanner {
      *
      */
     private void processBucketizedData() {
-        //
+        // TODO: This is a replacement for determineCurrentRegionType
+        // TODO: do sth to do with window size (do initial preprocessing into FLAT, UP, and DOWN,
+        // then smooth the flat (via the modes method), sharpen the up/down where need be
+    }
+
+    private void processBucketizedData(int startPos) {
+        // ONLY LOOK FOR UPs, DOWNs: FLATS ARE THE THINGS THAT ARE NEITHER
+        // SHALLOWER THE UP/DOWN, THE MORE NOISE THERE WILL BE (allow up to 1 consecutive datum of
+        // noise per UP or DOWN)
     }
 
     private void determineCurrentRegionType(int startPos) {
+        // Use # times change up/down, total up, total down, largest up, largest down, etc.
+        // DON"T FORGET ADJACENT REGIONS OVERLAP. NEED TO LOOK AT EVERY OTHER, AS WELL AS EVERY ONE
+        int numUps = 0;
+        int numDowns = 0;
+        int numFlats = 0;
 
+        int numChanges = 0;
+
+        int totalUp = 0;
+        int totalDown = 0;
+
+        int maxUp = 0;
+        int maxDown = 0;
+
+        int prevPI = -1;
+        int prevDelta = 0;
+        for (int i = startPos; i < startPos + 6; i++) {
+            if (i >= bucketSet.length) {
+                break;
+            }
+            int currPI = bucketSet[i];
+            if (i > startPos) {
+                int currDelta = currPI - prevPI;
+                if ((prevDelta < 0 && currDelta > 0) || (prevDelta > 0 && currDelta < 0)) {
+                    numChanges++;
+                }
+                if (currDelta == 0) {
+                    numFlats++;
+                } else { // We're looking changes pos <--> neg (zeros don't count)
+                    prevDelta = currDelta;
+                    if (currDelta > 0) {
+                        numUps++;
+                        totalUp += currDelta;
+                        if (currDelta > maxUp) {
+                            maxUp = currDelta;
+                        }
+                    } else { // currDelta < 0
+                        numDowns++;
+                        totalDown += currDelta;
+                        if (currDelta < maxDown) {
+                            maxDown = currDelta;
+                        }
+                    }
+                }
+            }
+            prevPI = currPI;
+        }
     }
 
     // return endPos (also possibly include the 'type' of the next region)
@@ -145,12 +199,17 @@ public class DataScanner {
         int modeMagnitude = 1; // numOccurrencesMode
         List<Integer> modes = new LinkedList<Integer>();
 
+        int prevDblPI = -1;
         while (true /* TODO */) {
             int dblPI = bucketSet[pos];
             modeMagnitude = adjustMode(dblPI / 2, histogram, modes, modeMagnitude);
-            if (dblPI % 2 == 1) { // If the bucketized value is between two pixel intensities.
-                modeMagnitude = adjustMode(dblPI / 2, histogram, modes, modeMagnitude);
+
+            // If the bucketized value is between two pixel intensities, add to second PI.
+            if (dblPI % 2 == 1) {
+                modeMagnitude = adjustMode(dblPI / 2 + 1, histogram, modes, modeMagnitude);
             }
+
+            // Single mode continues until the last time that mode appears or is crossed.
 
             // TODO
 
