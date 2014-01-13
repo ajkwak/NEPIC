@@ -1,6 +1,7 @@
 
 package nepic.gui;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
@@ -43,10 +44,8 @@ public class Graph extends JPanel {
      * The collection of all the data sets being graphed.
      */
     private GraphData data = null;
-    /**
-     * Maps the ID in the GraphData to the ID in the AnnotatableImage.
-     */
-    // private Map<String, Integer> map;
+
+    private JLabel topLabel, bottomLabel;
 
     /**
      * Creates a {@link Graph} of the given width, height, and background color that can handle and
@@ -60,14 +59,29 @@ public class Graph extends JPanel {
      */
     public Graph(int width, int height, int bkColor) {
         Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
+        setBackground(new Color(0x888888 /* dark grey */));
 
         img = new AnnotatableImage(newMonochromeImg(width, height, bkColor));
+
+        topLabel = new JLabel();
+        topLabel.setForeground(Color.white);
+        add(topLabel);
+        topLabel.setLocation(0, 0);
+        topLabel.setSize(50, 25);
+        topLabel.setVisible(true);
+
+        bottomLabel = new JLabel();
+        bottomLabel.setForeground(Color.white);
+        add(bottomLabel);
+        bottomLabel.setLocation(0, height - 25);
+        bottomLabel.setSize(50, 25);
+        bottomLabel.setVisible(true);
 
         JLabel imgLabel = new JLabel();
         imgLabel.setIcon(new ImageIcon(img.getImage()));
         add(imgLabel);
-        imgLabel.setLocation(0, 0);
-        imgLabel.setSize(width, height);
+        imgLabel.setLocation(0, 12);
+        imgLabel.setSize(width, height - 24);
         imgLabel.setVisible(true);
 
         setLayout(null);
@@ -110,7 +124,22 @@ public class Graph extends JPanel {
         this.inScaleY = inScaleY;
         img.clear();
         if (data != null) {
-            int id = 0;
+            // Draw the y-gridlines
+            if (inScaleY) {
+                int imgWidth = img.getWidth();
+                int minY = data.getMinY();
+                DataSet yGridlines = new UnorderedDataSet().setRgb(0x444444 /* Light Gray */);
+                for (int yGridline = minY + (5 - minY % 5); yGridline <= data.getMaxY(); yGridline += 5) {
+                    int convolvedY = convolveY(yGridline);
+                    for (int x = 0; x < imgWidth; x++) {
+                        yGridlines.add(new Point(x, convolvedY));
+                    }
+                }
+                img.annotate(0, yGridlines);
+            }
+
+            // Draw the DataSets in the GraphData
+            int id = 1;
             for (Pair<String, ? extends DataSet> dataEntry : data) {
                 // Redraws the data set.
                 DataSet convolvedData = convolveDatasetForDrawing(dataEntry.second);
@@ -134,6 +163,8 @@ public class Graph extends JPanel {
                 }
                 id++;
             }
+            topLabel.setText("" + data.getMaxY());
+            bottomLabel.setText("" + data.getMinY());
         }
     }
 
@@ -157,6 +188,27 @@ public class Graph extends JPanel {
             }
         }
         return graphImage;
+    }
+
+
+    private int convolveY(int y) { // assumes inScaleY is true
+        // Determine the maxima and minima for graphing this data set.
+        int minY = data.getMinY();
+        int maxY = data.getMaxY();
+
+        // Determine the multiplier and offset to graph this data set properly in the y direction.
+        int imgMaxY = img.getHeight() - 1;
+        double ratioY;
+        long offsetY;
+        if (minY == maxY) {
+            ratioY = 1;
+            offsetY = img.getHeight() / 2;
+        } else {
+            ratioY = (double) imgMaxY / (maxY - minY);
+            offsetY = 0 - Math.round(ratioY * minY);
+        }
+
+        return imgMaxY - (int) Math.round(ratioY * y + offsetY); // return convolved y
     }
 
     private DataSet convolveDatasetForDrawing(DataSet dataSet) {

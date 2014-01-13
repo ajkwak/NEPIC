@@ -18,8 +18,8 @@ public class ScannerGroupSizeVarierPanel extends JPanel {
         Verify.notNull(scanner, "OneDimensionalScanner");
         this.scanner = scanner;
 
-        int graphWidth = 800;
-        int graphHeight = 400;
+        int graphWidth = 1200;
+        int graphHeight = 800;
 
         graph = new Graph(graphWidth, graphHeight, 0x000000 /* Black */)
                 .setData(scanner.getGraphData());
