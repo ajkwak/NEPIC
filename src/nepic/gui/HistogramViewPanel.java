@@ -45,7 +45,7 @@ public class HistogramViewPanel extends JPanel {
         histImgL.setVisible(true);
 
         int xPos = 0;
-        int maxNumDataPtsInColumn = hist.getMagnitudeAt(hist.getMode());
+        int maxNumDataPtsInColumn = hist.getMagnitudeAt(hist.getNumberModeInstances());
         // System.out.println("Print histogram.");
         for (int i = hist.getMin(); i <= hist.getMax(); i++) {
             int columnHeight = hist.getMagnitudeAt(i) * histHeight / maxNumDataPtsInColumn;

@@ -1,8 +1,15 @@
 package nepic.data;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 import nepic.io.Label;
 import nepic.util.CsvFormattable;
+import nepic.util.Lists;
 import nepic.util.Verify;
+
+// TODO: convert this into a Histogram interface, with two implementations (mutable and immutable).
 
 /**
  * A class representing a histogram of single-dimensional data within a given range of values.
@@ -31,6 +38,14 @@ public class Histogram implements CsvFormattable {
      * The sum of the magnitudes of all columns in the histogram.
      */
     private final int sum;
+    /**
+     * The modes of the data represented by the histogram
+     */
+    private final List<Integer> modePositions;
+    /**
+     * The number of times the mode occurs in the data summarized by the histogram.
+     */
+    private final int numModeInstances;
 
     /**
      * Creates a histogram with the given information passed from the {@link Builder}.
@@ -41,19 +56,27 @@ public class Histogram implements CsvFormattable {
      * @param sum the sum of all values in the given histogram data
      * @param minPos the minimum position in the histogram data at which there is at least one value
      * @param maxPos the maximum position in the histogram data at which there is at least one value
+     * @param numModeInstances the number of times the mode occurs in the data summarized by this
+     *        {@link Histogram}
      */
-    private Histogram(int[] hist, int n, int offset, int sum, int minPos, int maxPos) {
+    private Histogram(int[] hist, int n, int offset, int sum, int minPos, int maxPos, int numModeInstances) {
         Verify.argument(minPos <= maxPos, "Invalid bounds given.  maxPos (= " + maxPos
                 + ") < minPos (= " + minPos + ")");
         this.n = n;
         this.offset = offset;
         this.sum = sum;
+        this.numModeInstances = numModeInstances;
+        this.modePositions = new LinkedList<Integer>();
 
         // Make a defensive copy of the Histogram in case the Builder is modified after this
         // Histogram is made.
         this.hist = new int[maxPos - minPos + 1];
         for (int pos = minPos; pos <= maxPos; pos++) {
-            this.hist[pos - minPos] = hist[pos];
+            int numOccurrences = hist[pos];
+            this.hist[pos - minPos] = numOccurrences;
+            if (numOccurrences == numModeInstances) {
+                modePositions.add(pos - minPos);
+            }
         }
     }
 
@@ -80,7 +103,7 @@ public class Histogram implements CsvFormattable {
                 getMin(),
                 getMax(),
                 getMedian(),
-                getMode(),
+                getModes().get(0),
                 mean,
                 stDev,
                 getNumValuesBetween((int) Math.ceil(mean - stDev), (int) Math.floor(mean + stDev)),
@@ -142,19 +165,21 @@ public class Histogram implements CsvFormattable {
     }
 
     /**
-     * Gets the mode of the data in this {@link Histogram}.
+     * Gets the all of the modes of the data in this {@link Histogram}.
      */
-    public int getMode() {
-        int modePos = 0;
-        int modeMagnitude = hist[0];
-        for (int pos = 1; pos < hist.length; pos++) {
-            int magnitude = hist[pos];
-            if (magnitude > modeMagnitude) {
-                modeMagnitude = magnitude;
-                modePos = pos;
-            }
+    public List<Integer> getModes() {
+        List<Integer> modes = new ArrayList<Integer>(modePositions.size());
+        for (int modePos : modePositions) {
+            modes.add(modePos + offset);
         }
-        return modePos + offset;
+        return modes;
+    }
+
+    /**
+     * Gets the number of times the mode appears in the data represented by this {@link Histogram}
+     */
+    public int getNumberModeInstances() {
+        return numModeInstances;
     }
 
     /**
@@ -242,7 +267,7 @@ public class Histogram implements CsvFormattable {
     @Override
     public String toString() {
         return "Hist (n = " + n + ", range " + getMin() + "-" + getMax() + "): med = "
-                + getMedian() + ", mode = " + getMode() + ", mean = " + getMean() + " +/- "
+                + getMedian() + ", mode(s) = " + getModes() + ", mean = " + getMean() + " +/- "
                 + getStDev() + " stDev";
     }
 
@@ -265,19 +290,20 @@ public class Histogram implements CsvFormattable {
          * The position of the maximum value in the histogram array.
          */
         private int maxPos = Integer.MIN_VALUE;
+        private int numModeInstances = 0;
+        private List<Integer> modes = new LinkedList<Integer>();
 
         /**
          * Creates an object that builds a {@link Histogram} with the given bounds.
-         *
-         * @param lowerBound the lower bound of the domain over which the built {@link Histogram}
-         *        must extend.
-         * @param upperBound the upper bound of the domain over which the built {@link Histogram}
-         *        must extend.
+         * 
+         * @param lowerBound the lower bound (inclusive) of the domain over which the built
+         *        {@link Histogram} must extend.
+         * @param upperBound the upper bound (inclusive) of the domain over which the built
+         *        {@link Histogram} must extend.
          */
         public Builder(int lowerBound, int upperBound) {
             Verify.argument(lowerBound <= upperBound,
-                    "Lower bound greater than upper bound!  Given lowerBound = " + lowerBound
-                            + ", upperBound = " + upperBound);
+                    "Lower bound " + lowerBound + "is greater than upper bound " + upperBound);
             this.histogram = new int[upperBound - lowerBound + 1];
             this.offset = lowerBound;
         }
@@ -313,7 +339,7 @@ public class Histogram implements CsvFormattable {
         @Override
         public Histogram build() {
             Verify.state(minPos <= maxPos, "Cannot instantiate an empty Histogram");
-            return new Histogram(histogram, n, offset, sum, minPos, maxPos);
+            return new Histogram(histogram, n, offset, sum, minPos, maxPos, numModeInstances);
         }
 
         /**
@@ -326,7 +352,8 @@ public class Histogram implements CsvFormattable {
             Verify.argument(pos >= 0 && pos < histogram.length, "Cannot add illegal value " + value
                     + " to to the Histogram being built.  Acceptable values range from " + offset
                     + " to " + (offset + histogram.length - 1));
-            histogram[pos]++;
+            int numValueInstances = histogram[pos] + 1;
+            histogram[pos] = numValueInstances;
             n++;
             sum += value; // TODO: this varies from previous version of Histogram
             if (pos < minPos) {
@@ -335,6 +362,22 @@ public class Histogram implements CsvFormattable {
             if (pos > maxPos) {
                 maxPos = pos;
             }
+            if (numValueInstances >= numModeInstances) {
+                if (numValueInstances > numModeInstances) {
+                    modes.clear();
+                    numModeInstances = numValueInstances;
+                }
+                numModeInstances = numValueInstances;
+                modes.add(pos);
+            }
+        }
+
+        public List<Integer> getModes() {
+            return Lists.copyOf(modes);
+        }
+
+        public int getNumberModeInstances() {
+            return numModeInstances;
         }
     }
 }
