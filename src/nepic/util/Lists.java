@@ -28,4 +28,11 @@ public class Lists {
         return list;
     }
 
+    public static <E> ArrayList<E> copyOf(Iterable<? extends E> iterable) {
+        ArrayList<E> list = new ArrayList<E>();
+        for (E element : iterable) {
+            list.add(element);
+        }
+        return list;
+    }
 }
