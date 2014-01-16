@@ -62,10 +62,10 @@ public class OneDimensionalScanner {
         }
         // System.out.println(medians);
         // System.out.println();
-        for (Integer median : medians) {
-            System.out.print("\t" + median);
-        }
-        System.out.println();
+        // for (Integer median : medians) {
+        // System.out.print("\t" + median);
+        // }
+        // System.out.println();
         return medians;
     }
 
