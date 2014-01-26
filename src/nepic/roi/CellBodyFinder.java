@@ -4,6 +4,7 @@ package nepic.roi;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,8 +16,10 @@ import nepic.image.RoiFinder;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.roi.model.Blob;
+import nepic.roi.model.BoundingBox;
 import nepic.roi.model.Histogram;
 import nepic.roi.model.Line;
+import nepic.roi.model.LineSegment;
 import nepic.roi.model.Polygon;
 import nepic.util.DoubleLinkRing;
 import nepic.util.Pair;
@@ -53,20 +56,12 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
         // System.out.println("img width = " + img.width + ", height  = " + img.height);
 
-        // System.out.print("pi/2");
-        OneDimensionalScanner scanner = new OneDimensionalScanner(img, new Line(seedPixel,
-                -Math.PI / 2));
-        // System.out.print("-pi/4");
-        scanner = new OneDimensionalScanner(img, new Line(seedPixel, -Math.PI / 4));
-        // System.out.print("zero");
-        scanner = new OneDimensionalScanner(img, new Line(seedPixel, 0));
-        // System.out.print("pi/4");
-        scanner = new OneDimensionalScanner(img, new Line(seedPixel, Math.PI / 4));
 
         List<Point> edges = new LinkedList<Point>();
         edges.add(seedPixel);
         try {
             int minPi = determinePiThreshold(eThresh, seedPixel);
+            Nepic.log(EventType.VERBOSE, "minPI = " + minPi);
 
             // Extend edges to MinPi
             edges = extendEdges(edges, roi, minPi);
@@ -364,7 +359,9 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
         // Determines the actual pixel intensity threshold
         if (threshVals.size() < numThreshVals / 2) {
-            throw new NoSuchFieldException("No CellBody found.  Unable to find PI threshold.");
+            Nepic.log(EventType.VERBOSE,
+                    "Unable to find edges of cell body using raw data.  Processing the data");
+            return smoothAndDeterminePiThreshold(seedPix) + 1;
         }
         int minRL = 256;
         int secMin = 256;
@@ -377,6 +374,86 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         }// while
         return secMin;
     }// determineThreshold
+
+    private int smoothAndDeterminePiThreshold(Point seedPixel) throws NoSuchFieldException {
+        BoundingBox upperLeftQuadrant = new BoundingBox(0 /* minX */,
+                seedPixel.x /* maxX */, 0 /* minY */, seedPixel.y /* maxY */);
+        BoundingBox upperRightQuadrant = new BoundingBox(
+                seedPixel.x /* minX */, img.width - 1 /* maxX */, 0 /* minY */,
+                seedPixel.y /* maxY */);
+        BoundingBox lowerLeftQuadrant = new BoundingBox(0 /* minX */,
+                seedPixel.x /* maxX */, seedPixel.y /* minY */, img.height - 1 /* maxY */);
+        BoundingBox lowerRightQuadrant = new BoundingBox(
+                seedPixel.x /* minX */, img.width - 1 /* maxX */,
+                seedPixel.y /* minY */, img.height - 1 /* maxY */);
+
+        Line verticalLine = new Line(seedPixel, -Math.PI / 2);
+        Line fortyFiveDegreeLine = new Line(seedPixel, Math.PI / 4);
+        Line horizontalLine = new Line(seedPixel, 0);
+        Line negFortyFiveDegreeLine = new Line(seedPixel, -Math.PI / 4);
+
+        return getPiThreshForScanlines(
+                horizontalLine.boundTo(upperRightQuadrant), // 0 Degrees.
+                fortyFiveDegreeLine.boundTo(lowerRightQuadrant), // 45 Degrees.
+                verticalLine.boundTo(lowerRightQuadrant), // 90 Degrees.
+                negFortyFiveDegreeLine.boundTo(lowerLeftQuadrant), // 135 Degrees.
+                horizontalLine.boundTo(lowerLeftQuadrant), // 180 Degrees.
+                fortyFiveDegreeLine.boundTo(upperLeftQuadrant), // -135 Degrees.
+                verticalLine.boundTo(upperLeftQuadrant), // -90 Degrees.
+                negFortyFiveDegreeLine.boundTo(upperRightQuadrant)); // -45 Degrees.
+    }
+
+    private int getPiThreshForScanlines(LineSegment... scanlines) throws NoSuchFieldException {
+        List<Integer> threshPis = new ArrayList<Integer>(8);
+        for (LineSegment scanline : scanlines) {
+            int threshPi = getProcessedThreshPiForScanline(scanline);
+            if (threshPi >= 0 && threshPi <= 255) { // If is valid.
+                threshPis.add(threshPi);
+            }
+        }
+
+        if (threshPis.size() < 2) {
+            throw new NoSuchFieldException(
+                    "No CellBody found.  Unable to find PI threshold.");
+        }
+
+        Collections.sort(threshPis);
+
+        return threshPis.get((int) Math.round(0.75 * (threshPis.size() - 1)));
+    }
+
+    private List<Integer> getImgPixsForScanline(LineSegment scanline) {
+        List<Point> scanlinePoints = scanline.draw();
+        List<Integer> pis = new ArrayList<Integer>(scanlinePoints.size());
+        for (Point pt : scanlinePoints) {
+            pis.add(img.getPixelIntensity(pt.x, pt.y));
+        }
+        return pis;
+    }
+
+    private int getProcessedThreshPiForScanline(LineSegment scanline) {
+        List<Integer> rawData = getImgPixsForScanline(scanline);
+        List<Integer> processedData = new DataScanner(rawData)
+                .getProcessedData();
+
+        // The threshPI is the first pixel intensity with 4 consecutive buckets.
+        int currPI = -1; // invalid PI
+        int numConsecutiveBuckets = 0;
+        for (int bucketPI : processedData) {
+            if (bucketPI == currPI) {
+                numConsecutiveBuckets++;
+                if (numConsecutiveBuckets == 4) {
+                    return currPI;
+                }
+            } else {
+                currPI = bucketPI;
+                numConsecutiveBuckets = 1;
+            }
+        }
+
+        return -1; // invalid value
+    }
+
 
     /**
      * Finds the threshold value in a single direction away from the seed pixel.

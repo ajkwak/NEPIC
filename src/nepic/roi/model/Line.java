@@ -9,11 +9,11 @@ import nepic.util.Verify;
 /**
  * NOTE: all methods treating this treating a {@link Line} object as a line segment contain the word
  * 'segment' in their declarations.
- * 
+ *
  * @author AJ Parmidge
  * @since ????
  * @version AutoCBFnder_Alpha_v1-1-2013-03-14
- * 
+ *
  */
 public class Line {
     /**
@@ -63,7 +63,9 @@ public class Line {
     }
 
     /**
-     * 
+     *
+     * NOTE: remember that positive on the y-axis is going DOWN the image
+     *
      * @param pt a point that the line passes through
      * @param theta angle from the positive x axis (radians), from -pi/2 to pi/2
      */
@@ -91,7 +93,7 @@ public class Line {
 
     /**
      * Determines whether this line is vertical.
-     * 
+     *
      * @return true if this line is vertical (has a slope of infinity); otherwise false.
      */
     public boolean isVertical() {
@@ -100,7 +102,7 @@ public class Line {
 
     /**
      * Determines whether this line is horizontal.
-     * 
+     *
      * @return true if this line is horizontal (has a slope of zero); otherwise false;
      */
     public boolean isHorizontal() {
@@ -109,7 +111,7 @@ public class Line {
 
     /**
      * Determines if this line is parallel to (has the same slope as) the parameter line.
-     * 
+     *
      * @param other line to which to compare the slope of this line.
      * @return true if the two lines are parallel; otherwise false.
      */
@@ -136,7 +138,7 @@ public class Line {
 
     /**
      * Determines if this line is equivalent to the parameter line.
-     * 
+     *
      * @param other the line to which to compare this line.
      * @return true if this {@link Line} and <code> other </code> are equivalent lines (i.e. if they
      *         are parallel and share a point); otherwise returns false.
@@ -148,7 +150,7 @@ public class Line {
 
     /**
      * Finds the intersection between this line and the parameter line.
-     * 
+     *
      * @param other the line with which to find an intersection.
      * @return null if this {@link Line} and <code> other </code> are parallel. Otherwise returns
      *         the single intersection between the two lines.
@@ -252,13 +254,13 @@ public class Line {
 
     /**
      * Finds the intersection between this line and the parameter line segment.
-     * 
+     *
      * @param lineSegment the line segment with which to find an intersection.
      * @return null if this line does not cross the parameter line segment or if this line is
      *         equivalent to the line the segment would be if it were not being treated as a
      *         segment; otherwise returns the single intersection between this line and the
      *         parameter line segment.
-     * 
+     *
      */
     // Treats this as a line, other as a line segment
     public DoublePoint getIntersectionWithSegment(LineSegment lineSegment) {
@@ -292,7 +294,7 @@ public class Line {
     }
 
     /**
-     * 
+     *
      * @return the angle from the positive x-axis (from -pi/2 to pi/2).
      */
     public double getAngleFromX() { // TODO sth wrong here
