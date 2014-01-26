@@ -12,15 +12,15 @@ import javax.swing.*;
 import nepic.ButtonHandler;
 import nepic.IniConstants;
 import nepic.Nepic;
+import nepic.data.DataSet;
 import nepic.io.TiffOpener;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.logging.LoggerObserver;
-import nepic.util.ColoredPointList;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since ManualCBFinder_v1-6
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
@@ -71,7 +71,7 @@ public class Interface extends JFrame implements LoggerObserver {
         setJMenuBar(myMainMenu);
 
         // Image Display
-        img = new AnnotatableImage(maxNumRois);
+        // img = new AnnotatableImage();
         imgL = new JLabel();
         imgSP = new JScrollPane(imgL, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -95,7 +95,6 @@ public class Interface extends JFrame implements LoggerObserver {
         int windowWidth = Nepic.INI_CONSTANTS.WINDOW_WIDTH.getValue();
         int windowHeight = Nepic.INI_CONSTANTS.WINDOW_HEIGHT.getValue();
         setMySize(windowWidth, windowHeight);
-
     }// Interface
 
     // **************************************************
@@ -169,7 +168,7 @@ public class Interface extends JFrame implements LoggerObserver {
         btnPanel.setPgNum(thePgNum, totNumPgs);
 
         imgL.setIcon(new ImageIcon(theImage));
-        img.setImage(theImage);
+        img = new AnnotatableImage(theImage);
         repaint();
     }// setPage
 
@@ -293,23 +292,23 @@ public class Interface extends JFrame implements LoggerObserver {
         add(imgSP);
     }
 
-    public void redraw(int categoryId, ColoredPointList... newVals) {
-        img.redraw(categoryId, newVals);
+    public void draw(int categoryId, DataSet first, DataSet... rest) {
+        img.annotate(categoryId, first, rest);
         repaint();
     }// drawPixels
 
     public void recolor(int categoryId, int color) {
-        img.recolor(categoryId, color);
+        img.recolorAnnotation(categoryId, color);
         repaint();
     }// drawPixels
 
     public void erase(int categoryId) {
-        img.erase(categoryId);
+        img.eraseAnnotation(categoryId);
         repaint();
     }
 
     public void restoreImg() {
-        img.eraseAll();
+        img.clear();
         repaint();
     }// restoreImg
 
@@ -404,7 +403,7 @@ public class Interface extends JFrame implements LoggerObserver {
     // **************************************************
 
     /**
-     * 
+     *
      * @author AJ Parmidge
      * @version AutoCBFinder_Alpha_v0-9-2013-02-10
      */
@@ -416,7 +415,7 @@ public class Interface extends JFrame implements LoggerObserver {
     }// ExitHandler
 
     /**
-     * 
+     *
      * @version AutoCBFinder_Alpha_v0-9-2013-02-10
      */
     private void displayProgramInfo() {
@@ -448,7 +447,7 @@ public class Interface extends JFrame implements LoggerObserver {
     }
 
     /**
-     * 
+     *
      * @author AJ Parmidge
      * @version AutoCBFinder_Alpha_v0-9-2013-02-10
      */

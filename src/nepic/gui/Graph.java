@@ -1,22 +1,20 @@
+
 package nepic.gui;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import nepic.data.DataSet;
+import nepic.data.GraphData;
+import nepic.data.UnorderedDataSet;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.LineSegment.IncludeEnd;
 import nepic.roi.model.LineSegment.IncludeStart;
-import nepic.util.DataSet;
-import nepic.util.ColoredPointList;
-import nepic.util.GraphData;
+import nepic.util.Pair;
 import nepic.util.Verify;
 
 public class Graph extends JPanel {
@@ -29,15 +27,13 @@ public class Graph extends JPanel {
      */
     private boolean connectTheDots = true;
     /**
-     * Whether or not all of the data sets being graphed should be in-scale with each other on the
-     * x-axis.
+     * The interval between the gridlines on the y-axis (the horizontal gridlines).
      */
-    private boolean inScaleX = false;
+    private int yGridlineInterval = -1; // Initialize to invalid number.
     /**
-     * Whether or not all of the data sets being graphed should be in-scale with each other on the
-     * y-axis.
+     * The interval between the gridlines on the x-axis (the vertical gridlines).
      */
-    private boolean inScaleY = false;
+    private int xGridlineInterval = -1; // Initialize to invalid number.
     /**
      * The image upon which all of the data sets are being graphed.
      */
@@ -45,7 +41,9 @@ public class Graph extends JPanel {
     /**
      * The collection of all the data sets being graphed.
      */
-    private final GraphData data;
+    private GraphData data = null;
+
+    private JLabel topLabel, bottomLabel;
 
     /**
      * Creates a {@link Graph} of the given width, height, and background color that can handle and
@@ -57,19 +55,31 @@ public class Graph extends JPanel {
      * @param numDataSets the number of distinct data sets that must be handled by this
      *        {@link Graph}
      */
-    public Graph(int width, int height, int bkColor, GraphData data) {
+    public Graph(int width, int height, int bkColor) {
         Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
-        Verify.notNull(data, "GraphData");
+        setBackground(new Color(0x888888 /* dark grey */));
 
-        this.data = data.copy();
-        img = new AnnotatableImage(data.getMaxNumDataSetsSupported() + 2 /* Include axes, grid */)
-                .setImage(newMonochromeImg(width, height, bkColor));
+        img = new AnnotatableImage(newMonochromeImg(width, height, bkColor));
+
+        topLabel = new JLabel();
+        topLabel.setForeground(Color.white);
+        add(topLabel);
+        topLabel.setLocation(0, 0);
+        topLabel.setSize(50, 25);
+        topLabel.setVisible(true);
+
+        bottomLabel = new JLabel();
+        bottomLabel.setForeground(Color.white);
+        add(bottomLabel);
+        bottomLabel.setLocation(0, height - 25);
+        bottomLabel.setSize(50, 25);
+        bottomLabel.setVisible(true);
 
         JLabel imgLabel = new JLabel();
         imgLabel.setIcon(new ImageIcon(img.getImage()));
         add(imgLabel);
-        imgLabel.setLocation(0, 0);
-        imgLabel.setSize(width, height);
+        imgLabel.setLocation(0, 12);
+        imgLabel.setSize(width, height - 24);
         imgLabel.setVisible(true);
 
         setLayout(null);
@@ -79,89 +89,67 @@ public class Graph extends JPanel {
         setVisible(true);
     }
 
-    public Graph(int width, int height, int bkColor, int maxNumDataSets) {
-        Verify.argument(width > 0 && height > 0, "Graph must have a positive width and height");
-        Verify.argument(maxNumDataSets > 0, "Graph must support 1 or more data sets");
-
-        this.data = new GraphData(maxNumDataSets);
-        img = new AnnotatableImage(data.getMaxNumDataSetsSupported() + 2 /* Include axes, grid */)
-                .setImage(newMonochromeImg(width, height, bkColor));
-    }
-
     /**
-     * Adds the given values as a new data set on the graph.
+     * Sets the data underlying this {@link Graph} to the given {@link GraphData}.
      *
-     * @param newVals the data values to add
-     * @param rgb the color in which to draw the new data set on the graph
-     * @return the unique ID number of the newly added data set
+     * @param data the {@link GraphData} to set
+     * @return {@code this}, for chaining
      */
-    public int addDataSet(String name, List<? extends Point> values, int rgb) {
-        Verify.nonEmpty(values, "List<Point>");
-
-        // Make a DataSet out of the newVals
-        int id = data.addDataSet(name, values, rgb);
-        redrawDataSet(id);
-        return id;
-    }
-
-    /**
-     * Removes the data set with the given {@code id}.
-     *
-     * @param id the ID of the data set to remove
-     */
-    public void removeDataSet(int id) {
-        int initMinX = data.getMinX();
-        int initMaxX = data.getMaxX();
-        int initMinY = data.getMinY();
-        int initMaxY = data.getMaxY();
-
-        // Remove the data set.
-        data.removeDataSet(id);
-        img.erase(id);
-
-        // Determine if need to redraw entire image due to bounds change.
-        if ((inScaleX && (initMinX != data.getMinX() || initMaxX != data.getMaxX()))
-                || (inScaleY && (initMinY != data.getMinY() || initMaxY != data.getMaxY()))) {
-            redraw(connectTheDots, inScaleX, inScaleY);
+    public Graph setData(GraphData data) {
+        this.data = data;
+        if (data != null && !data.isEmpty()) {
+            refresh();
         }
+        return this;
     }
 
     /**
-     * Renames the data set with the given {@code id} to the given value.
+     * Sets the interval between the gridlines on the x-axis (the vertical gridlines). If the given
+     * gridline interval is invalid (non-positive), no vertical gridlines are drawn on this
+     * {@link Graph}.
      *
-     * @param id the ID of the data set to rename
-     * @param name the new name for the specified data set
+     * @param xGridlineInterval the gridline interval to set on the x-axis
+     * @return {@code this}, for chaining
      */
-    public void renameDataSet(int id, String name) {
-        data.redefineDataSetName(id, name);
+    public Graph setXGridlineInterval(int xGridlineInterval) {
+        this.xGridlineInterval = xGridlineInterval;
+        return this;
     }
 
     /**
-     * Recolors the dat aset with the given {@code id} to the given RGB color.
+     * Sets the interval between the gridlines on the y-axis (the horizontal gridlines). If the
+     * given gridline interval is invalid (non-positive), no horizontal gridlines are drawn on this
+     * {@link Graph}.
      *
-     * @param id the ID of the data set to recolor
-     * @param rgb the RGB color in which to recolor the specified data set
+     * @param xGridlineInterval the gridline interval to set on the y-axis
+     * @return {@code this}, for chaining
      */
-    public void recolorDataSet(int id, int rgb) {
-        data.redefineDataSetColor(id, rgb);
-        redrawDataSet(id);
+    public Graph setYGridlineInterval(int yGridlineInterval) {
+        this.yGridlineInterval = yGridlineInterval;
+        return this;
     }
 
     /**
-     * Redraws the graph with the given conditions.
+     * Sets whether or not data points of the same {@link DataSet} in the underlying
+     * {@link GraphData} should be connected in the graph.
      *
-     * @param connectTheDots whether or not the data points in the data sets should be connected
-     * @param inScaleX whether or not to draw the graph in-scale in the x direction (if
-     *        {@code false}, then all data sets will cover the entirety of the x-axis)
-     * @param inScaleY whether or not to draw the graph in-scale in the y direction (if
-     *        {@code false}, then all data sets will cover the entirety of the y-axis)
+     * @return {@code this}, for chaining
      */
-    public void redraw(boolean connectTheDots, boolean inScaleX, boolean inScaleY) {
-        this.connectTheDots = connectTheDots;
-        this.inScaleX = inScaleX;
-        this.inScaleY = inScaleY;
-        for (int id : data.getValidIds()) {
-            redrawDataSet(id);
+    public Graph connectDataPoints(boolean connect) {
+        this.connectTheDots = connect;
+        return this;
+    }
+
+    /**
+     * Refreshes the graph after some change in the underlying {@link GraphData} was made or after a
+     * control parameter of the graphing process was changed.
+     */
+    public void refresh() {
+        img.clear();
+        if (data != null) {
+            ConvolutionData cData = determineCurrentConvolutionData();
+            drawGridlines(cData);
+            drawDataSets(cData);
         }
     }
 
@@ -183,110 +171,137 @@ public class Graph extends JPanel {
         return graphImage;
     }
 
-    private List<Point> convolveDatasetForDrawing(DataSet dataSet) {
-        // Determine the maxima and minima for graphing this data set.
-        int minX = inScaleX ? data.getMinX() : dataSet.getMinX();
-        int maxX = inScaleX ? data.getMaxX() : dataSet.getMaxX();
-        int minY = inScaleY ? data.getMinY() : dataSet.getMinY();
-        int maxY = inScaleY ? data.getMaxX() : dataSet.getMaxY();
-
+    private ConvolutionData determineCurrentConvolutionData() {
         // Determine the multiplier and offset to graph this data set properly in the x direction.
-        double ratioX;
-        long offsetX;
+        int minX = data.getMinX();
+        int maxX = data.getMaxX();
+        double xMultiplier;
+        long xOffset;
         if (minX == maxX) {
-            ratioX = 1;
-            offsetX = img.getWidth() / 2;
+            xMultiplier = 1;
+            xOffset = img.getWidth() / 2;
         } else {
-            ratioX = (double) (img.getWidth() - 1) / (maxX - minX);
-            offsetX = 0 - Math.round(ratioX * minX);
+            xMultiplier = (double) (img.getWidth() - 1) / (maxX - minX);
+            xOffset = 0 - Math.round(xMultiplier * minX);
         }
 
         // Determine the multiplier and offset to graph this data set properly in the y direction.
+        int minY = data.getMinY();
+        int maxY = data.getMaxY();
         int imgMaxY = img.getHeight() - 1;
-        double ratioY;
-        long offsetY;
+        double yMultiplier;
+        long yOffset;
         if (minY == maxY) {
-            ratioY = 1;
-            offsetY = img.getHeight() / 2;
+            yMultiplier = 1;
+            yOffset = img.getHeight() / 2;
         } else {
-            ratioY = (double) imgMaxY / (maxY - minY);
-            offsetY = 0 - Math.round(ratioY * minY);
+            yMultiplier = (double) imgMaxY / (maxY - minY);
+            yOffset = 0 - Math.round(yMultiplier * minY);
         }
 
+        return new ConvolutionData(xMultiplier, xOffset, yMultiplier, yOffset);
+    }
+
+    private void drawGridlines(ConvolutionData cData) {
+        // Draw the x-gridlines.
+        DataSet gridlines = new UnorderedDataSet().setRgb(0x444444 /* Light Gray */);
+        if (xGridlineInterval > 0) { // If the xGridlineInterval is valid.
+            for (int xGridline = determineMinimumGridline(data.getMinX(), xGridlineInterval); xGridline <= data
+                    .getMaxX(); xGridline += xGridlineInterval) {
+                int convolvedX = convolveX(xGridline, cData);
+                for (int y = 0; y < img.getHeight(); y++) {
+                    gridlines.add(new Point(convolvedX, y));
+                }
+            }
+        }
+
+        // Draw the y-gridlines
+        if (yGridlineInterval > 0) {
+            for (int yGridline = determineMinimumGridline(data.getMinY(), yGridlineInterval); yGridline <= data
+                    .getMaxY(); yGridline += yGridlineInterval) {
+                int convolvedY = convolveY(yGridline, cData);
+                for (int x = 0; x < img.getWidth(); x++) {
+                    gridlines.add(new Point(x, convolvedY));
+                }
+            }
+        }
+
+        // Annotate the gridlines onto the image.
+        if (!gridlines.isEmpty()) {
+            img.annotate(0, gridlines);
+        }
+    }
+
+    private int determineMinimumGridline(int graphMin, int gridlineInterval) {
+        int mod = graphMin % gridlineInterval;
+        return mod == 0 ? graphMin : graphMin + (gridlineInterval - mod);
+    }
+
+    private void drawDataSets(ConvolutionData cData) {
+        int id = 1;
+        for (Pair<String, ? extends DataSet> dataEntry : data) {
+            // Redraws the data set.
+            DataSet convolvedData = convolveDataset(dataEntry.second, cData);
+            if (connectTheDots) {
+                DataSet connectedData = new UnorderedDataSet();
+                connectedData.setRgb(convolvedData.getRgb());
+                Point startPt = null;
+                for (Point datum : convolvedData) {
+                    Point endPt = datum;
+                    if (startPt != null) {
+                        connectedData.addAll(
+                                new LineSegment(startPt, endPt).draw(IncludeStart.YES,
+                                        IncludeEnd.NO));
+                    }
+                    startPt = endPt;
+                }
+                connectedData.add(startPt); // Adds the last point in the convolved data.
+                img.annotate(id, connectedData);
+            } else {
+                img.annotate(id, convolvedData);
+            }
+            id++;
+        }
+        topLabel.setText("" + data.getMaxY());
+        bottomLabel.setText("" + data.getMinY());
+    }
+
+    private DataSet convolveDataset(DataSet dataSet, ConvolutionData cData) {
         // Convolve the actual data set to fit on the graph when drawn.
-        List<Point> convolvedData = new ArrayList<Point>(dataSet.size());
+        DataSet convolvedData = new UnorderedDataSet();
+        convolvedData.setRgb(dataSet.getRgb());
         for (Point datum : dataSet) {
-            Point convolvedDatum = new Point(
-                    (int) Math.round(ratioX * datum.x + offsetX),
-                    imgMaxY - (int) Math.round(ratioY * datum.y + offsetY));
+            Point convolvedDatum = new Point(convolveX(datum.x, cData), convolveY(datum.y, cData));
             convolvedData.add(convolvedDatum);
         }
         return convolvedData;
     }
 
+    private int convolveX(int x, ConvolutionData cData) {
+        return (int) Math.round(cData.xMultiplier * x + cData.xOffset);
+    }
+
+    private int convolveY(int y, ConvolutionData cData) {
+        return (img.getHeight() - 1) - (int) Math.round(cData.yMultiplier * y + cData.yOffset);
+    }
+
     /**
-     * Redraws (graphs) the ColoredDataSet at the given unique ID on the actual graph image.
+     * A simple class made for storing convolution data, which maps the data in the current
+     * {@link GraphData} to pixels on the {@link Graph} image.
      *
-     * @param id the ID of the data set to graph
+     * @author AJ Parmidge
      */
-    private void redrawDataSet(int id) {
-        DataSet dataSet = data.getDataSet(id);
-        if (dataSet == null || dataSet.isEmpty()) { // Then no need to redraw the data set.
-            return;
+    private class ConvolutionData {
+        private final double xMultiplier;
+        private final double yMultiplier;
+        private final long xOffset;
+        private final long yOffset;
+
+        private ConvolutionData(double xMultiplier, long xOffset, double yMultiplier, long yOffset) {
+            this.xMultiplier = xMultiplier;
+            this.xOffset = xOffset;
+            this.yMultiplier = yMultiplier;
+            this.yOffset = yOffset;
         }
-        List<Point> convolvedData = convolveDatasetForDrawing(dataSet);
-        if (connectTheDots) {
-            List<Point> connectedData = new LinkedList<Point>();
-            Point startPt = null;
-            for(Point datum : convolvedData){
-                Point endPt = datum;
-                if(startPt != null){
-                    connectedData.addAll(
-                            new LineSegment(startPt, endPt).draw(IncludeStart.YES, IncludeEnd.NO));
-                }
-                startPt = endPt;
-            }
-            connectedData.add(startPt); // Adds the last point in the convolved data.
-            img.redraw(id, new ColoredPointList(connectedData, dataSet.getRgb()));
-        } else {
-            img.redraw(id, new ColoredPointList(convolvedData, dataSet.getRgb()));
-        }
-    }
-
-    /* TEST STUFF */
-
-    private static final int[] TEST_DATA_1 = new int[]{
-        32,33,31,34,33,34,36,31,33,32,31,31,33,33,33,36,35,35,35,36,32,35,33,36,35,37,32,36,37,
-        35,37,34,38,36,39,41,49,58,57,65,64,61,58,62,62,57,48,47,44,42,42,36,35,37,31,32,32,32,
-        32,32,31,31,33,31,32,33,32,36,32,32,29,33,29,31,31,33,33,31,33,28,30,31,30,30};
-    private static final int[] TEST_DATA_2 = new int[]{
-        25,29,21,23,26,24,23,27,26,29,27,25,25,27,28,27,25,24,27,25,28,28,27,27,30,27,28,27,27,26,
-        28,26,27,28,30,28,29,27,25,30,31,28,27,25,27,30,27,31,30,29,47,55,71,88,90,75,62,52,43,39,
-        30,34,32,32,29,28,28,29,30,29,30,31,30,32,30,30,31,32,29,29,30,32,32,27,29,26,26,29,26,29,
-        29,28,27,29,28,29,28,32,27,30,32,30,27,28,30};
-
-    private static List<Point> testData(int[] yVals, int xOffset) {
-        List<Point> testDataSet = new ArrayList<Point>(yVals.length);
-        for (int i = 0; i < yVals.length; i++) {
-            testDataSet.add(new Point(i + xOffset, yVals[i]));
-        }
-        return testDataSet;
-    }
-
-    public static void main(String[] args) {
-        Graph graph = new Graph(300, 300, 0xcc99ff, new GraphData(5));
-        int dataId1 = graph.addDataSet("Hello", testData(TEST_DATA_2, -13), 0x000000);
-        // // graph.redrawDataSet(dataId, testData(TEST_DATA_2, -13), 0xffffff);
-        int dataId2 = graph.addDataSet("World", testData(TEST_DATA_1, -15), 0xffffff);
-        graph.recolorDataSet(dataId2, 0xff0000);
-        graph.redraw(true, true, true);
-        graph.removeDataSet(dataId1);
-        // graph.recolorDataSet(dataId1, 0x008800);
-        // graph.redraw(true, true, true);
-        // graph.recolorDataSet(dataId2, 0xff0000);
-        // graph.removeDataSet(dataId1);
-        // // graph.redraw(true, true /* inScaleX */, true /* inScaleY */);
-        // JLabel picLabel = new JLabel(new ImageIcon(graph.img.getImage()));
-        JOptionPane.showMessageDialog(null, graph, "About", JOptionPane.PLAIN_MESSAGE, null);
     }
 }
