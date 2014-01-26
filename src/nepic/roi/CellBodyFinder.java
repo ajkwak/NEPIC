@@ -4,7 +4,6 @@ package nepic.roi;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,6 +59,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         List<Point> edges = new LinkedList<Point>();
         edges.add(seedPixel);
         try {
+            roi.setEdgeFinders(processScanlines(seedPixel));
             int minPi = determinePiThreshold(eThresh, seedPixel);
             Nepic.log(EventType.VERBOSE, "minPI = " + minPi);
 
@@ -341,7 +341,8 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
      * @return
      * @throws NoSuchFieldException
      */
-    private int determinePiThreshold(int eThresh, Point seedPix) throws NoSuchFieldException {
+    private int determinePiThreshold(int eThresh, Point seedPix)
+            throws NoSuchFieldException {
         // Generate possible threshold values.
         int numThreshVals = 8;
         List<Point> threshVals = new ArrayList<Point>(numThreshVals);
@@ -393,6 +394,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         Line negFortyFiveDegreeLine = new Line(seedPixel, -Math.PI / 4);
 
         return getPiThreshForScanlines(
+                seedPixel,
                 horizontalLine.boundTo(upperRightQuadrant), // 0 Degrees.
                 fortyFiveDegreeLine.boundTo(lowerRightQuadrant), // 45 Degrees.
                 verticalLine.boundTo(lowerRightQuadrant), // 90 Degrees.
@@ -403,10 +405,25 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                 negFortyFiveDegreeLine.boundTo(upperRightQuadrant)); // -45 Degrees.
     }
 
-    private int getPiThreshForScanlines(LineSegment... scanlines) throws NoSuchFieldException {
+    private DataScanner[] processScanlines(Point seedPixel){
+        DataScanner[] scanners = new DataScanner[4];
+        scanners[0] = new DataScanner(
+                getImgPixsForScanline(new Line(seedPixel, 0).boundTo(img))); // Horizontal.
+        scanners[1] = new DataScanner(
+                getImgPixsForScanline(new Line(seedPixel, Math.PI / 4).boundTo(img))); // 45 Deg.
+        scanners[2] = new DataScanner(
+                getImgPixsForScanline(new Line(seedPixel, -Math.PI / 2).boundTo(img))); // Vertical.
+        scanners[3] = new DataScanner(
+                getImgPixsForScanline(new Line(seedPixel, -Math.PI / 4).boundTo(img))); // -45 Deg.
+        return scanners;
+    }
+
+    private int getPiThreshForScanlines(Point seedPix, LineSegment... scanlines)
+            throws NoSuchFieldException {
         List<Integer> threshPis = new ArrayList<Integer>(8);
-        for (LineSegment scanline : scanlines) {
-            int threshPi = getProcessedThreshPiForScanline(scanline);
+        for (int i = 0; i < scanlines.length; i++) {
+            DataScanner scanner = new DataScanner(getImgPixsForScanline(scanlines[i]));
+            int threshPi = getProcessedThreshPiForData(scanner);
             if (threshPi >= 0 && threshPi <= 255) { // If is valid.
                 threshPis.add(threshPi);
             }
@@ -417,11 +434,16 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                     "No CellBody found.  Unable to find PI threshold.");
         }
 
-        System.out.println("threshPIs = " + threshPis);
+        double avgThreshPi = 0;
+        for(int threshPi : threshPis){
+            avgThreshPi+= threshPi;
+        }
+        avgThreshPi /= threshPis.size();
 
-        Collections.sort(threshPis);
+        return (int) Math.round(
+                avgThreshPi + 0.25 * (img.getPixelIntensity(seedPix.x, seedPix.y) - avgThreshPi));
 
-        return threshPis.get((int) Math.round(0.75 * (threshPis.size() - 1)));
+        //return threshPis.get((int) Math.round(0.75 * (threshPis.size() - 1)));
     }
 
     private List<Integer> getImgPixsForScanline(LineSegment scanline) {
@@ -433,10 +455,8 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         return pis;
     }
 
-    private int getProcessedThreshPiForScanline(LineSegment scanline) {
-        List<Integer> rawData = getImgPixsForScanline(scanline);
-        List<Integer> processedData = new DataScanner(rawData)
-                .getProcessedData();
+    private int getProcessedThreshPiForData(DataScanner scanner) {
+        List<Integer> processedData = scanner.getProcessedData();
 
         // The threshPI is the first pixel intensity with 4 consecutive buckets.
         int currPI = -1; // invalid PI

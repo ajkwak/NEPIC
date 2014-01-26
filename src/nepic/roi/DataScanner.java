@@ -450,7 +450,8 @@ public class DataScanner {
                 28, 29, 33, 30, 35, 31, 37, 32, 33, 29, 36, 31, 31, 31, 32, 32, 34, 32, 31, 31, 33,
                 35, 31, 31, 32, 28, 30, 33, 32, 29, 33, 33, 31, 31));
         JOptionPane.showMessageDialog(null,
-                new Graph(800, 600, 0x000000).setData(dataScanner.getGraphData()),
+                new Graph(800, 600, 0x000000)
+                        .setData(dataScanner.getGraphData()).setYGridlineInterval(5),
                 "Scanline Graph",
                 JOptionPane.PLAIN_MESSAGE, null);
         // System.out.println("Bucket Set originally = " + arrayToList(dataScanner.bucketSet));

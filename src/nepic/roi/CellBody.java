@@ -12,16 +12,17 @@ import nepic.roi.model.Histogram;
 import nepic.util.Pixel;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_ALpha_v0-9-122212 (Called CellBody3 until AutoCBFinder_Alpha_v0-9_122212)
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
- * 
+ *
  */
 public class CellBody extends Roi<CellBodyConstraint<?>> {
     private Pixel seedPixel;
     private Blob cbArea;
     private Histogram piHist;
+    private DataScanner[] cbEdgeFinders = new DataScanner[8];
 
     private int minPi;
     private int eThresh;
@@ -81,6 +82,18 @@ public class CellBody extends Roi<CellBodyConstraint<?>> {
 
     public void setEdgeThresh(Integer newVal) {
         eThresh = newVal;
+    }
+
+    public DataScanner[] getEdgeFinders() {
+        return cbEdgeFinders;
+    }
+
+    public DataScanner getEdgeFinder(int idx) {
+        return cbEdgeFinders[idx];
+    }
+
+    public void setEdgeFinders(DataScanner[] edgeFinders) {
+        cbEdgeFinders = edgeFinders;
     }
 
     @Override

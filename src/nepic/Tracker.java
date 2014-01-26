@@ -16,7 +16,9 @@ import java.io.IOException;
 import javax.swing.JOptionPane;
 
 import nepic.data.DataSet;
+import nepic.data.GraphData;
 import nepic.data.UnorderedDataSet;
+import nepic.gui.Graph;
 import nepic.gui.HistogramViewPanel;
 import nepic.gui.Interface;
 import nepic.image.ConstraintMap;
@@ -33,6 +35,7 @@ import nepic.roi.BackgroundFinder;
 import nepic.roi.CellBody;
 import nepic.roi.CellBodyConstraint;
 import nepic.roi.CellBodyFinder;
+import nepic.roi.DataScanner;
 import nepic.roi.model.Histogram;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.Polygon;
@@ -662,6 +665,27 @@ public class Tracker {
 
     }
 
+    public class ViewScanlineHandler extends ButtonHandler {
+        private GraphData data;
+
+        public ViewScanlineHandler(String name, DataScanner scanner) {
+            super(name);
+            this.data = scanner.getGraphData();
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent arg0) {
+            DataSet minPiData = new UnorderedDataSet();
+            minPiData.add(new Point(data.getMinX(), cbCand.getMinPi()));
+            minPiData.add(new Point(data.getMaxX(), cbCand.getMinPi()));
+            data.setDataSet("minPI", minPiData, 0xffff00 /* yellow */);
+            JOptionPane.showMessageDialog(myGUI,
+                    new Graph(800, 600, 0x000000).setData(data).setYGridlineInterval(5));
+            data.removeDataSet("minPI");
+        }
+
+    }
+
     // *********************************************************************************************
     // Change Current Page
     // *********************************************************************************************
@@ -732,14 +756,19 @@ public class Tracker {
                     if (ImagePage.candNumLegal(roiId)) {
                         if (cbCand != null && roiId == cbCand.getId()) {
                             myGUI.openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
-                                    new ViewHistHandler("View CB Hist", cbCand.getPiHist()));
+                                    new ViewHistHandler("View CB Hist", cbCand.getPiHist()),
+                                    new ViewScanlineHandler("0 Deg", cbCand.getEdgeFinder(0)),
+                                    new ViewScanlineHandler("45 Deg", cbCand.getEdgeFinder(1)),
+                                    new ViewScanlineHandler("90 Deg", cbCand.getEdgeFinder(2)),
+                                    new ViewScanlineHandler("135 Deg", cbCand.getEdgeFinder(3)));
+                            // TODO: also allow users to see the scanlines.
                         } else if (bkCand != null && roiId == bkCand.getId()) {
                             myGUI.openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
                                     new ViewHistHandler("View BK Hist", bkCand.getPiHist()),
                                     new ViewHistHandler("View BK Edge Hist", bkCand.getEdgeHist()));
                         } else {
-                            myGUI
-                                    .displayCurrentAction("Unable to determine identity of clicked ROI");
+                            myGUI.displayCurrentAction(
+                                    "Unable to determine identity of clicked ROI");
                         }
                         // myGUI.recolor(roiId, Annotation.SELECTED_ROI);
                     } else {
