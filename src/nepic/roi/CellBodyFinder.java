@@ -417,6 +417,8 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                     "No CellBody found.  Unable to find PI threshold.");
         }
 
+        System.out.println("threshPIs = " + threshPis);
+
         Collections.sort(threshPis);
 
         return threshPis.get((int) Math.round(0.75 * (threshPis.size() - 1)));
@@ -585,7 +587,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                 int ePixY = ePixel.y;
                 if (ePixX > 0 && img.getId(ePixX - 1, ePixY) != roiId) {
                     int checkIfAdd = img.getPixelIntensity(ePixX - 1, ePixY);
-                    if (checkIfAdd >= minPi) {
+                    if (shouldAddPixel(ePixel, minPi)) {
                         Pixel pixToAdd = new Pixel(ePixX - 1, ePixY, checkIfAdd);
                         numErrors += tryToAdd(pixToAdd, candEdges, roi);
                         extendedBy.add(pixToAdd);
@@ -593,7 +595,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                 }// if pixel to left of pixel being examined is not already in cand
                 if (ePixX < img.width - 1 && img.getId(ePixX + 1, ePixY) != roiId) {
                     int checkIfAdd = img.getPixelIntensity(ePixX + 1, ePixY);
-                    if (checkIfAdd >= minPi) {
+                    if (shouldAddPixel(ePixel, minPi)) {
                         Pixel pixToAdd = new Pixel(ePixX + 1, ePixY, checkIfAdd);
                         numErrors += tryToAdd(pixToAdd, candEdges, roi);
                         extendedBy.add(pixToAdd);
@@ -601,7 +603,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                 }// if pixel to the right of pixel being examined is not already in cand
                 if (ePixY > 0 && img.getId(ePixX, ePixY - 1) != roiId) {
                     int checkIfAdd = img.getPixelIntensity(ePixX, ePixY - 1);
-                    if (checkIfAdd >= minPi) {
+                    if (shouldAddPixel(ePixel, minPi)) {
                         Pixel pixToAdd = new Pixel(ePixX, ePixY - 1, checkIfAdd);
                         numErrors += tryToAdd(pixToAdd, candEdges, roi);
                         extendedBy.add(pixToAdd);
@@ -609,7 +611,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                 }// if pixel above pixel being examined not already in cand
                 if (ePixY < img.height - 1 && img.getId(ePixX, ePixY + 1) != roiId) {
                     int checkIfAdd = img.getPixelIntensity(ePixX, ePixY + 1);
-                    if (checkIfAdd >= minPi) {
+                    if (shouldAddPixel(ePixel, minPi)) {
                         Pixel pixToAdd = new Pixel(ePixX, ePixY + 1, checkIfAdd);
                         numErrors += tryToAdd(pixToAdd, candEdges, roi);
                         extendedBy.add(pixToAdd);
@@ -638,6 +640,38 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                     + " unable to extend edges of cbCand");
         }
     }// extendEdges
+
+    private boolean shouldAddPixel(Point toAdd, int minPI) {
+        // Only add if at least four of the surrounding pixels are ALSO over the minPI.
+        if (img.getPixelIntensity(toAdd.x, toAdd.y) >= minPI) {
+            // Then check the surrounding pixels.
+            int numSurroundingPixelsOverThresh = 0;
+            if (toAdd.x > 0) {
+                if (img.getPixelIntensity(toAdd.x - 1, toAdd.y) >= minPI) {
+                    numSurroundingPixelsOverThresh++;
+                }
+            }
+            if (toAdd.x < img.width - 1) {
+                if (img.getPixelIntensity(toAdd.x + 1, toAdd.y) >= minPI) {
+                    numSurroundingPixelsOverThresh++;
+                }
+            }
+            if (toAdd.y > 0) {
+                if (img.getPixelIntensity(toAdd.x, toAdd.y - 1) >= minPI) {
+                    numSurroundingPixelsOverThresh++;
+                }
+            }
+            if (toAdd.y < img.height - 1) {
+                if (img.getPixelIntensity(toAdd.x, toAdd.y + 1) >= minPI) {
+                    numSurroundingPixelsOverThresh++;
+                }
+            }
+            if (numSurroundingPixelsOverThresh >= 3) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private int tryToAdd(Pixel toAdd, DoubleLinkRing<Point> candEdges, Roi<?> roi) {
         int numErrors = 0;

@@ -15,6 +15,8 @@ import java.io.IOException;
 
 import javax.swing.JOptionPane;
 
+import nepic.data.DataSet;
+import nepic.data.UnorderedDataSet;
 import nepic.gui.HistogramViewPanel;
 import nepic.gui.Interface;
 import nepic.image.ConstraintMap;
@@ -34,12 +36,11 @@ import nepic.roi.CellBodyFinder;
 import nepic.roi.model.Histogram;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.Polygon;
-import nepic.util.ColoredPointList;
 import nepic.util.Pair;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-9_2013-01-08
  * @version Nepic_Alpha_v1-1-2013-03-13; Merged with Controller in Nepic_Alpha_v1-1-2013-03-13
@@ -188,7 +189,7 @@ public class Tracker {
     }
 
     /**
-     * 
+     *
      * @param numPgsSearch the number of pages before the previous page to go back and search for
      *        for a valid {@link PageInfo} with valid ROI candidates.
      * @return
@@ -304,7 +305,7 @@ public class Tracker {
     }// ChooseFileHandler
 
     /**
-     * 
+     *
      * @return true if background updated, otherwise false
      */
     public boolean findCB() {
@@ -317,7 +318,7 @@ public class Tracker {
     }
 
     /**
-     * 
+     *
      * @param corners
      * @return true if background updated, otherwise false
      */
@@ -529,7 +530,7 @@ public class Tracker {
     // *********************************************************************************************
 
     /**
-     * 
+     *
      * @return true if the previous page had valid ROIs; otherwise false
      */
     public boolean canTrackFromPrevPage() {
@@ -542,7 +543,7 @@ public class Tracker {
      * NOTE: It is recommended that {@link Tracker#canTrackFromPrevPage()} is called (and returns
      * true) before this method to avoid throwing an {@link IllegalStateException}
      * </p>
-     * 
+     *
      * @return true if the CellBody was successfully tracked from the last page; otherwise false
      * @throws IllegalStateException if the previous page did not have valid ROIs
      */
@@ -607,8 +608,16 @@ public class Tracker {
     private boolean redrawCbCand() {
         // Integer cbId = tracker.getCbCandId();
         if (cbCand != null) {
-            myGUI.redraw(cbCand.getId(), new ColoredPointList(cbCand.getEdges(), (cbCand
-                    .isModified() ? Nepic.CELL_BODY_CAND_COLOR : Nepic.CELL_BODY_COLOR)));
+            DataSet cbCandPixels = new UnorderedDataSet();
+            cbCandPixels.addAll(cbCand.getEdges());
+            if (cbCand.isModified()) {
+                cbCandPixels.setRgb(Nepic.CELL_BODY_CAND_COLOR);
+            } else {
+                cbCandPixels.setRgb(Nepic.CELL_BODY_COLOR);
+            }
+            myGUI.draw(cbCand.getId(), cbCandPixels);
+            // myGUI.redraw(cbCand.getId(), new ColoredPointList(cbCand.getEdges(), (cbCand
+            // .isModified() ? Nepic.CELL_BODY_CAND_COLOR : Nepic.CELL_BODY_COLOR)));
             return true;
         }
         // else {
@@ -620,8 +629,16 @@ public class Tracker {
     private boolean redrawBkCand() {
         // Integer bkId = tracker.getBkCandId();
         if (bkCand != null) {
-            myGUI.redraw(bkCand.getId(), new ColoredPointList(bkCand.getEdges(), (bkCand
-                    .isModified() ? Nepic.BACKGROUND_CAND_COLOR : Nepic.BACKGROUND_COLOR)));
+            DataSet bkCandPixels = new UnorderedDataSet();
+            bkCandPixels.addAll(bkCand.getEdges());
+            if (bkCand.isModified()) {
+                bkCandPixels.setRgb(Nepic.BACKGROUND_CAND_COLOR);
+            } else {
+                bkCandPixels.setRgb(Nepic.BACKGROUND_COLOR);
+            }
+            myGUI.draw(bkCand.getId(), bkCandPixels);
+            // myGUI.redraw(bkCand.getId(), new ColoredPointList(bkCand.getEdges(), (bkCand
+            // .isModified() ? Nepic.BACKGROUND_CAND_COLOR : Nepic.BACKGROUND_COLOR)));
             return true;
         }
         // else {
@@ -767,8 +784,10 @@ public class Tracker {
                             new Point(clickLoc.x, dragLoc.y),
                             dragLoc,
                             new Point(dragLoc.x, clickLoc.y) });
-                    myGUI.redraw(Nepic.MOUSE_ACTION_ID, new ColoredPointList(newRec.getEdges(),
-                            Nepic.MOUSE_ACTION_COLOR));
+                    DataSet mouseActionPixels = new UnorderedDataSet();
+                    mouseActionPixels.addAll(newRec.getEdges());
+                    mouseActionPixels.setRgb(Nepic.MOUSE_ACTION_COLOR);
+                    myGUI.draw(Nepic.MOUSE_ACTION_ID, mouseActionPixels);
                 } else {
                     myGUI.erase(Nepic.MOUSE_ACTION_ID);
                 }
