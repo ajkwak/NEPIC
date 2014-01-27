@@ -213,7 +213,7 @@ public class Tracker {
     // Find Background
     // *********************************************************************************************
 
-    public class BkCharacterizer extends ButtonHandler {
+    public class BkCharacterizer extends TitledActionListener {
         public BkCharacterizer() {
             super("Re-Define BK");
         }
@@ -269,7 +269,7 @@ public class Tracker {
     // Find CellBody
     // *********************************************************************************************
 
-    public class CBFinder extends ButtonHandler {
+    public class CBFinder extends TitledActionListener {
         public CBFinder() {
             super("Find Cell Body");
         }
@@ -367,7 +367,7 @@ public class Tracker {
     // Modify CellBody
     // *********************************************************************************************
 
-    public class EnlargeCandHandler extends ButtonHandler {
+    public class EnlargeCandHandler extends TitledActionListener {
         public EnlargeCandHandler() {
             super("Enlarge Candidate");
         }
@@ -384,7 +384,7 @@ public class Tracker {
         }// actionPerformed
     }// ChooseFileHandler
 
-    public class ShrinkCandHandler extends ButtonHandler {
+    public class ShrinkCandHandler extends TitledActionListener {
         public ShrinkCandHandler() {
             super("Shrink Candidate");
         }
@@ -434,7 +434,7 @@ public class Tracker {
     // Accept ROIs
     // *********************************************************************************************
 
-    public class AcceptRoiHandler extends ButtonHandler {
+    public class AcceptRoiHandler extends TitledActionListener {
         Point midpoint = new Point(200, 200);
         double theta = 0;
         final double phi = Math.PI / 12;
@@ -650,7 +650,7 @@ public class Tracker {
         return false;
     }
 
-    public class ViewHistHandler extends ButtonHandler {
+    public class ViewHistHandler extends TitledActionListener {
         private Histogram hist;
 
         public ViewHistHandler(String name, Histogram hist) {
@@ -665,7 +665,7 @@ public class Tracker {
 
     }
 
-    public class ViewScanlineHandler extends ButtonHandler {
+    public class ViewScanlineHandler extends TitledActionListener {
         private GraphData data;
 
         public ViewScanlineHandler(String name, DataScanner scanner) {

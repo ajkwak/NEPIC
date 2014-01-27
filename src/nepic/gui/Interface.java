@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import javax.swing.*;
 
-import nepic.ButtonHandler;
+import nepic.TitledActionListener;
 import nepic.IniConstants;
 import nepic.Nepic;
 import nepic.data.DataSet;
@@ -56,7 +56,7 @@ public class Interface extends JFrame implements LoggerObserver {
             ActionListener pgIncrementor,
             MouseListener clickHandler,
             MouseMotionListener dragHandler,
-            ButtonHandler... functionButtonHandlers) {
+            TitledActionListener... functionButtonHandlers) {
 
         // General
         super(Nepic.getFullAppName());
@@ -264,10 +264,10 @@ public class Interface extends JFrame implements LoggerObserver {
         return null;
     }
 
-    public void openJPopupMenu(Component invoker, int x, int y, ButtonHandler... handlers) {
+    public void openJPopupMenu(Component invoker, int x, int y, TitledActionListener... handlers) {
         JPopupMenu popup = new JPopupMenu();
-        for (ButtonHandler handler : handlers) {
-            JMenuItem menuItem = new JMenuItem(handler.getButtonText());
+        for (TitledActionListener handler : handlers) {
+            JMenuItem menuItem = new JMenuItem(handler.getText());
             menuItem.addActionListener(handler);
             popup.add(menuItem);
         }

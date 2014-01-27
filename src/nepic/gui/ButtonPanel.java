@@ -5,7 +5,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import nepic.ButtonHandler;
+import nepic.TitledActionListener;
 
 /**
  * 
@@ -37,7 +37,7 @@ public class ButtonPanel extends JPanel {
     protected ButtonPanel(
             ActionListener prevPgHandler,
             ActionListener nxtPgHandler,
-            ButtonHandler[] functHandlers) {
+            TitledActionListener[] functHandlers) {
         setLayout(null);
         setBorder(UtilityMethods.PANEL_BORDERS);
         setVisible(true);
@@ -54,7 +54,7 @@ public class ButtonPanel extends JPanel {
         buttons = new JButton[numFunctButtons];
         int yPos = spacer;
         for (int i = 0; i < buttons.length; i++) {
-            buttons[i] = UtilityMethods.makeButton(functHandlers[i].getButtonText(),
+            buttons[i] = UtilityMethods.makeButton(functHandlers[i].getText(),
                     functButtonWidth, functButtonHeight, spacer, yPos, false, functHandlers[i],
                     this);
             yPos += functButtonHeight + spacer;
