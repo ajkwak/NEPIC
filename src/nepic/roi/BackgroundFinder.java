@@ -7,16 +7,16 @@ import nepic.Nepic;
 import nepic.image.ConstraintMap;
 import nepic.image.RoiFinder;
 import nepic.logging.EventType;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.roi.model.Polygon;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_ALpha_v0-9_122212
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
+ *
  */
 public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Background> {
     // Need to initialize these values in order to track the background
@@ -145,7 +145,7 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
     }
 
     /**
-     * 
+     *
      */
     @Override
     public void removeFeature(Background roi) {
@@ -183,8 +183,8 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         roi.setArea(bkArea);
 
         // Make Histograms for bkArea
-        Histogram piHist = Histogram.newPixelIntensityHistogram();
-        Histogram edgeHist = Histogram.newEdgeHistogram();
+        Histogram.Builder piHistBuilder = new Histogram.Builder(0, 255);
+        Histogram.Builder edgeHistBuilder = new Histogram.Builder(-255, 255);
 
         // Fill histograms
         List<Point> bkPts = bkArea.getInnards();
@@ -193,10 +193,10 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
             int y = bkPt.y;
             try {
                 int rl = img.getPixelIntensity(x, y);
-                piHist.addData(rl);
+                piHistBuilder.addValues(rl);
 
                 // edgeHist: add only 2 differences so don't double-count edges
-                edgeHist.addData(rl - img.getPixelIntensity(x + 1, y), rl
+                edgeHistBuilder.addValues(rl - img.getPixelIntensity(x + 1, y), rl
                         - img.getPixelIntensity(x, y + 1));
 
                 img.setId(x, y, roi);
@@ -216,8 +216,8 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         }
 
         // Set histograms to BK
-        roi.setPiHist(piHist);
-        roi.setEdgeHist(edgeHist);
+        roi.setPiHist(piHistBuilder.build());
+        roi.setEdgeHist(edgeHistBuilder.build());
     }
 
     private void initializeBkArea(Background roi, Polygon bkArea) {

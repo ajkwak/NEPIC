@@ -16,7 +16,7 @@ import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.roi.model.Blob;
 import nepic.roi.model.BoundingBox;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.roi.model.Line;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.Polygon;
@@ -267,12 +267,12 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         roi.setEdges(newEdges);
 
         // Make histogram for cb
-        Histogram cbPiHist = Histogram.newPixelIntensityHistogram();
+        Histogram.Builder cbPiHistBuilder = new Histogram.Builder(0, 255);
         for (Point cbPt : newEdges.getInnards()) {
             // For all points in the cell body
-            cbPiHist.addData(img.getPixelIntensity(cbPt.x, cbPt.y));
+            cbPiHistBuilder.addValues(img.getPixelIntensity(cbPt.x, cbPt.y));
         }
-        roi.setPiHist(cbPiHist);
+        roi.setPiHist(cbPiHistBuilder.build());
     }
 
     /**

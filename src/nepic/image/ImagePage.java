@@ -3,7 +3,7 @@ package nepic.image;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import nepic.roi.model.BoundingBox;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.util.BoundedRegion;
 import nepic.util.Pixel;
 import nepic.util.Verify;
@@ -400,13 +400,13 @@ public class ImagePage implements IdTaggedImage {
     }// setCandNum
 
     public Histogram makeHistogram() {
-        Histogram imgHist = Histogram.newPixelIntensityHistogram();
+        Histogram.Builder imgHistBuilder = new Histogram.Builder(0, 255);
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                imgHist.addData(getPixelIntensity(x, y));
+                imgHistBuilder.addValues(getPixelIntensity(x, y));
             }
         }
-        return imgHist;
+        return imgHistBuilder.build();
     }
 
     public int[] getDimensions() {

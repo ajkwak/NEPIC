@@ -4,7 +4,7 @@ import nepic.io.ComplexLabel;
 import nepic.io.Label;
 import nepic.roi.Background;
 import nepic.roi.CellBody;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.util.CsvFormattable;
 import nepic.util.Validatable;
 import nepic.util.Verify;
@@ -74,7 +74,7 @@ public class PageInfo implements CsvFormattable, Validatable {
     public double getPiRatio() {
         Verify.state(cb != null && bk != null,
                 "Neither the cell body nor the background for this PageInfo can be null!");
-        return cb.getPiHist().getAverage() / bk.getPiHist().getAverage();
+        return cb.getPiHist().getMean() / bk.getPiHist().getMean();
     }
 
     public static Label[] getCsvLabels() {

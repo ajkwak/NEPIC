@@ -8,7 +8,7 @@ import nepic.image.Roi;
 import nepic.io.ComplexLabel;
 import nepic.io.Label;
 import nepic.roi.model.Blob;
-import nepic.roi.model.Histogram;
+import nepic.data.Histogram;
 import nepic.util.Pixel;
 
 /**
