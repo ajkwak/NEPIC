@@ -1,10 +1,14 @@
-package nepic.util;
+package nepic.data;
 
 import static org.junit.Assert.*;
 
 import java.awt.Point;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+import nepic.util.BoundedRegion;
+import nepic.util.Lists;
+import nepic.util.TestBoundedRegion;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +30,6 @@ public class ImmutableDataSetTest {
     @Before
     public void setUp() {
         underlyingDataSet = new MutableDataSet();
-        underlyingDataSet.setName("Do you like my name?");
         underlyingDataSet.setRgb(0x684729);
         containedPoint1 = new Point(5, 6);
         containedPoint2 = new Point(5, 3);
@@ -41,16 +44,6 @@ public class ImmutableDataSetTest {
     @Test(expected = NullPointerException.class)
     public void constructor_Null_Throws() {
         new ImmutableDataSet((DataSet) null);
-    }
-
-    @Test
-    public void getName() {
-        assertEquals(underlyingDataSet.getName(), dataSet.getName());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setName_Throws() {
-        dataSet.setName("New name for DataSet");
     }
 
     @Test

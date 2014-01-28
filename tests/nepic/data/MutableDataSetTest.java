@@ -1,4 +1,4 @@
-package nepic.util;
+package nepic.data;
 
 import static org.junit.Assert.*;
 
@@ -7,6 +7,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+
+import nepic.util.BoundedRegion;
+import nepic.util.Lists;
+import nepic.util.TestBoundedRegion;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -29,39 +33,6 @@ public class MutableDataSetTest {
         dataSet = new MutableDataSet();
         assertTrue(dataSet.isEmpty());
         assertEquals(0, dataSet.size());
-        assertEquals("", dataSet.getName());
-    }
-
-    @Test
-    public void setName_NonEmptyString() {
-        String name = "Region of Interest";
-        assertFalse(name.equals(dataSet.getName()));
-
-        // Set data set name to the given value.
-        dataSet.setName(name);
-        assertEquals(name, dataSet.getName());
-    }
-
-    @Test
-    public void setName_EmptyString() {
-        dataSet.setName("nonEmptyString");
-        String name = "";
-        assertFalse(name.equals(dataSet.getName()));
-
-        // Set data set name to the given value.
-        dataSet.setName(name);
-        assertEquals(name, dataSet.getName());
-    }
-
-    @Test
-    public void setName_NullToEmptyString() {
-        dataSet.setName("nonEmptyString");
-        String name = null;
-        assertNotNull(dataSet.getName());
-
-        // Set data set name to the given value.
-        dataSet.setName(name);
-        assertEquals("", dataSet.getName());
     }
 
     @Test
