@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 
 import org.junit.Test;
@@ -16,13 +16,8 @@ import org.junit.Test;
  */
 public class VerifyTest {
 
-    @Test(expected = NullPointerException.class)
-    public void notNull_NullObject_Throws() {
-        Verify.notNull(null);
-    }
-
     @Test
-    public void notNull_NullObject_ThrowsWithMessage() {
+    public void notNull_NullObject_Throws() {
         String message = "Here's my message!";
         try {
             Verify.notNull(null, message);
@@ -35,19 +30,14 @@ public class VerifyTest {
     @Test
     public void notNull_NonNullObject_Succeeds() {
         // None of these should throw.
-        Verify.notNull("");
-        Verify.notNull(new Point(9, 8));
-        Verify.notNull(Lists.newArrayList());
-        Verify.notNull(Lists.newArrayList("", "voila"));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void argument_False_Throws() {
-        Verify.argument(false);
+        Verify.notNull("", "Message");
+        Verify.notNull(new Point(9, 8), "Message");
+        Verify.notNull(Lists.newArrayList(), "Message");
+        Verify.notNull(Lists.newArrayList("", "voila"), "Message");
     }
 
     @Test
-    public void argument_False_ThrowsWithMessage() {
+    public void argument_False_Throws() {
         String message = "Hello, world!";
         try {
             Verify.argument("" == "Voila", message);
@@ -60,18 +50,13 @@ public class VerifyTest {
     @Test
     public void argument_True_Succeeds() {
         // None of these should throw.
-        Verify.argument(true);
-        Verify.argument(2 * 6 == new Integer(13) - 1);
-        Verify.argument("" != null);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void state_False_Throws() {
-        Verify.state(false);
+        Verify.argument(true, "Message");
+        Verify.argument(2 * 6 == new Integer(13) - 1, "Message");
+        Verify.argument("" != null, "Message");
     }
 
     @Test
-    public void state_False_ThrowsWithMessage() {
+    public void state_False_Throws() {
         String message = "Hello, world!";
         try {
             Verify.state("" == "Voila", message);
@@ -84,14 +69,14 @@ public class VerifyTest {
     @Test
     public void state_True_Succeeds() {
         // None of these should throw.
-        Verify.state(true);
-        Verify.state(2 * 6 == new Integer(13) - 1);
-        Verify.state("" != null);
+        Verify.state(true, "Message");
+        Verify.state(2 * 6 == new Integer(13) - 1, "Message");
+        Verify.state("" != null, "Message");
     }
 
     @Test(expected = NullPointerException.class)
-    public void nonEmpty_NullIterable_Throws() {
-        Verify.nonEmpty((Iterable<?>) null);
+    public void nonEmpty_NullCollection_Throws() {
+        Verify.nonEmpty((Collection<?>) null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -99,19 +84,10 @@ public class VerifyTest {
         Verify.nonEmpty(new ArrayList<String>());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void nonEmpty_EmptyIterable_Throws() {
-        Verify.nonEmpty(newIterable());
-    }
-
     @Test
     public void nonEmpty_NonEmptyCollection_Succeeds() {
+        Verify.nonEmpty(Lists.newArrayList("Hello"));
         Verify.nonEmpty(Lists.newArrayList("Hello", "World"));
-    }
-
-    @Test
-    public void nonEmpty_NonEmptyIterable_Throws() {
-        Verify.nonEmpty(newIterable("Voila"));
     }
 
     @Test(expected = NullPointerException.class)
@@ -144,16 +120,5 @@ public class VerifyTest {
     @Test
     public void noNullElements_Succeeds() {
         Verify.noNullElements(Lists.newArrayList("Hello", "World", ""));
-    }
-
-    private <T> Iterable<T> newIterable(final T... elements) {
-        return new Iterable<T>(){
-            List<T> list = Lists.newArrayList(elements);
-
-            @Override
-            public Iterator<T> iterator() {
-                return list.iterator();
-            }
-        };
     }
 }

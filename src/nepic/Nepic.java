@@ -1,7 +1,7 @@
 package nepic;
 
 import nepic.image.PageInfo;
-import nepic.io.DataWriter2;
+import nepic.io.DataWriter;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 
@@ -38,7 +38,7 @@ public class Nepic {
 
     public static final IniConstants INI_CONSTANTS = new IniConstants("nepic.properties");
 
-    public static final DataWriter2 dWriter = new DataWriter2(PageInfo.getCsvLabels());
+    public static final DataWriter dWriter = new DataWriter(PageInfo.getCsvLabels());
 
     static final EventLogger eLogger = new EventLogger("nepicEvents");
 

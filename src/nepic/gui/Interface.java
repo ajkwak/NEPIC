@@ -133,7 +133,6 @@ public class Interface extends JFrame implements LoggerObserver {
             buttonPanelHeight = minImgDimension;
         }
         buttonPanelHeight = btnPanel.setHeight(buttonPanelHeight);
-        Verify.argument(buttonPanelHeight == btnPanel.getHeight());
         int buttonPanelWidth = btnPanel.getWidth();
 
         // Resize Image Display

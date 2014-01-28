@@ -13,7 +13,7 @@ import nepic.logging.EventType;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-8_NewLogger
  * @version AutoCBFinder_Alpha_v0-9_2013-01-11
@@ -23,7 +23,7 @@ public class DataWriter {
     private final List<ArrayList<String>> dataList;
 
     public DataWriter(Label[] labels) {
-        Verify.notNull(labels);
+        Verify.notNull(labels, "labels");
         labelList = new ArrayList<String>();
         dataList = new LinkedList<ArrayList<String>>();
         flattenLabels("", labels);
@@ -41,7 +41,7 @@ public class DataWriter {
     }
 
     public boolean addDataRow(Object[] data) {
-        Verify.notNull(data);
+        Verify.notNull(data, "data");
         ArrayList<String> dataRow = new ArrayList<String>(labelList.size());
         flattenData(data, dataRow);
         if (dataRow.size() == labelList.size()) {
@@ -55,7 +55,7 @@ public class DataWriter {
     }
 
     public boolean addDataRows(List<Object[]> data) { // TODO: keep???
-        Verify.notNull(data);
+        Verify.notNull(data, "data");
         for (Object[] row : data) {
             if (!addDataRow(row)) {
                 return false;
@@ -79,12 +79,12 @@ public class DataWriter {
     }
 
     public boolean canSaveData(File file) {
-        Verify.notNull(file);
+        Verify.notNull(file, "file");
         return EventLogger.getFileExtention(file.getAbsolutePath()).equals("csv");
     }
 
     public boolean saveData(File file) {
-        Verify.notNull(file);
+        Verify.notNull(file, "file");
         String classpath = file.getAbsolutePath();
         Verify
                 .argument(EventLogger.getFileExtention(classpath).equals("csv"),

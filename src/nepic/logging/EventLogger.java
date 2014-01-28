@@ -14,7 +14,7 @@ import nepic.Nepic;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-8_NewLogger
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
@@ -236,8 +236,8 @@ public class EventLogger {
 
         private Log(EventType type, String messageForUser, Object[] furtherInfo) {
             // initial verification
-            Verify.notNull(type);
-            Verify.notNull(furtherInfo);
+            Verify.notNull(type, "type");
+            Verify.notNull(furtherInfo, "futher info");
 
             // Type of event being logged
             this.type = type;

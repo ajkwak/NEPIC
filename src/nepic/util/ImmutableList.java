@@ -9,7 +9,7 @@ public class ImmutableList<E> implements List<E> {
     private List<E> list;
 
     public ImmutableList(List<E> list) {
-        Verify.notNull(list);
+        Verify.notNull(list, "list");
         this.list = list;
     }
 

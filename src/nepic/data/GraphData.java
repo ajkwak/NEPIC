@@ -153,7 +153,7 @@ public class GraphData implements BoundedRegion, Iterable<Pair<String, ? extends
     }
 
     public void revalueDataSet(String name, Collection<? extends Point> values) {
-        Verify.notNull(name);
+        Verify.notNull(name, "name");
         Verify.nonEmpty(values, "values");
         DataSet dataSet = removeAndAdjustBounds(name);
         Verify.argument(dataSet != null, "No data set with name '" + name + "' exists.");

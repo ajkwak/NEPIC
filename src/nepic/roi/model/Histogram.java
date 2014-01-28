@@ -5,11 +5,11 @@ import nepic.util.CsvFormattable;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since
  * @version Nepic_Alpha_v1-1-2013-03-13
- * 
+ *
  */
 public class Histogram implements CsvFormattable { // TODO: improve, so have private / public
                                                    // methods for everything, so don't have to
@@ -102,7 +102,7 @@ public class Histogram implements CsvFormattable { // TODO: improve, so have pri
     }
 
     public int getValue(int percentile) {
-        Verify.argument(percentile >= 0 && percentile <= 100);
+        Verify.argument(percentile >= 0 && percentile <= 100, "Illegal percentile " + percentile);
         int elPos = n * percentile / 100;
         int numPassed = 0;
         int elVal = min;
@@ -157,7 +157,7 @@ public class Histogram implements CsvFormattable { // TODO: improve, so have pri
     }
 
     /**
-     * 
+     *
      * @param pi the pixel intensity for which to get the number of pixels
      * @return the number of pixels in the image section at the provided pixel intensity
      * @throws ArrayIndexOutOfBoundsException

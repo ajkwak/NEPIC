@@ -10,11 +10,11 @@ import nepic.util.Validatable;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-9_2013-01-08
  * @version AutoCBFinder_Alpha_v0-9_2013-01-08
- * 
+ *
  */
 public class PageInfo implements CsvFormattable, Validatable {
     // Page-specific info
@@ -72,7 +72,8 @@ public class PageInfo implements CsvFormattable, Validatable {
     }
 
     public double getPiRatio() {
-        Verify.state(cb != null && bk != null);
+        Verify.state(cb != null && bk != null,
+                "Neither the cell body nor the background for this PageInfo can be null!");
         return cb.getPiHist().getAverage() / bk.getPiHist().getAverage();
     }
 

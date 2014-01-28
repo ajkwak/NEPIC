@@ -3,7 +3,7 @@ package nepic.io;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-8_NewLogger
  * @version AutoCBFinder_Alpha_v0-8_NewLogger
@@ -13,7 +13,7 @@ public class ComplexLabel extends Label {
 
     public ComplexLabel(String label, Label[] sublabels) {
         super(label);
-        Verify.notNull(sublabels);
+        Verify.notNull(sublabels, "sublabels"); // TODO: check not empty??
         this.sublabels = sublabels;
     }
 }

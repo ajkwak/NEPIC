@@ -178,10 +178,6 @@ public class Line {
         double intersectX = (b2 - b1) / (m1 - m2);
         double intersectY = m1 * intersectX + b1;
 
-        // TODO: remove next two lines
-        double intersectY2 = m2 * intersectX + b2;
-        Verify.argument(DoublePoint.sameWithinError(intersectY, intersectY2, 0.00000001));
-
         return new DoublePoint(intersectX, intersectY);
     }
 

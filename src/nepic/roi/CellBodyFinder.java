@@ -331,7 +331,6 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                 }// if found new possible max
             }// if not already in a previous candidate
         }
-        Verify.argument(img.getPixelIntensity(xPos, yPos) == maxLum); // TODO remove
         return new Pixel(xPos, yPos, maxLum);
     }// findMostIntensePixClump
 

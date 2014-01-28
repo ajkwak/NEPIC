@@ -9,18 +9,18 @@ import nepic.util.Pixel;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-6_093012 (Called ImgMatrix until AutoCBFinder_Alpha_v0-9-2013-01-29)
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
+ *
  */
 // assumes 32-bit processor
 public class ImagePage implements IdTaggedImage {
 
     /*
      * Pixel Properties in imgToAnal: ASSUMING BIT 0 IS LEAST SIGNIFICANT BIT
-     * 
+     *
      * Bit 00-07 = RL in original image Bit 08-15 = RL in gaussian image Bit 16 = Dirty bit for
      * Gaussian image Bit 17-26 = Sobel gradient Bit 27 = Dirty bit for Sobel gradient Bit 28-31 =
      * CandNum
@@ -33,7 +33,7 @@ public class ImagePage implements IdTaggedImage {
 
     /**
      * Creates an empty ImageModel object
-     * 
+     *
      * @param thePgWidth
      * @param thePgHeight
      */
@@ -44,7 +44,7 @@ public class ImagePage implements IdTaggedImage {
     }// PictureModel constructor
 
     /**
-     * 
+     *
      * @param x
      * @param y
      * @return true if the specified coordinate is within the boundaries of the image; otherwise
@@ -321,8 +321,10 @@ public class ImagePage implements IdTaggedImage {
         private void swap(RoiIdHandle h1, RoiIdHandle h2) {
             int pos1 = h1.pos;
             int pos2 = h2.pos;
-            Verify.state(handles[pos1] == h1);
-            Verify.state(handles[pos2] == h2);
+            Verify.state(handles[pos1] == h1, "Handle at position of h1.pos (=" + pos1
+                    + ") is NOT " + h1 + ".  Instead, is " + handles[pos1]);
+            Verify.state(handles[pos2] == h2, "Handle at position of h2.pos (=" + pos2
+                    + ") is NOT " + h2 + ".  Instead, is " + handles[pos2]);
 
             handles[pos1] = h2;
             h2.pos = pos1;
@@ -372,8 +374,8 @@ public class ImagePage implements IdTaggedImage {
 
     public void setId(int x, int y, Roi<?> roi) {
         RoiIdHandle roiHandle = roi.getIdHandle();
-        Verify.argument(roiHandle.owner == roi); // TODO: Really, should throw
-                                                 // IllegalAccessException
+        Verify.argument(roiHandle.owner == roi, "RoiIdHandle owner is " + roiHandle.owner
+                + ", not " + roi + ".  Unable to set ID.");
         int newRoiNum = roiHandle.id;
         int currentRoiNum = getId(x, y);
         if (newRoiNum == currentRoiNum) {

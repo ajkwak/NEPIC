@@ -660,10 +660,8 @@ public class Blob implements BoundedRegion {
             for (int x = minX; x <= maxX; x++) {
                 if (edgeRow.contains(x)) {
                     builder.append(EDGE_POINT);
-                    Verify.argument(!innardRow.contains(x));
                 } else if (innardRow.contains(x)) {
                     builder.append(INNARD_POINT);
-                    Verify.argument(!edgeRow.contains(x));
                 } else {
                     builder.append(OUTSIDE_POINT);
                 }
@@ -772,10 +770,8 @@ public class Blob implements BoundedRegion {
             for (int x = minX; x <= maxX; x++) {
                 if (edgeRow.contains(x)) {
                     System.out.print(EDGE_POINT);
-                    Verify.argument(!innardRow.contains(x));
                 } else if (innardRow.contains(x)) {
                     System.out.print(INNARD_POINT);
-                    Verify.argument(!edgeRow.contains(x));
                 } else {
                     if (uncleared != null && uncleared.contains(new Point(x, (minY + i)))) {
                         System.out.print(UNCAUGHT_POINT);

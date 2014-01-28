@@ -25,7 +25,7 @@ import nepic.image.ConstraintMap;
 import nepic.image.ImagePage;
 import nepic.image.MultiPageImageInfo;
 import nepic.image.PageInfo;
-import nepic.io.DataWriter2;
+import nepic.io.DataWriter;
 import nepic.io.TiffOpener;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
@@ -507,7 +507,7 @@ public class Tracker {
         if (!unsavedDataOnCurrentImg) {
             return;
         }
-        DataWriter2 dataWriter = Nepic.dWriter;
+        DataWriter dataWriter = Nepic.dWriter;
         for (PageInfo page : pages) {
             if (page != null && page.hasValidRois()) {
                 dataWriter.addDataRow(page.getCsvData());
@@ -695,7 +695,7 @@ public class Tracker {
         int incrementFactor;
 
         public IncrementPageHandler(int amntIncrementBy) {
-            Verify.argument(amntIncrementBy != 0);
+            Verify.argument(amntIncrementBy != 0, "Illegal incrementation amount: 0");
             incrementFactor = amntIncrementBy;
         }// IncrementPageHandler
 
