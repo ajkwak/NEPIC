@@ -17,14 +17,14 @@ import nepic.util.Pixel;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since ??? (called Blob2 until AutoCBFinder_Alpha_v0-9_122212)
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
+ *
  */
 public class Blob implements BoundedRegion {
-    private final ArrayList<LinkedList<HorizEdge>> horizEdges;
+    private final ArrayList<LinkedList<HorizontalEdge>> horizEdges;
     private final BoundingBox boundaries;
     private int size = -1;
 
@@ -77,7 +77,7 @@ public class Blob implements BoundedRegion {
     }
 
     // For making deep copy
-    private Blob(BoundingBox boundaries, ArrayList<LinkedList<HorizEdge>> horizEdges, int size) {
+    private Blob(BoundingBox boundaries, ArrayList<LinkedList<HorizontalEdge>> horizEdges, int size) {
         this.horizEdges = horizEdges;
         this.boundaries = boundaries;
         this.size = size;
@@ -158,7 +158,7 @@ public class Blob implements BoundedRegion {
 
     /**
      * Finds the outer edges of an ROI in the current image.
-     * 
+     *
      * @param maxXPoint the point in the ROI that has the largest x-coordinate
      * @param id the ID number of the ROI for which to find the outer edges
      * @return the outer edges of the ROI with the specified ID number
@@ -287,12 +287,12 @@ public class Blob implements BoundedRegion {
 
         // Copy horizEdges
         int numRows = horizEdges.size();
-        ArrayList<LinkedList<HorizEdge>> horizEdgeCopy = new ArrayList<LinkedList<HorizEdge>>(
+        ArrayList<LinkedList<HorizontalEdge>> horizEdgeCopy = new ArrayList<LinkedList<HorizontalEdge>>(
                 numRows);
         for (int i = 0; i < numRows; i++) {
-            LinkedList<HorizEdge> rowCopy = new LinkedList<HorizEdge>();
-            for (HorizEdge horizEdge : horizEdges.get(i)) {
-                rowCopy.add(new HorizEdge(horizEdge.first, horizEdge.last));
+            LinkedList<HorizontalEdge> rowCopy = new LinkedList<HorizontalEdge>();
+            for (HorizontalEdge horizEdge : horizEdges.get(i)) {
+                rowCopy.add(new HorizontalEdge(horizEdge.first, horizEdge.last));
             }
             horizEdgeCopy.add(rowCopy);
         }
@@ -350,7 +350,7 @@ public class Blob implements BoundedRegion {
     }
 
     /**
-     * 
+     *
      * @return the size of the innards of the {@link Blob}
      */
     public int getSize() {
@@ -361,7 +361,7 @@ public class Blob implements BoundedRegion {
     }
 
     /**
-     * 
+     *
      * @param passThrough
      * @param angle
      * @return the diameter of the blob at the given angle and passing through the given point
@@ -382,38 +382,13 @@ public class Blob implements BoundedRegion {
         throw new NotYetImplementedException(); // TODO
     }
 
-    private class HorizEdge implements Comparable<HorizEdge> {
-        int first; // first x value
-        int last; // last x value
-
-        HorizEdge(int first, int last) {
-            if (first < last) {
-                this.first = first;
-                this.last = last;
-            } else {
-                this.first = last;
-                this.last = first;
-            }
-        }
-
-        @Override
-        public int compareTo(HorizEdge other) {
-            return this.first - other.first;
-        }
-
-        @Override
-        public String toString() {
-            return "{" + first + ", " + last + "}";
-        }
-    }
-
     // fixed: version AutoCBFinder_Alpha_v0-9_NewLogger
     public List<Point> getInnards() {
         LinkedList<Point> toReturn = new LinkedList<Point>();
         final int minY = boundaries.getMinY();
         for (int rowNum = 0; rowNum < horizEdges.size(); rowNum++) {
-            LinkedList<HorizEdge> currentRow = horizEdges.get(rowNum);
-            Iterator<HorizEdge> currRowItr = currentRow.iterator();
+            LinkedList<HorizontalEdge> currentRow = horizEdges.get(rowNum);
+            Iterator<HorizontalEdge> currRowItr = currentRow.iterator();
             int prevEnd = Integer.MIN_VALUE;
             while (currRowItr.hasNext()) {
                 int start = currRowItr.next().last + 1;
@@ -439,10 +414,10 @@ public class Blob implements BoundedRegion {
         final int minY = boundaries.getMinY();
 
         for (int rowNum = 0; rowNum < horizEdges.size(); rowNum++) {
-            LinkedList<HorizEdge> currentRow = horizEdges.get(rowNum);
+            LinkedList<HorizontalEdge> currentRow = horizEdges.get(rowNum);
             int y = minY + rowNum;
             int prevEnd = Integer.MIN_VALUE;
-            for (HorizEdge edge : currentRow) {
+            for (HorizontalEdge edge : currentRow) {
                 int newEnd = edge.last;
                 if (newEnd > prevEnd) {
                     for (int x = Math.max(edge.first, prevEnd + 1); x <= newEnd; x++) {
@@ -455,30 +430,31 @@ public class Blob implements BoundedRegion {
         return edgePts;
     }
 
-    private ArrayList<LinkedList<HorizEdge>> initializeHorizEdgeLists(int numRows) {
-        ArrayList<LinkedList<HorizEdge>> horizEdges = new ArrayList<LinkedList<HorizEdge>>(numRows);
+    private ArrayList<LinkedList<HorizontalEdge>> initializeHorizEdgeLists(int numRows) {
+        ArrayList<LinkedList<HorizontalEdge>> horizEdges = new ArrayList<LinkedList<HorizontalEdge>>(
+                numRows);
         for (int i = 0; i < numRows; i++) {
-            horizEdges.add(new LinkedList<HorizEdge>());
+            horizEdges.add(new LinkedList<HorizontalEdge>());
         }
         return horizEdges;
     }
 
-    private ArrayList<LinkedList<HorizEdge>> makeSinglePointBlob(Point pt) {
-        ArrayList<LinkedList<HorizEdge>> horizEdges = initializeHorizEdgeLists(1);
-        LinkedList<HorizEdge> row = horizEdges.get(0);
-        HorizEdge edge = new HorizEdge(pt.x, pt.x);
+    private ArrayList<LinkedList<HorizontalEdge>> makeSinglePointBlob(Point pt) {
+        ArrayList<LinkedList<HorizontalEdge>> horizEdges = initializeHorizEdgeLists(1);
+        LinkedList<HorizontalEdge> row = horizEdges.get(0);
+        HorizontalEdge edge = new HorizontalEdge(pt.x, pt.x);
         row.add(edge);
         row.add(edge);
         return horizEdges;
     }
 
-    private void sortHorizEdgeLists(ArrayList<LinkedList<HorizEdge>> horizEdges) {
-        for (LinkedList<HorizEdge> row : horizEdges) {
+    private void sortHorizEdgeLists(ArrayList<LinkedList<HorizontalEdge>> horizEdges) {
+        for (LinkedList<HorizontalEdge> row : horizEdges) {
             Collections.sort(row);
         }
     }
 
-    private ArrayList<LinkedList<HorizEdge>> findHorizEdges(Point[] edgePts) {
+    private ArrayList<LinkedList<HorizontalEdge>> findHorizEdges(Point[] edgePts) {
         // Special case: single point Blob
         if (edgePts.length == 1) {
             return makeSinglePointBlob(edgePts[0]);
@@ -487,7 +463,7 @@ public class Blob implements BoundedRegion {
         // Initialize all linked lists in horizEdges
         final int minY = boundaries.getMinY();
         final int numRows = boundaries.getMaxY() - minY + 1;
-        ArrayList<LinkedList<HorizEdge>> horizEdges = initializeHorizEdgeLists(numRows);
+        ArrayList<LinkedList<HorizontalEdge>> horizEdges = initializeHorizEdgeLists(numRows);
 
         // Find start of first horizontal edge
         int currY = edgePts[0].y; // The y-value of the current horizontal edge
@@ -520,8 +496,8 @@ public class Blob implements BoundedRegion {
         int nextDiffY = currY - edgePts[lastPos].y;
 
         // Make horizontal edge with given first and last positions
-        HorizEdge edge = new HorizEdge(horizEdgeMin, horizEdgeMax);
-        LinkedList<HorizEdge> row = horizEdges.get(currY - minY);
+        HorizontalEdge edge = new HorizontalEdge(horizEdgeMin, horizEdgeMax);
+        LinkedList<HorizontalEdge> row = horizEdges.get(currY - minY);
         row.add(edge);
         if (prevDiffY * nextDiffY >= 0) { // if diffs have the same sign
             // If is local min or local max, add edge a second time
@@ -554,7 +530,7 @@ public class Blob implements BoundedRegion {
             }
 
             // Make horizontal edge with given first and last positions
-            edge = new HorizEdge(horizEdgeMin, horizEdgeMax);
+            edge = new HorizontalEdge(horizEdgeMin, horizEdgeMax);
             row = horizEdges.get(currY - minY);
             row.add(edge);
             if (prevDiffY * nextDiffY >= 0) { // if diffs have the same sign
