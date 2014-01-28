@@ -13,10 +13,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import javax.swing.JOptionPane;
 
 import nepic.gui.Graph;
-import nepic.image.ImagePage;
 import nepic.data.GraphData;
 import nepic.data.HistogramPositionMap;
-import nepic.roi.model.Line;
 import nepic.util.Lists;
 import nepic.util.Range;
 import nepic.util.Verify;
@@ -25,19 +23,6 @@ public class DataScanner {
     private final GraphData data = new GraphData();
     List<Integer> rawData;
     BucketizedDataSet bucketSet;
-
-    // TODO: convert to static method (probably in different class)????
-    public DataScanner(ImagePage pg, Line scanline) {
-        Verify.notNull(pg, "Page on which to scan the line cannot be null!");
-        Verify.notNull(scanline, "line to scan cannot be null!");
-
-        List<Point> scanlinePoints = scanline.boundTo(pg).draw();
-        List<Integer> rawData = new ArrayList<Integer>(scanlinePoints.size());
-        for (Point pt : scanlinePoints) {
-            rawData.add(pg.getPixelIntensity(pt.x, pt.y));
-        }
-        processRawData(rawData);
-    }
 
     public DataScanner(Collection<Integer> rawData) {
         Verify.nonEmpty(rawData, "rawData");
