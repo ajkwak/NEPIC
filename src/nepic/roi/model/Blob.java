@@ -12,7 +12,6 @@ import nepic.image.IdTaggedImage;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.util.BoundedRegion;
-import nepic.util.NotYetImplementedException;
 import nepic.util.Pixel;
 import nepic.util.Verify;
 
@@ -379,7 +378,7 @@ public class Blob implements BoundedRegion {
 
         // Take union of line, edges
 
-        throw new NotYetImplementedException(); // TODO
+        throw new UnsupportedOperationException("Not yet implemented."); // TODO
     }
 
     // fixed: version AutoCBFinder_Alpha_v0-9_NewLogger
@@ -658,11 +657,11 @@ public class Blob implements BoundedRegion {
     public List<Pixel> getSurroundingEdges() {
         // Get the list of pixels that are just outside of the Blob (touching the edges of the Blob,
         // but not included in the Blob)
-        throw new NotYetImplementedException(); // TODO
+        throw new UnsupportedOperationException("Not yet implemented"); // TODO
     }
 
     public Blob dilate() {
-        throw new NotYetImplementedException(); // TODO
+        throw new UnsupportedOperationException("Not yet implemented"); // TODO
     }
 
     /*

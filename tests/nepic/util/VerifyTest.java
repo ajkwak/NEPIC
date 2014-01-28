@@ -9,6 +9,8 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
 /**
  * JUnit tests for {@link Verify}.
  *
@@ -23,6 +25,7 @@ public class VerifyTest {
             Verify.notNull(null, message);
             fail("Expected NullPointerException");
         } catch (NullPointerException expected) {
+            // MoreAsserts.assertContains();
             assertEquals(message, expected.getMessage());
         }
     }

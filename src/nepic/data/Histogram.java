@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.common.collect.Lists;
+
 import nepic.io.Label;
 import nepic.util.CsvFormattable;
-import nepic.util.Lists;
 import nepic.util.Verify;
 
 // TODO: convert this into a Histogram interface, with two implementations (mutable and immutable).
@@ -373,7 +374,7 @@ public class Histogram implements CsvFormattable {
         }
 
         public List<Integer> getModes() {
-            return Lists.copyOf(modes);
+            return Lists.newArrayList(modes);
         }
 
         public int getNumberModeInstances() {

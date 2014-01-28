@@ -7,11 +7,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import nepic.util.BoundedRegion;
-import nepic.util.Lists;
 import nepic.util.TestBoundedRegion;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.Lists;
 
 /**
  * JUnit tests for {@link MutableDataSet}.

@@ -12,10 +12,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.swing.JOptionPane;
 
+import com.google.common.collect.Lists;
+
 import nepic.gui.Graph;
 import nepic.data.GraphData;
 import nepic.data.HistogramPositionMap;
-import nepic.util.Lists;
 import nepic.util.Range;
 import nepic.util.Verify;
 

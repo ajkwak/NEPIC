@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import nepic.util.Lists;
+import com.google.common.collect.Lists;
+
 import nepic.util.Range;
 import nepic.util.Verify;
 
@@ -111,7 +112,7 @@ public class HistogramPositionMap {
     }
 
     public List<Integer> getPositionsAssociatedWith(int pi) {
-        return Lists.copyOf(histogram.get(pi));
+        return Lists.newArrayList(histogram.get(pi));
     }
 
     public int getNumberModeInstances() {
