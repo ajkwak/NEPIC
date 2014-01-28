@@ -680,7 +680,7 @@ public class Tracker {
             minPiData.add(new Point(data.getMaxX(), cbCand.getMinPi()));
             data.setDataSet("minPI", minPiData, 0xffff00 /* yellow */);
             JOptionPane.showMessageDialog(myGUI,
-                    new Graph(800, 600, 0x000000).setData(data).setYGridlineInterval(5));
+                    new Graph(800, 600, 0x000000).setData(data).setYGridlineInterval(5).refresh());
             data.removeDataSet("minPI");
         }
 

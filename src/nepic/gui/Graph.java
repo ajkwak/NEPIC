@@ -97,9 +97,6 @@ public class Graph extends JPanel {
      */
     public Graph setData(GraphData data) {
         this.data = data;
-        if (data != null && !data.isEmpty()) {
-            refresh();
-        }
         return this;
     }
 
@@ -143,14 +140,17 @@ public class Graph extends JPanel {
     /**
      * Refreshes the graph after some change in the underlying {@link GraphData} was made or after a
      * control parameter of the graphing process was changed.
+     *
+     * @return {@code this}, for chaining
      */
-    public void refresh() {
+    public Graph refresh() {
         img.clear();
         if (data != null) {
             ConvolutionData cData = determineCurrentConvolutionData();
             drawGridlines(cData);
             drawDataSets(cData);
         }
+        return this;
     }
 
     /**
