@@ -21,8 +21,12 @@ public class ImmutableDataSet implements DataSet {
      * @param dataSet the data set for which to create an immutable wrapper
      */
     public ImmutableDataSet(DataSet dataSet) {
-        Verify.notNull(dataSet, "DataSet");
-        this.dataSet = dataSet;
+        Verify.notNull(dataSet, "dataSet");
+        if(dataSet instanceof ImmutableDataSet){
+            this.dataSet = ((ImmutableDataSet) dataSet).dataSet;
+        }else{
+            this.dataSet = dataSet;
+        }
     }
 
     @Override
