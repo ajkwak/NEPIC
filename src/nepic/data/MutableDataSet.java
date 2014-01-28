@@ -15,7 +15,6 @@ import nepic.util.Verify;
  * @author AJ Parmidge
  */
 public class MutableDataSet implements DataSet {
-    private String name = ""; // Default is empty string.
     private final List<Point> data;
     private int rgb = 0x000000; // Default is black.
 
@@ -237,6 +236,6 @@ public class MutableDataSet implements DataSet {
 
     @Override
     public String toString() {
-        return name + "(0x" + Integer.toHexString(rgb) + "): " + data.toString();
+        return "(0x" + Integer.toHexString(rgb) + "): " + data.toString();
     }
 }
