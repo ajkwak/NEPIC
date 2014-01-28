@@ -14,7 +14,7 @@ import nepic.util.Verify;
  *
  * @author AJ Parmidge
  */
-public class UnorderedDataSet implements DataSet {
+public class MutableDataSet implements DataSet {
     private String name = ""; // Default is empty string.
     private final List<Point> data;
     private int rgb = 0x000000; // Default is black.
@@ -25,9 +25,9 @@ public class UnorderedDataSet implements DataSet {
     private int maxY = Integer.MIN_VALUE;
 
     /**
-     * Creates an empty {@link UnorderedDataSet}.
+     * Creates an empty {@link MutableDataSet}.
      */
-    public UnorderedDataSet() {
+    public MutableDataSet() {
         this.data = new LinkedList<Point>();
     }
 

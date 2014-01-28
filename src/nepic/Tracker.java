@@ -17,7 +17,7 @@ import javax.swing.JOptionPane;
 
 import nepic.data.DataSet;
 import nepic.data.GraphData;
-import nepic.data.UnorderedDataSet;
+import nepic.data.MutableDataSet;
 import nepic.gui.Graph;
 import nepic.gui.HistogramViewPanel;
 import nepic.gui.Interface;
@@ -611,7 +611,7 @@ public class Tracker {
     private boolean redrawCbCand() {
         // Integer cbId = tracker.getCbCandId();
         if (cbCand != null) {
-            DataSet cbCandPixels = new UnorderedDataSet();
+            DataSet cbCandPixels = new MutableDataSet();
             cbCandPixels.addAll(cbCand.getEdges());
             if (cbCand.isModified()) {
                 cbCandPixels.setRgb(Nepic.CELL_BODY_CAND_COLOR);
@@ -632,7 +632,7 @@ public class Tracker {
     private boolean redrawBkCand() {
         // Integer bkId = tracker.getBkCandId();
         if (bkCand != null) {
-            DataSet bkCandPixels = new UnorderedDataSet();
+            DataSet bkCandPixels = new MutableDataSet();
             bkCandPixels.addAll(bkCand.getEdges());
             if (bkCand.isModified()) {
                 bkCandPixels.setRgb(Nepic.BACKGROUND_CAND_COLOR);
@@ -675,7 +675,7 @@ public class Tracker {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            DataSet minPiData = new UnorderedDataSet();
+            DataSet minPiData = new MutableDataSet();
             minPiData.add(new Point(data.getMinX(), cbCand.getMinPi()));
             minPiData.add(new Point(data.getMaxX(), cbCand.getMinPi()));
             data.setDataSet("minPI", minPiData, 0xffff00 /* yellow */);
@@ -813,7 +813,7 @@ public class Tracker {
                             new Point(clickLoc.x, dragLoc.y),
                             dragLoc,
                             new Point(dragLoc.x, clickLoc.y) });
-                    DataSet mouseActionPixels = new UnorderedDataSet();
+                    DataSet mouseActionPixels = new MutableDataSet();
                     mouseActionPixels.addAll(newRec.getEdges());
                     mouseActionPixels.setRgb(Nepic.MOUSE_ACTION_COLOR);
                     myGUI.draw(Nepic.MOUSE_ACTION_ID, mouseActionPixels);

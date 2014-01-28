@@ -10,7 +10,7 @@ import javax.swing.JPanel;
 
 import nepic.data.DataSet;
 import nepic.data.GraphData;
-import nepic.data.UnorderedDataSet;
+import nepic.data.MutableDataSet;
 import nepic.roi.model.LineSegment;
 import nepic.roi.model.LineSegment.IncludeEnd;
 import nepic.roi.model.LineSegment.IncludeStart;
@@ -204,7 +204,7 @@ public class Graph extends JPanel {
 
     private void drawGridlines(ConvolutionData cData) {
         // Draw the x-gridlines.
-        DataSet gridlines = new UnorderedDataSet().setRgb(0x444444 /* Light Gray */);
+        DataSet gridlines = new MutableDataSet().setRgb(0x444444 /* Light Gray */);
         if (xGridlineInterval > 0) { // If the xGridlineInterval is valid.
             for (int xGridline = determineMinimumGridline(data.getMinX(), xGridlineInterval); xGridline <= data
                     .getMaxX(); xGridline += xGridlineInterval) {
@@ -243,7 +243,7 @@ public class Graph extends JPanel {
             // Redraws the data set.
             DataSet convolvedData = convolveDataset(dataEntry.second, cData);
             if (connectTheDots) {
-                DataSet connectedData = new UnorderedDataSet();
+                DataSet connectedData = new MutableDataSet();
                 connectedData.setRgb(convolvedData.getRgb());
                 Point startPt = null;
                 for (Point datum : convolvedData) {
@@ -268,7 +268,7 @@ public class Graph extends JPanel {
 
     private DataSet convolveDataset(DataSet dataSet, ConvolutionData cData) {
         // Convolve the actual data set to fit on the graph when drawn.
-        DataSet convolvedData = new UnorderedDataSet();
+        DataSet convolvedData = new MutableDataSet();
         convolvedData.setRgb(dataSet.getRgb());
         for (Point datum : dataSet) {
             Point convolvedDatum = new Point(convolveX(datum.x, cData), convolveY(datum.y, cData));
