@@ -257,7 +257,7 @@ public class Histogram implements CsvFormattable {
     public double getVariance() {
         double var = 0;
         double mean = getMean() - offset;
-        for (int pos = 0; pos <= hist.length; pos++) {
+        for (int pos = 0; pos < hist.length; pos++) {
             double diff = pos - mean;
             var += hist[pos] * (diff * diff); // take sum of square of diffs
         }
@@ -295,7 +295,7 @@ public class Histogram implements CsvFormattable {
 
         /**
          * Creates an object that builds a {@link Histogram} with the given bounds.
-         * 
+         *
          * @param lowerBound the lower bound (inclusive) of the domain over which the built
          *        {@link Histogram} must extend.
          * @param upperBound the upper bound (inclusive) of the domain over which the built
