@@ -48,14 +48,14 @@ public class Blob implements BoundedRegion {
             currPix = itr.next();
             Verify.notNull(currPix, "None of the points in the Blob edges can be null.");
             boundaries.editBoundariesIfNeeded(currPix.x, currPix.y);
-            if (!Pixel.touching(prevPix, currPix)) { // Check that adjacent pixels are touching
+            if (!Pixel.areTouching(prevPix, currPix)) { // Check that adjacent pixels are touching
                 needToTraceEdges = true;
             }
             prevPix = currPix;
         }
 
         // Check if the first and last pixels touch
-        if (!needToTraceEdges && currPix != null && !Pixel.touching(firstPix, currPix)) {
+        if (!needToTraceEdges && currPix != null && !Pixel.areTouching(firstPix, currPix)) {
             needToTraceEdges = true;
         }
 

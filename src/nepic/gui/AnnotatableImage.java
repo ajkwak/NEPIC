@@ -126,7 +126,7 @@ public class AnnotatableImage {
             for (Pixel pix : dataSet.pixels) {
                 int x = pix.x;
                 int y = pix.y;
-                pix.relLum = img.getRGB(x, y); // The color to restore when erasing this pixel.
+                pix.color = img.getRGB(x, y); // The color to restore when erasing this pixel.
                 img.setRGB(x, y, rgb);
             }
         }
@@ -141,7 +141,7 @@ public class AnnotatableImage {
             Iterator<Pixel> reversePixItr = annotationItr.next().pixels.reverseIterator();
             while (reversePixItr.hasNext()) {
                 Pixel pixToRestore = reversePixItr.next();
-                img.setRGB(pixToRestore.x, pixToRestore.y, pixToRestore.relLum);
+                img.setRGB(pixToRestore.x, pixToRestore.y, pixToRestore.color);
             }
         }
         return poppedAnnotation;

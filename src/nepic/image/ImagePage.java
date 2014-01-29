@@ -122,7 +122,7 @@ public class ImagePage implements IdTaggedImage {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 toDisplay.setRGB(x, y, Pixel
-                        .relLumToRGB((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
+                        .piToRgb((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
             }// for all y
         }// for all x
         return toDisplay;
@@ -136,7 +136,7 @@ public class ImagePage implements IdTaggedImage {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 toDisplay.setRGB(x, y, Pixel
-                        .relLumToRGB((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
+                        .piToRgb((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
             }// for all y
         }// for all x
         return toDisplay;

@@ -125,7 +125,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         // Set seed pixel
         img.setId(seedPixel.x, seedPixel.y, roi);
         roi.setSeedPixel(seedPixel);
-        roi.setMinPi(seedPixel.relLum);
+        roi.setMinPi(seedPixel.color);
 
         // Set edges
         List<Point> initEdges = new LinkedList<Point>();
@@ -208,7 +208,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
     private boolean shrinkToDesiredSize(CellBody roi, int desiredSize, SizeEdgeCase edgeCase) {
         final Pixel seedPix = roi.getSeedPixel();
-        final int seedPixPi = seedPix.relLum;
+        final int seedPixPi = seedPix.color;
         int minPi = roi.getMinPi();
         if (minPi == seedPixPi) {
             Nepic.log(EventType.INFO, "Unable to shrink candidate further.");
