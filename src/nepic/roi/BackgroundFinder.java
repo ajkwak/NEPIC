@@ -4,11 +4,11 @@ import java.awt.Point;
 import java.util.List;
 
 import nepic.Nepic;
+import nepic.geo.Polygon;
 import nepic.image.ConstraintMap;
 import nepic.image.RoiFinder;
 import nepic.logging.EventType;
 import nepic.data.Histogram;
-import nepic.roi.model.Polygon;
 import nepic.util.Verify;
 
 /**

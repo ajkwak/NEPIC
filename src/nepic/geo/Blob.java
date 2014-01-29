@@ -1,4 +1,4 @@
-package nepic.roi.model;
+package nepic.geo;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import nepic.Nepic;
 import nepic.image.IdTaggedImage;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
-import nepic.util.BoundedRegion;
+import nepic.roi.model.HorizontalEdge;
 import nepic.util.Pixel;
 import nepic.util.Verify;
 

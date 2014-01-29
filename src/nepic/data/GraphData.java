@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import nepic.geo.BoundedRegion;
 import nepic.gui.Graph;
-import nepic.util.BoundedRegion;
 import nepic.util.Pair;
 import nepic.util.Verify;
 

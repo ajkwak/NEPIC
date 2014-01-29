@@ -6,7 +6,7 @@ import java.awt.Point;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import nepic.util.BoundedRegion;
+import nepic.geo.BoundedRegion;
 import nepic.util.TestBoundedRegion;
 
 import org.junit.Before;

@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import nepic.util.BoundedRegion;
+import nepic.geo.BoundedRegion;
 import nepic.util.Verify;
 
 /**

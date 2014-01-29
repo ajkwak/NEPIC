@@ -11,9 +11,9 @@ import javax.swing.JPanel;
 import nepic.data.DataSet;
 import nepic.data.GraphData;
 import nepic.data.MutableDataSet;
-import nepic.roi.model.LineSegment;
-import nepic.roi.model.LineSegment.IncludeEnd;
-import nepic.roi.model.LineSegment.IncludeStart;
+import nepic.geo.LineSegment;
+import nepic.geo.LineSegment.IncludeEnd;
+import nepic.geo.LineSegment.IncludeStart;
 import nepic.util.Pair;
 import nepic.util.Verify;
 

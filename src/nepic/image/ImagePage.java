@@ -2,9 +2,9 @@ package nepic.image;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import nepic.roi.model.BoundingBox;
 import nepic.data.Histogram;
-import nepic.util.BoundedRegion;
+import nepic.geo.BoundedRegion;
+import nepic.geo.BoundingBox;
 import nepic.util.Pixel;
 import nepic.util.Verify;
 

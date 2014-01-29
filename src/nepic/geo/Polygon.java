@@ -1,4 +1,4 @@
-package nepic.roi.model;
+package nepic.geo;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import nepic.util.BoundedRegion;
 import nepic.util.Verify;
 
 /**

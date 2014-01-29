@@ -1,4 +1,4 @@
-package nepic.util;
+package nepic.geo;
 
 /**
  * 

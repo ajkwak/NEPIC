@@ -1,4 +1,4 @@
-package nepic.roi.model;
+package nepic.geo;
 
 import java.awt.Point;
 import java.awt.geom.Point2D;

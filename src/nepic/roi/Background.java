@@ -3,12 +3,12 @@ package nepic.roi;
 import java.awt.Point;
 import java.util.List;
 
+import nepic.geo.Polygon;
 import nepic.image.ImagePage;
 import nepic.image.Roi;
 import nepic.io.ComplexLabel;
 import nepic.io.Label;
 import nepic.data.Histogram;
-import nepic.roi.model.Polygon;
 
 /**
  *

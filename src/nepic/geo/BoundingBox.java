@@ -1,8 +1,7 @@
-package nepic.roi.model;
+package nepic.geo;
 
 import java.awt.Point;
 
-import nepic.util.BoundedRegion;
 import nepic.util.Verify;
 
 /**

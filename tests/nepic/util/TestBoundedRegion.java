@@ -1,5 +1,7 @@
 package nepic.util;
 
+import nepic.geo.BoundedRegion;
+
 /**
  * A test implementation of the {@link BoundedRegion} interface.
  *

@@ -1,6 +1,6 @@
 package nepic.image;
 
-import nepic.util.BoundedRegion;
+import nepic.geo.BoundedRegion;
 
 /**
  * 

@@ -4,7 +4,7 @@ import java.awt.Point;
 import java.util.Collection;
 import java.util.Iterator;
 
-import nepic.util.BoundedRegion;
+import nepic.geo.BoundedRegion;
 import nepic.util.Verify;
 
 /**
