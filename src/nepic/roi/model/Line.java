@@ -1,9 +1,9 @@
 package nepic.roi.model;
 
 import java.awt.Point;
+import java.awt.geom.Point2D;
 
 import nepic.util.BoundedRegion;
-import nepic.util.DoublePoint;
 import nepic.util.Verify;
 
 /**
@@ -156,7 +156,7 @@ public class Line {
      *         the single intersection between the two lines.
      */
     // Treats both this and other as continuous lines
-    public DoublePoint getLineIntersection(Line other) {
+    public Point2D getLineIntersection(Line other) {
         if (this.isParallelTo(other)) {
             // Then either there is no intersection or there are infinitely many intersections.
             return null;
@@ -178,7 +178,7 @@ public class Line {
         double intersectX = (b2 - b1) / (m1 - m2);
         double intersectY = m1 * intersectX + b1;
 
-        return new DoublePoint(intersectX, intersectY);
+        return new Point2D.Double(intersectX, intersectY);
     }
 
     public LineSegment boundTo(BoundedRegion region) {
@@ -259,12 +259,11 @@ public class Line {
      *
      */
     // Treats this as a line, other as a line segment
-    public DoublePoint getIntersectionWithSegment(LineSegment lineSegment) {
-        DoublePoint intersection = getLineIntersection(lineSegment);
+    public Point2D getIntersectionWithSegment(LineSegment lineSegment) {
+        Point2D intersection = getLineIntersection(lineSegment);
         if (intersection != null) {
-            Point intersectCoord = intersection.asPoint();
-            if (lineSegment.domainContains(intersectCoord.x)
-                    && lineSegment.rangeContains(intersectCoord.y)) {
+            if (lineSegment.domainContains(intersection.getX())
+                    && lineSegment.rangeContains(intersection.getY())) {
                 return intersection;
             }
         }

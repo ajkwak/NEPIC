@@ -1,10 +1,9 @@
 package nepic.roi.model;
 
 import java.awt.Point;
+import java.awt.geom.Point2D;
 import java.util.LinkedList;
 import java.util.List;
-
-import nepic.util.DoublePoint;
 
 public class LineSegment extends Line {
 
@@ -15,7 +14,7 @@ public class LineSegment extends Line {
     /**
      * Gets the end-points of the line segment. NOTE: This method treats this {@link Line} object as
      * a line segment rather than a continuous line.
-     * 
+     *
      * @return the end-points of the line segment.
      */
     public Point[] getEndPoints() {
@@ -24,19 +23,18 @@ public class LineSegment extends Line {
 
     /**
      * Finds the intersection between this line segment and the other line segment.
-     * 
+     *
      * @param other the line segment with which to find an intersection.
      * @return null if the two line segments do not cross, or if the lines represented by the line
      *         segments are equivalent; otherwise returns the single intersection between the two
      *         line segments.
      */
     // Treats both this and other as a line segment
-    public DoublePoint getSegmentIntersection(LineSegment other) {
-        DoublePoint intersection = super.getLineIntersection(other);
+    public Point2D getSegmentIntersection(LineSegment other) {
+        Point2D intersection = super.getLineIntersection(other);
         if (intersection != null) {
-            Point intersectCoord = intersection.asPoint();
-            int intersectX = intersectCoord.x;
-            int intersectY = intersectCoord.y;
+            double intersectX = intersection.getX();
+            double intersectY = intersection.getY();
             if (this.domainContains(intersectX) && this.rangeContains(intersectY)
                     && other.domainContains(intersectX) && other.rangeContains(intersectY)) {
                 return intersection;
@@ -47,14 +45,14 @@ public class LineSegment extends Line {
 
     /**
      * Finds the intersection between this line segment and the other line.
-     * 
+     *
      * @param line the line with which to find an intersection.
      * @return null if the two line segments do not cross, or if the lines represented by the line
      *         segments are equivalent; otherwise returns the single intersection between the two
      *         line segments.
      */
     // Convenience method which calls the getIntersection(LineSegment) on the line parameter.
-    public DoublePoint getIntersectionWithLine(Line line) {
+    public Point2D getIntersectionWithLine(Line line) {
         return line.getIntersectionWithSegment(this);
     }
 
@@ -92,7 +90,7 @@ public class LineSegment extends Line {
 
     /**
      * Determines whether the given x value is within the domain of this line segment.
-     * 
+     *
      * @param x
      * @return
      */
@@ -102,7 +100,7 @@ public class LineSegment extends Line {
 
     /**
      * Does NOT include end points in domain
-     * 
+     *
      * @param x
      * @return
      */
@@ -140,7 +138,7 @@ public class LineSegment extends Line {
 
     /**
      * Draw line including endpoints
-     * 
+     *
      * @return
      */
     public List<Point> draw() {
