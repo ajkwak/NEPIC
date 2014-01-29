@@ -1,4 +1,4 @@
-package nepic.roi.model;
+package nepic.util;
 
 public class HorizontalEdge implements Comparable<HorizontalEdge> {
     public int first; // first x value

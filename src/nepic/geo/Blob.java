@@ -11,7 +11,7 @@ import nepic.Nepic;
 import nepic.image.IdTaggedImage;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
-import nepic.roi.model.HorizontalEdge;
+import nepic.util.HorizontalEdge;
 import nepic.util.Pixel;
 import nepic.util.Verify;
 
