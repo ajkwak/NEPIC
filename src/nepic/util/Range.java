@@ -1,17 +1,33 @@
 package nepic.util;
 
+/**
+ * Class representing a one-dimensional range of values, from a lower bound to an upper bound.
+ * 
+ * @author AJ Parmidge
+ */
 public class Range {
+    /**
+     * The lower bound of this {@link Range}.
+     */
     public final int min;
+    /**
+     * The upper bound of this {@link Range}.
+     */
     public final int max;
 
-    public Range(int min, int max) {
-        // Make sure that the min and max are saved in the correct variables.
-        if (min <= max) {
-            this.min = min;
-            this.max = max;
+    /**
+     * Creates a {@link Range} with the given bounds.
+     *
+     * @param bound1 the first (lower or upper) bound of the {@link Range} to create
+     * @param bound2 the second (upper or lower) bound of the {@link Range} to create
+     */
+    public Range(int bound1, int bound2) {
+        if (bound1 <= bound2) {
+            this.min = bound1;
+            this.max = bound2;
         } else {
-            this.min = max;
-            this.max = min;
+            this.min = bound2;
+            this.max = bound1;
         }
     }
 
