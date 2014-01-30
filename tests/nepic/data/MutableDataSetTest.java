@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import nepic.geo.BoundedRegion;
-import nepic.util.TestBoundedRegion;
-
+import nepic.geo.BoundingBox;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -80,7 +79,7 @@ public class MutableDataSetTest {
     public void boundsContain_Region_EmptyDataSet_Throws() {
         assertTrue(dataSet.isEmpty()); // Verify preconditions.
         dataSet.boundsContain(
-                new TestBoundedRegion(1 /* minX */, 2 /* maxX */, 0 /* minY */, 5 /* maxY */));
+                new BoundingBox(1 /* minX */, 2 /* maxX */, 0 /* minY */, 5 /* maxY */));
     }
 
     @Test
@@ -97,8 +96,8 @@ public class MutableDataSetTest {
         assertEquals(maxY, dataSet.getMaxY());
 
         // Test the method.
-        assertTrue(dataSet.boundsContain(new TestBoundedRegion(minX, maxX, minY, maxY)));
-        assertFalse(dataSet.boundsContain(new TestBoundedRegion(minX, maxX, minY, maxY + 1)));
+        assertTrue(dataSet.boundsContain(new BoundingBox(minX, maxX, minY, maxY)));
+        assertFalse(dataSet.boundsContain(new BoundingBox(minX, maxX, minY, maxY + 1)));
     }
 
     @Test(expected = IllegalStateException.class)
