@@ -13,6 +13,7 @@ import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.util.HorizontalEdge;
 import nepic.util.Pixel;
+import nepic.util.Pixels;
 import nepic.util.Verify;
 
 /**
@@ -48,14 +49,14 @@ public class Blob implements BoundedRegion {
             currPix = itr.next();
             Verify.notNull(currPix, "None of the points in the Blob edges can be null.");
             boundaries.editBoundariesIfNeeded(currPix.x, currPix.y);
-            if (!Pixel.areTouching(prevPix, currPix)) { // Check that adjacent pixels are touching
+            if (!Pixels.areTouching(prevPix, currPix)) { // Check that adjacent pixels are touching
                 needToTraceEdges = true;
             }
             prevPix = currPix;
         }
 
         // Check if the first and last pixels touch
-        if (!needToTraceEdges && currPix != null && !Pixel.areTouching(firstPix, currPix)) {
+        if (!needToTraceEdges && currPix != null && !Pixels.areTouching(firstPix, currPix)) {
             needToTraceEdges = true;
         }
 

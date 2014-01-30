@@ -5,7 +5,6 @@ import java.awt.image.BufferedImage;
 import nepic.data.Histogram;
 import nepic.geo.BoundedRegion;
 import nepic.geo.BoundingBox;
-import nepic.util.Pixel;
 import nepic.util.Verify;
 
 /**
@@ -121,8 +120,7 @@ public class ImagePage implements IdTaggedImage {
         BufferedImage toDisplay = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                toDisplay.setRGB(x, y, Pixel
-                        .piToRgb((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
+                toDisplay.setRGB(x, y, piToRgb((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
             }// for all y
         }// for all x
         return toDisplay;
@@ -135,12 +133,28 @@ public class ImagePage implements IdTaggedImage {
         BufferedImage toDisplay = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                toDisplay.setRGB(x, y, Pixel
-                        .piToRgb((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
+                toDisplay.setRGB(x, y, piToRgb((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
             }// for all y
         }// for all x
         return toDisplay;
     }// displayImg
+
+    /**
+     * Converts the given pixel intensity (PI) to an RGB-formatted color. If the pixel intensity is
+     * outside the range {@code 0-255}, it will be converted to this range before being converted
+     * into a RGB color.
+     *
+     * @param pi the pixel intensity to convert
+     * @return the RGB-formatted color corresponding to the given pixel intensity
+     */
+    private int piToRgb(int pi) {
+        pi = pi > 255 ? 255 : pi < 0 ? 0 : pi;
+        int rgbVal = 0;// sets alpha of RGB
+        rgbVal = (rgbVal << 8) | pi;// sets red of rgb
+        rgbVal = (rgbVal << 8) | pi;// sets green of rgb
+        rgbVal = (rgbVal << 8) | pi;// sets blue of rgb
+        return rgbVal;
+    }
 
     // REL LUM (original)
 
