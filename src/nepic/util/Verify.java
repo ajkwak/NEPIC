@@ -59,25 +59,25 @@ public class Verify {
 
     /**
      * Verifies that the given {@link Collection} is non-empty.
-     * 
+     *
      * @param toCheck the collection to check.
      * @throws NullPointerException if the given collection is {@code null}
      * @throws IllegalArgumentException if the given collection is empty
      */
     public static void nonEmpty(Collection<?> toCheck) {
-        Verify.nonEmpty(toCheck, "given iterable");
+        Verify.nonEmpty(toCheck, "given collection");
     }
 
     /**
      * Verifies that the given {@link Collection} is non-empty.
-     * 
+     *
      * @param toCheck the collection to check.
      * @param item the name of the collection variable
      * @throws NullPointerException if the given collection is {@code null}
      * @throws IllegalArgumentException if the given collection is empty
      */
     public static void nonEmpty(Collection<?> toCheck, String item) {
-        String msg = "Expected " + item + " to be non-empty.  Instead got " + item;
+        String msg = "Expected " + item + " to be non-empty collection.";
         Verify.notNull(toCheck, msg);
         Verify.argument(!toCheck.isEmpty(), msg);
     }
@@ -90,7 +90,7 @@ public class Verify {
      * @throws IllegalArgumentException if the given string is empty
      */
     public static void nonEmpty(String toCheck) {
-        Verify.nonEmpty(toCheck, "given String");
+        Verify.nonEmpty(toCheck, "given string");
     }
 
     /**
@@ -131,6 +131,7 @@ public class Verify {
         int i = 0;
         for (Object element : toCheck) {
             Verify.notNull(element, "Element " + i + " of " + item);
+            i++;
         }
     }
 }
