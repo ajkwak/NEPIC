@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import nepic.data.Histogram;
 import nepic.geo.BoundedRegion;
 import nepic.geo.BoundingBox;
+import nepic.roi.ConflictingRoisException;
 import nepic.util.Verify;
 
 /**
@@ -386,7 +387,7 @@ public class ImagePage implements IdTaggedImage {
         return (15 & imgToAnal[x][y] >> 28);
     }// getCandNum
 
-    public void setId(int x, int y, Roi<?> roi) {
+    public void setId(int x, int y, Roi<?> roi) throws ConflictingRoisException {
         RoiIdHandle roiHandle = roi.getIdHandle();
         Verify.argument(roiHandle.owner == roi, "RoiIdHandle owner is " + roiHandle.owner
                 + ", not " + roi + ".  Unable to set ID.");
@@ -395,7 +396,7 @@ public class ImagePage implements IdTaggedImage {
         if (newRoiNum == currentRoiNum) {
             return;
         } else if (currentRoiNum != 0) {
-            throw new IllegalStateException(new StringBuilder("Unable to set roiID of pixel (")
+            throw new ConflictingRoisException(new StringBuilder("Unable to set roiID of pixel (")
                     .append(x)
                     .append(", ")
                     .append(y)

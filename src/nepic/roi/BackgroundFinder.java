@@ -3,6 +3,8 @@ package nepic.roi;
 import java.awt.Point;
 import java.util.List;
 
+import com.google.common.collect.Lists;
+
 import nepic.Nepic;
 import nepic.geo.Polygon;
 import nepic.image.ConstraintMap;
@@ -39,7 +41,9 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         Double currTheta = constraints.getConstraint(CurrTheta.class);
         if (bkArea != null) {
             // Background constraint
-            initializeBkArea(toReturn, bkArea);
+            if (!initializeBkArea(toReturn, bkArea)) {
+                return null;
+            }
 
             // Origin constraint
             if (origin != null) {
@@ -50,6 +54,8 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
             if (currTheta != null) {
                 initializeTheta(toReturn, currTheta);
             }
+
+            return toReturn;
 
         } else {
             Verify.state(origOrigin != null, "Original y-axis for background not set.");
@@ -103,14 +109,16 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
             }
 
             // Background
-            setRoiBackground(toReturn, bkArea);
+            if (setRoiBackground(toReturn, bkArea)) {
+                return toReturn;
+            }
         }
 
-        return toReturn;
+        return null;
     }
 
     @Override
-    public Background editFeature(Background roi, ConstraintMap<BackgroundConstraint<?>> constraints) {
+    public boolean editFeature(Background roi, ConstraintMap<BackgroundConstraint<?>> constraints) {
         roi.setModified(true);
 
         // BackgroundArea constraint
@@ -120,7 +128,9 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
             if (roiBkArea != null) {
                 removeFeatureFromImage(roi);
             }
-            initializeBkArea(roi, bkArea);
+            if (!initializeBkArea(roi, bkArea)) {
+                return false;
+            }
         }
 
         // Origin constraint
@@ -135,7 +145,7 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
             initializeTheta(roi, currTheta);
         }
 
-        return roi;
+        return true;
     }
 
     @Override
@@ -154,12 +164,22 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
     }
 
     @Override
-    public void restoreFeature(Background validRoi) {
+    public boolean restoreFeature(Background validRoi) {
         Verify.notNull(validRoi, "ROI to restore cannot be null.");
         Verify.argument(validRoi.isValid(), "ROI to restore must be valid");
         validRoi.revalidate(img); // Give valid ROI an Id handle for this image
-        for (Point innardPt : validRoi.getArea().getInnards()) {
-            img.setId(innardPt.x, innardPt.y, validRoi);
+        List<Point> bkInnards = validRoi.getInnards();
+        List<Point> restoredBkPts = Lists.newArrayListWithCapacity(bkInnards.size());
+        try {
+            for (Point innardPt : bkInnards) {
+                img.setId(innardPt.x, innardPt.y, validRoi);
+            }
+            return true;
+        } catch (ConflictingRoisException e) {
+            for (Point invalidRestoredPt : restoredBkPts) {
+                img.noLongerCand(invalidRestoredPt.x, invalidRestoredPt.y);
+            }
+            return false;
         }
     }
 
@@ -179,7 +199,8 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
                 + roi.getArea().getInnards().size());// + "\n\n" + img.printDraw());
     }
 
-    private void setRoiBackground(Background roi, Polygon bkArea) {
+    private boolean setRoiBackground(Background roi, Polygon bkArea) {
+        Polygon prevBkArea = roi.getArea();
         roi.setArea(bkArea);
 
         // Make Histograms for bkArea
@@ -205,24 +226,32 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
                 roi.setArea(null);
                 Nepic.log(EventType.WARNING, "Background extends beyond image boundaries.  "
                         + "Please indicate a new background.");
-                break;
-            } catch (IllegalStateException e) { // if overlap with another ROI
+                return false;
+            } catch (ConflictingRoisException e) { // if overlap with another ROI
                 removeFeatureFromImage(roi);
-                roi.setArea(null);
+                roi.setArea(prevBkArea);
+                if (prevBkArea != null) {
+                    restoreFeature(roi);
+                }
                 Nepic.log(EventType.WARNING, "Background conflicts with another ROI.  "
                         + "Please indicate a new background.");
-                break;
+                return false;
             }
         }
+
 
         // Set histograms to BK
         roi.setPiHist(piHistBuilder.build());
         roi.setEdgeHist(edgeHistBuilder.build());
+        return true;
     }
 
-    private void initializeBkArea(Background roi, Polygon bkArea) {
-        origBkArea = bkArea;
-        setRoiBackground(roi, bkArea);
+    private boolean initializeBkArea(Background roi, Polygon bkArea) {
+        if (setRoiBackground(roi, bkArea)) {
+            origBkArea = bkArea;
+            return true;
+        }
+        return false;
     }
 
     private void initializeTheta(Background toReturn, Double currTheta) {

@@ -256,7 +256,7 @@ public class Tracker {
             bkFinder.editFeature(bkCand, map);
         }
 
-        if (bkCand.getArea() != null) {
+        if (bkCand != null && bkCand.getArea() != null) {
             return true;
         }
         return false;
@@ -332,7 +332,7 @@ public class Tracker {
             // TODO: relase ROI number!
         }
 
-        try {
+        // try {
 
             cbCand = cbFinder.createFeature(cbConstraints);
 
@@ -346,10 +346,10 @@ public class Tracker {
                 bkFinder.editFeature(bkCand, bkConstraints);
             }
 
-        } catch (IllegalStateException e) {
-            fixCandConflictsWithBackground();
-            cbCand = cbFinder.createFeature(cbConstraints);
-        }
+        // } catch (IllegalStateException e) {
+        // fixCandConflictsWithBackground();
+        // cbCand = cbFinder.createFeature(cbConstraints); // TODO exception thrown here.
+        // }
 
         return cbCand != null;
     }// findCB
@@ -402,23 +402,14 @@ public class Tracker {
         }
         ConstraintMap<CellBodyConstraint<?>> constraints = new ConstraintMap<CellBodyConstraint<?>>()
                 .addConstraints(new CellBodyFinder.DesiredSize(constraint));
-        try {
+        // try {
             cbFinder.editFeature(cbCand, constraints);
-        } catch (IllegalStateException e) {
-            // Will only happen when candidate is enlarged such that it collides with the background
-            fixCandConflictsWithBackground();
-            cbFinder.editFeature(cbCand, constraints);
-        }
+        // } catch (IllegalStateException e) {
+        // // Will only happen when candidate is enlarged such that it collides with the background
+        // fixCandConflictsWithBackground();
+        // cbFinder.editFeature(cbCand, constraints);
+        // }
 
-    }
-
-    public void fixCandConflictsWithBackground() {
-        Nepic.log(EventType.WARNING, "Cell body conflicts with the indicated background.  "
-                + "Please indicate a new background.");
-        // cbFinder.removeFeature(cbCand);
-        myGUI.erase(bkCand.getId());
-        bkFinder.removeFeature(bkCand);
-        bkCand = null;
     }
 
     // *********************************************************************************************

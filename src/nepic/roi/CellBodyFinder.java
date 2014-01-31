@@ -8,6 +8,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.common.collect.Lists;
+
 import nepic.Nepic;
 import nepic.geo.Blob;
 import nepic.geo.BoundingBox;
@@ -35,7 +37,7 @@ import nepic.util.Verify;
 public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
     @Override
-    public CellBody createFeature(ConstraintMap<CellBodyConstraint<?>> constraints) {
+    public CellBody createFeature(ConstraintMap<CellBodyConstraint<?>> constraints) { // XXX
         CellBody roi = new CellBody(img);
 
         // SeedPolygon constraint
@@ -44,7 +46,13 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             // Use the whole image to find the seedPixel
             seedPolygon = img.getBoundingBox().asPolygon();
         }
-        adjustToSeedPolygon(roi, seedPolygon);
+        try{
+            adjustToSeedPolygon(roi, seedPolygon);
+        }catch(ConflictingRoisException e){
+            Nepic.log(EventType.WARNING, "Seed pixel of CellBody conflicts with another ROI", e
+                    .getMessage());
+            return null;
+        }
 
         // Determine if CellBody can be found in this area
         Point seedPixel = roi.getSeedPixel();
@@ -60,9 +68,8 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             Nepic.log(EventType.VERBOSE, "minPI = " + minPi);
 
             // Extend edges to MinPi
-            edges = extendEdges(edges, roi, minPi);
-            roi.setMinPi(minPi);
-            setRoiEdges(roi, new Blob(edges));
+            extendEdges(roi, minPi);
+            generateNewCellBodyHistogram(roi);
 
             // DesiredSize constraint
             Pair<Integer, SizeEdgeCase> desiredSize = constraints.getConstraint(DesiredSize.class);
@@ -73,24 +80,25 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             Nepic.log(EventType.WARNING, "Edges of CellBody not found.");
             // TODO: in future, simply return null, but for now, have this workaround
             roi.setEdges(new Blob(edges)); // Does NOT make a valid CellBody object
+        } catch (ConflictingRoisException e) {
+            return roi;
         }
         return roi;
     }
 
     @Override
-    public CellBody editFeature(CellBody roi, ConstraintMap<CellBodyConstraint<?>> constraints) {
-        roi.setModified(true);
+    public boolean editFeature(CellBody roi, ConstraintMap<CellBodyConstraint<?>> constraints) {
         // Only adjustable CellBody Constraint is currently desiredSize
         Pair<Integer, SizeEdgeCase> desiredSize = constraints.getConstraint(DesiredSize.class);
         if (desiredSize != null) {
             adjustToDesiredSize(roi, desiredSize.first, desiredSize.second);
         }
-        return roi;
+        return true;
     }
 
     @Override
     public void removeFeature(CellBody roi) {
-        removeFeatureFromImage(roi.getId(), roi.getArea());
+        removeFeatureFromImage(roi);
         // roi.setPiHist(null);
         // roi.clear();
     }
@@ -98,24 +106,33 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
     @Override
     public void acceptFeature(CellBody roi) {
         roi.setModified(false);
-        removeFeatureFromImage(roi.getId(), roi.getArea());
+        removeFeatureFromImage(roi);
     }
 
     @Override
-    public void restoreFeature(CellBody validRoi) {
+    public boolean restoreFeature(CellBody validRoi) {
         Verify.notNull(validRoi, "ROI to restore cannot be null.");
         Verify.argument(validRoi.isValid(), "ROI to restore must be valid");
         validRoi.revalidate(img); // Give valid ROI an Id handle for this image
         Blob roiArea = validRoi.getArea();
-        for (Point edgePt : roiArea.getEdges()) {
-            img.setId(edgePt.x, edgePt.y, validRoi);
-        }
-        for (Point innardPt : roiArea.getInnards()) {
-            img.setId(innardPt.x, innardPt.y, validRoi);
+        List<Point> restoredPts = new LinkedList<Point>();
+        try {
+            for (Point edgePt : roiArea.getEdges()) {
+                img.setId(edgePt.x, edgePt.y, validRoi);
+                restoredPts.add(edgePt);
+            }
+            for (Point innardPt : roiArea.getInnards()) {
+                img.setId(innardPt.x, innardPt.y, validRoi);
+                restoredPts.add(innardPt);
+            }
+            return true;
+        } catch (ConflictingRoisException e) {
+            return false;
         }
     }
 
-    private void adjustToSeedPolygon(CellBody roi, Polygon seedPolygon) {
+    private void adjustToSeedPolygon(CellBody roi, Polygon seedPolygon)
+            throws ConflictingRoisException {
         Pixel seedPixel = getMostIntensePixel(seedPolygon);
 
         // Set seed pixel
@@ -157,44 +174,55 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
     private static final int changePiIncrement = 5;
 
     private boolean enlargeToDesiredSize(CellBody roi, int desiredSize, SizeEdgeCase edgeCase) {
-        Blob cb = roi.getArea();
         int minPi = roi.getMinPi();
         int imgSize = img.getNumPixels();
-        int size = cb.getSize();
+        int initCbSize = roi.getArea().getSize();
+        int size = initCbSize;
         if (size == imgSize) {
             Nepic.log(EventType.INFO, "Unable to enlarge candidate further.");
             return false;
         }
         int prevSize = size;
-        List<Point> edges = cb.getEdges();
         final int roiNum = roi.getId();
 
-        while (size < desiredSize && size < imgSize) {
-            prevSize = size;
-            minPi -= changePiIncrement;
-            edges = extendEdges(edges, roi, minPi);
-            cb = new Blob(edges);
-            size = cb.getSize();
+        try {
+            while (size < desiredSize && size < imgSize) {
+                prevSize = size;
+                minPi -= changePiIncrement;
+                extendEdges(roi, minPi);
+                size = roi.getArea().getSize();
+            }
+        } catch (ConflictingRoisException e) {
+            Nepic.log(EventType.WARNING, e.getMessage());
+            return false;
         }
 
-        // Re-shrink once, if necessary
-        if (edgeCase == SizeEdgeCase.SMALLER
-                || (edgeCase == SizeEdgeCase.AS_CLOSE_AS_POSSIBLE && (desiredSize - prevSize < size
-                        - desiredSize))) {
-            removeFeatureFromImage(roiNum, cb);
-            minPi += changePiIncrement;
-            edges.clear();
-            Point seedPix = roi.getSeedPixel();
-            edges.add(seedPix);
-            img.setId(seedPix.x, seedPix.y, roi);
-            if (prevSize > 1) {
-                edges = extendEdges(edges, roi, minPi);
-                cb = new Blob(edges);
+
+        try {
+            // Re-shrink once, if necessary
+            if (edgeCase == SizeEdgeCase.SMALLER
+                    || (edgeCase == SizeEdgeCase.AS_CLOSE_AS_POSSIBLE && (desiredSize - prevSize < size
+                            - desiredSize))) {
+                removeFeatureFromImage(roi);
+                minPi += changePiIncrement;
+                Point seedPix = roi.getSeedPixel();
+                img.setId(seedPix.x, seedPix.y, roi);
+                roi.setEdges(new Blob(Lists.newArrayList(seedPix)));
+                if (prevSize > 1) {
+                    extendEdges(roi, minPi);
+                }
             }
+        } catch (ConflictingRoisException e) {
+            // This should never happen!!
+            Nepic.log(EventType.ERROR_FATAL, "Shrink during candidate enlargement failed!",
+                    EventLogger.formatException(e));
+            return false;
         }
+
         roi.setMinPi(minPi);
-        setRoiEdges(roi, cb);
-        Nepic.log(EventType.VERBOSE, "Candidate enlarged.  Size of candidate now: " + cb.getSize());
+        generateNewCellBodyHistogram(roi);
+        Nepic.log(EventType.VERBOSE, "Candidate enlarged.  Size of candidate now: "
+                + roi.getArea().getSize() + ".  MinPI = " + roi.getMinPi());
         return true;
     }
 
@@ -202,50 +230,51 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         final Pixel seedPix = roi.getSeedPixel();
         final int seedPixPi = seedPix.color;
         int minPi = roi.getMinPi();
-        if (minPi == seedPixPi) {
+        int size = roi.getArea().getSize();
+        int prevSize = size;
+        if (minPi == seedPixPi || size == 1) {
             Nepic.log(EventType.INFO, "Unable to shrink candidate further.");
             return false;
         }
 
-        Blob cb = roi.getArea();
-        List<Point> edges = cb.getEdges();
-        final int roiNum = roi.getId();
-        int size = roi.getArea().getSize();
-        int prevSize = size;
+        try {
+            while (size > desiredSize) {
+                // Remove feature so can extend to shrink
+                removeFeatureFromImage(roi);
+                img.setId(seedPix.x, seedPix.y, roi);
+                roi.setEdges(new Blob(Lists.newArrayList(seedPix)));
 
-        while (size > desiredSize) {
-            // Remove feature so can extend to shrink
-            removeFeatureFromImage(roiNum, cb);
-            edges.clear();
-            edges.add(seedPix);
-            img.setId(seedPix.x, seedPix.y, roi);
-
-            // Extend cell body edges to a higher minPi (net shrink action)
-            prevSize = size;
-            minPi += changePiIncrement;
-            if (minPi > seedPixPi) {
-                minPi = seedPixPi;
+                // Extend cell body edges to a higher minPi (net shrink action)
+                prevSize = size;
+                minPi += changePiIncrement;
+                if (minPi > seedPixPi) {
+                    minPi = seedPixPi;
+                    System.out.println("minPI should now be " + seedPixPi);
+                }
+                extendEdges(roi, minPi);
+                size = roi.getArea().getSize();
+                if (minPi == seedPixPi) {
+                    break;
+                }
             }
-            edges = extendEdges(edges, roi, minPi);
-            cb = new Blob(edges);
-            size = cb.getSize();
-            if (minPi == seedPixPi) {
-                break;
-            }
-        }
 
-        // Re-enlarge once, if necessary
-        if (edgeCase == SizeEdgeCase.BIGGER
-                || (edgeCase == SizeEdgeCase.AS_CLOSE_AS_POSSIBLE && (desiredSize - prevSize > size
-                        - desiredSize))) {
-            minPi -= changePiIncrement;
-            edges = extendEdges(edges, roi, minPi);
-            cb = new Blob(edges);
+            // Re-enlarge once, if necessary
+            if (edgeCase == SizeEdgeCase.BIGGER
+                    || (edgeCase == SizeEdgeCase.AS_CLOSE_AS_POSSIBLE && (desiredSize - prevSize > size
+                            - desiredSize))) {
+                minPi -= changePiIncrement;
+                extendEdges(roi, minPi);
+            }
+            generateNewCellBodyHistogram(roi);
+            Nepic.log(EventType.VERBOSE, "Candidate shrunk.  Size of candidate now: "
+                    + roi.getArea().getSize() + ". MinPI now " + roi.getMinPi());
+            return true;
+        } catch (ConflictingRoisException e) {
+            // THIS SHOULD NEVER HAPPEN.
+            Nepic.log(EventType.ERROR_FATAL, "Edge extention during CB shrinkage failed!",
+                    EventLogger.formatException(e));
+            return false;
         }
-        roi.setMinPi(minPi);
-        setRoiEdges(roi, cb);
-        Nepic.log(EventType.VERBOSE, "Candidate shrunk.  Size of candidate now: " + cb.getSize());
-        return true;
     }
 
     /**
@@ -255,12 +284,14 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
      * @param roi the ROI whose edges need to e set
      * @param newEdges the new edges of the ROI
      */
-    private void setRoiEdges(CellBody roi, Blob newEdges) {
-        roi.setEdges(newEdges);
-
+    private void generateNewCellBodyHistogram(CellBody roi) {
         // Make histogram for cb
         Histogram.Builder cbPiHistBuilder = new Histogram.Builder(0, 255);
-        for (Point cbPt : newEdges.getInnards()) {
+        for (Point cbPt : roi.getInnards()) {
+            // For all points in the cell body
+            cbPiHistBuilder.addValues(img.getPixelIntensity(cbPt.x, cbPt.y));
+        }
+        for (Point cbPt : roi.getEdges()) {
             // For all points in the cell body
             cbPiHistBuilder.addValues(img.getPixelIntensity(cbPt.x, cbPt.y));
         }
@@ -274,21 +305,21 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
      * @param roiNum the ID number of the ROI to remove from the image
      * @param roiEdges the blob indicating the location of the ROI in the image
      */
-    private void removeFeatureFromImage(int roiNum, Blob roiEdges) {// Does NOT clear the roi
-        for (Point edgePix : roiEdges.getEdges()) {
+    private void removeFeatureFromImage(CellBody roi) {
+        for (Point edgePix : roi.getEdges()) {
             img.noLongerCand(edgePix.x, edgePix.y);
         }
-        for (Point innardPix : roiEdges.getInnards()) {
+        for (Point innardPix : roi.getInnards()) {
             img.noLongerCand(innardPix.x, innardPix.y);
         }
 
         // Check : TODO remove this code!
-        List<Point> unclearedPixs = getAllPixelsInRoi(roiNum);
+        List<Point> unclearedPixs = getAllPixelsInRoi(roi.getId());
         int numUnclearedPixs = unclearedPixs.size();
         if (numUnclearedPixs > 0) {
-            roiEdges.printDraw(unclearedPixs);
+            roi.getArea().printDraw(unclearedPixs);
         }
-        Verify.argument(numUnclearedPixs == 0, "Not all pixels in ROI (ID = " + roiNum
+        Verify.argument(numUnclearedPixs == 0, "Not all pixels in ROI (ID = " + roi.getId()
                 + ") removed! " + numUnclearedPixs + " uncleared pixels remain:\n\t"
                 + unclearedPixs);
     }
@@ -427,16 +458,16 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
     }
 
     // returns maxXPoint
-    private List<Point> extendEdges(List<Point> outerEdges, Roi<?> roi, int minPi) {
-        List<Point> extendedBy = new LinkedList<Point>();
+    private void extendEdges(CellBody roi, int minPi) throws ConflictingRoisException {
         DoubleLinkRing<Point> candEdges = new DoubleLinkRing<Point>();
         int roiId = roi.getId();
-        for (Point edgePt : outerEdges) {
+        for (Point edgePt : roi.getEdges()) {
             Verify.argument(img.getId(edgePt.x, edgePt.y) == roiId,
                     "edgePt is not in ROI!  Expected RoiNum = " + roiId + ", actual RoiNum of "
                             + edgePt + " = " + img.getId(edgePt.x, edgePt.y));
             candEdges.add(edgePt);
         }
+        List<Point> extendedBy = new LinkedList<Point>();
         try {
             Point maxXPix = null;
             Iterator<Point> edgePixItr = candEdges.iterator();
@@ -486,18 +517,20 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                 Nepic.log(EventType.ERROR,
                         "Unable to extend edges of candidate; too many errors detected.");
             }
-            if (extendedBy.isEmpty()) {
-                return outerEdges;
+            if (!extendedBy.isEmpty()) {
+                roi.setEdges(new Blob(Blob.traceOuterEdges(img, maxXPix, roiId)));
+                roi.setModified(true); // CellBody is ONLY modified if edges were extended.
             }
-            return Blob.traceOuterEdges(img, maxXPix, roiId);
-        } catch (IllegalStateException e) {
+            roi.setMinPi(minPi);
+        } catch (ConflictingRoisException e) {
             // If enlarge into another ROI
             for (Point pt : extendedBy) {
                 img.noLongerCand(pt.x, pt.y);
             }
-            throw new IllegalStateException(e.getMessage()
-                    + ", caught by CellBodyFinder.extendEdges();"
-                    + " unable to extend edges of cbCand");
+            Nepic.log(EventType.VERBOSE, "Unable to extend CellBody edges to " + minPi, ":",
+                    e.getMessage());
+            throw new ConflictingRoisException("Unable to further extend CellBody edges.  "
+                    + "Enlarged CellBody conflicts with an existing ROI.");
         }
     }// extendEdges
 
@@ -533,7 +566,8 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         return false;
     }
 
-    private int tryToAdd(Pixel toAdd, DoubleLinkRing<Point> candEdges, Roi<?> roi) {
+    private int tryToAdd(Pixel toAdd, DoubleLinkRing<Point> candEdges, Roi<?> roi)
+            throws ConflictingRoisException {
         int numErrors = 0;
 
         if (img.getId(toAdd.x, toAdd.y) == roi.getId()) {
