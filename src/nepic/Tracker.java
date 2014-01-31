@@ -37,8 +37,8 @@ import nepic.roi.CellBodyConstraint;
 import nepic.roi.CellBodyFinder;
 import nepic.roi.DataScanner;
 import nepic.data.Histogram;
-import nepic.roi.model.LineSegment;
-import nepic.roi.model.Polygon;
+import nepic.geo.LineSegment;
+import nepic.geo.Polygon;
 import nepic.util.Pair;
 import nepic.util.Verify;
 
