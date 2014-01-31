@@ -422,10 +422,6 @@ public class Interface extends JFrame implements LoggerObserver {
                 .append(Nepic.APP_NAME)
                 .append("\r\n");
 
-        if (Nepic.TEST_STAGE != Nepic.TestStage.Production) { // If not in production
-            appInfoBuilder.append("Testing Stage:  ").append(Nepic.TEST_STAGE).append("\r\n");
-        }
-
         appInfoBuilder
                 .append("Version:  ")
                 .append(Nepic.VERSION)

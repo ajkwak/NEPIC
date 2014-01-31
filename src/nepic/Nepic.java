@@ -6,7 +6,7 @@ import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-8_NewLogger (Called SharedVariables until
  *        AutoCBFinder_Alpha_v0-9-2013-01-29)
@@ -16,21 +16,9 @@ import nepic.logging.EventType;
 public class Nepic {
     public static final String APP_NAME = "NEPIC";
 
-    public enum TestStage {
-        Alpha,
-        Beta,
-        Production;
-    }
+    public static final String VERSION = "v1.1";
 
-    public static final TestStage TEST_STAGE = TestStage.Alpha;
-
-    public static final String VERSION = "v1.0.2013.02.10";
-
-    public static final String VERSION_NAME = "AutoCBFinder_Alpha_v1-0-2013-02-10";
-
-    public static final String RELEASE_DATE = null;
-
-    public static final String BASED_ON = "AutoCBFinder_Alpha_v1-0_2013-01-29";
+    public static final String RELEASE_DATE = "31 January 2014";
 
     public static final String AUTHOR = "AJ Parmidge";
 
@@ -43,13 +31,7 @@ public class Nepic {
     static final EventLogger eLogger = new EventLogger("nepicEvents");
 
     public static String getFullAppName() {
-        StringBuilder nameBuilder = new StringBuilder(APP_NAME).append(" ");
-
-        if (TEST_STAGE != TestStage.Production) {
-            nameBuilder.append("(").append(TEST_STAGE).append(") ");
-        }
-
-        return nameBuilder.append(VERSION).toString();
+        return new StringBuilder(APP_NAME).append(" ").append(VERSION).toString();
     }
 
     public static final int MOUSE_ACTION_ID = 0; // TODO: remove, put somewhere else!!!
