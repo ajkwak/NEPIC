@@ -64,7 +64,6 @@ public class Tracker {
 
     // From last page.img: Use for tracking
     private PageInfo prevPgInfo = null;
-    int eThresh = -1; // TODO change
 
     // Current page.img
     private ImagePage currPg = null;
@@ -258,8 +257,6 @@ public class Tracker {
         }
 
         if (bkCand.getArea() != null) {
-            eThresh = bkCand.getEdgeThresh();
-            // bkCand.setModified(false);
             return true;
         }
         return false;
@@ -276,33 +273,28 @@ public class Tracker {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (bkCand == null) {
+            boolean redrawBK; // TODO: what if CB doesn't exist
+            if (clickLoc == null || dragLoc == null) {
+                redrawBK = findCB();
+            } else {
+                myGUI.erase(Nepic.MOUSE_ACTION_ID);
+                Polygon secCorners = new Polygon(new Point[] {
+                        clickLoc,
+                        new Point(dragLoc.x, clickLoc.y),
+                        dragLoc,
+                        new Point(clickLoc.x, dragLoc.y) });
+                redrawBK = findCB(secCorners);
+            }// else
+            if (redrawBK) {
+                if (cbCandValid()) {
+                    Nepic.log(EventType.INFO, "Found CellBody candidate.  MinPi = "
+                            + cbCand.getMinPi());
+                }
+                redrawCbCand();
+                redrawBkCand();
+            } else {
                 myGUI.displayCurrentAction("Unable to find cell body until "
                         + "background has been accepted.");
-            } else {
-                boolean redrawBK; // TOOD: what if CB doesn't exist
-                if (clickLoc == null || dragLoc == null) {
-                    redrawBK = findCB();
-                } else {
-                    myGUI.erase(Nepic.MOUSE_ACTION_ID);
-                    Polygon secCorners = new Polygon(new Point[] {
-                            clickLoc,
-                            new Point(dragLoc.x, clickLoc.y),
-                            dragLoc,
-                            new Point(clickLoc.x, dragLoc.y) });
-                    redrawBK = findCB(secCorners);
-                }// else
-                if (redrawBK) {
-                    if (cbCandValid()) {
-                        Nepic.log(EventType.INFO, "Found CellBody candidate.  MinPi = "
-                                + cbCand.getMinPi());
-                    }
-                    redrawCbCand();
-                    redrawBkCand();
-                } else {
-                    myGUI.displayCurrentAction("Unable to find cell body until "
-                            + "background has been accepted.");
-                }
             }
         }// actionPerformed
     }// ChooseFileHandler
@@ -327,8 +319,7 @@ public class Tracker {
      */
     public boolean findCB(Polygon corners) {
         ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>()
-                .addConstraints(new CellBodyFinder.SeedPolygon(corners),
-                        new CellBodyFinder.EdgeThresh(eThresh));
+                .addConstraints(new CellBodyFinder.SeedPolygon(corners));
         if (prevPgInfo != null && prevPgInfo.hasValidCB()) {
             int desiredSize = prevPgInfo.getCB().getArea().getSize();
             cbConstraints.addConstraints(new CellBodyFinder.DesiredSize(Pair.newPair(desiredSize,
@@ -485,7 +476,6 @@ public class Tracker {
                 "After setting ROIs, should be valid.");
         currPgInfo = pages.getPage(currPgNum);
 
-        eThresh = bkCand.getEdgeThresh();
         Nepic.log(EventType.INFO, "ROI candidates accepted.", "PI ratio =",
                 currPgInfo.getPiRatio(), "CellBody: seedPix =", cbCand.getSeedPixel(), "minPi =",
                 cbCand.getMinPi(), "Background: corners =", bkCand.getArea());

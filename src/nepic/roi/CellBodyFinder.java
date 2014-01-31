@@ -46,10 +46,6 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         }
         adjustToSeedPolygon(roi, seedPolygon);
 
-        // EdgeThresh constraint
-        Integer eThresh = constraints.getConstraint(EdgeThresh.class); // TODO: what if no eThresh
-        adjustToEdgeThresh(roi, eThresh);
-
         // Determine if CellBody can be found in this area
         Point seedPixel = roi.getSeedPixel();
 
@@ -131,10 +127,6 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         List<Point> initEdges = new LinkedList<Point>();
         initEdges.add(seedPixel);
         roi.setEdges(new Blob(initEdges)); // sets edges without setting up histogram, etc
-    }
-
-    private void adjustToEdgeThresh(CellBody roi, int edgeThresh) {
-        roi.setEdgeThresh(edgeThresh);
     }
 
     /**
@@ -568,18 +560,6 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
     public static class SeedPolygon extends CellBodyConstraint<Polygon> {
 
         public SeedPolygon(Polygon val) {
-            super(val);
-        }
-
-    }
-
-    // *******************************************************************
-    // EdgeThresh
-    // *******************************************************************
-
-    public static class EdgeThresh extends CellBodyConstraint<Integer> {
-
-        public EdgeThresh(Integer val) {
             super(val);
         }
 

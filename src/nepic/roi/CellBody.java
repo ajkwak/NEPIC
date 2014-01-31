@@ -25,7 +25,6 @@ public class CellBody extends Roi<CellBodyConstraint<?>> {
     private DataScanner[] cbEdgeFinders = new DataScanner[8];
 
     private int minPi;
-    private int eThresh;
 
     CellBody(ImagePage img) {
         super(img);
@@ -74,14 +73,6 @@ public class CellBody extends Roi<CellBodyConstraint<?>> {
 
     public void setMinPi(Integer newVal) {
         minPi = newVal;
-    }
-
-    public Integer getEdgeThresh() {
-        return eThresh;
-    }
-
-    public void setEdgeThresh(Integer newVal) {
-        eThresh = newVal;
     }
 
     public DataScanner[] getEdgeFinders() {
