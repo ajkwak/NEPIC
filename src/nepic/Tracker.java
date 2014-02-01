@@ -1,6 +1,5 @@
 package nepic;
 
-//TODO: Record if user accepts a CB where no edges were initially found (so can track for dimmer images)
 import java.awt.Desktop;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -37,6 +36,7 @@ import nepic.roi.CellBodyConstraint;
 import nepic.roi.CellBodyFinder;
 import nepic.roi.DataScanner;
 import nepic.data.Histogram;
+import nepic.geo.Blob;
 import nepic.geo.LineSegment;
 import nepic.geo.Polygon;
 import nepic.util.Pair;
@@ -170,8 +170,7 @@ public class Tracker {
         currPg = page;
         PageInfo currPageInfo = pages.getPage(pgNum);
         boolean hasValidRois = false;
-        if (currPageInfo == null) { // TODO: what if 'page' does not match currPageInfo when
-                                    // non-null
+        if (currPageInfo == null) { // What if 'page' does not match currPageInfo when non-null?
             currPageInfo = new PageInfo(imgName, pgNum, page);
             pages.setPage(currPageInfo);
         } else {
@@ -286,15 +285,12 @@ public class Tracker {
                 redrawBK = findCB(secCorners);
             }// else
             if (redrawBK) {
-                if (cbCandValid()) {
-                    Nepic.log(EventType.INFO, "Found CellBody candidate.  MinPi = "
-                            + cbCand.getMinPi());
-                }
+                Nepic.log(EventType.INFO, "Found CellBody candidate.  MinPi = "
+                        + cbCand.getMinPi());
                 redrawCbCand();
                 redrawBkCand();
             } else {
-                myGUI.displayCurrentAction("Unable to find cell body until "
-                        + "background has been accepted.");
+                myGUI.displayCurrentAction("Unable to find cell body in indicated region.");
             }
         }// actionPerformed
     }// ChooseFileHandler
@@ -339,8 +335,9 @@ public class Tracker {
             if (bkCand != null) {
                 LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-                ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
-                        .addConstraints(new BackgroundFinder.Origin(cbLength.getMidPoint()),
+                ConstraintMap<BackgroundConstraint<?>> bkConstraints
+                    = new ConstraintMap<BackgroundConstraint<?>>().addConstraints(
+                                new BackgroundFinder.Origin(cbLength.getMidPoint()),
                                 new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
 
                 bkFinder.editFeature(bkCand, bkConstraints);
@@ -351,7 +348,7 @@ public class Tracker {
         // cbCand = cbFinder.createFeature(cbConstraints); // TODO exception thrown here.
         // }
 
-        return cbCand != null;
+        return cbCandValid();
     }// findCB
 
     // *********************************************************************************************
@@ -544,8 +541,10 @@ public class Tracker {
         }
 
         // If need to find the CB
-        Polygon prevCbLoc = prevPgInfo.getCB().getArea().getBoundingBox().asPolygon();
-        if (findCB(prevCbLoc) && cbCand.isValid()) { // TODO change
+        Blob prevCb = prevPgInfo.getCB().getArea();
+        Polygon prevCbLoc = prevCb.getBoundingBox().asPolygon();
+        int prevCbSize = prevCb.getSize();
+        if (trackCbInGivenArea(prevCbLoc, prevCbSize)) {
             if (!bkCandValid()) {
                 trackBackground();
             }
@@ -555,7 +554,7 @@ public class Tracker {
                 "Unable to find cell body in previous location.  Enlarging region for search");
         prevCbLoc = prevCbLoc.changeSize(2).getBoundingBox().getIntersectionWith(
                 currPg.getBoundingBox()).asPolygon();
-        if (findCB(prevCbLoc) && cbCand.isValid()) { // TODO change
+        if (trackCbInGivenArea(prevCbLoc, prevCbSize)) {
             if (!bkCandValid()) {
                 trackBackground();
             }
@@ -564,7 +563,7 @@ public class Tracker {
         Nepic.log(EventType.INFO,
                 "Unable to find cell body near previous location.  Checking entire image.");
         prevCbLoc = currPg.getBoundingBox().asPolygon();
-        if (findCB(prevCbLoc) && cbCand.isValid()) { // TODO change
+        if (trackCbInGivenArea(prevCbLoc, prevCbSize)) {
             if (!bkCandValid()) {
                 trackBackground();
             }
@@ -573,13 +572,22 @@ public class Tracker {
         return false;
     }
 
+    private boolean trackCbInGivenArea(Polygon location, int prevCbSize) {
+        if (findCB(location) && cbCand.isValid()) {
+            int newCbSize = cbCand.getArea().getSize();
+            return newCbSize >= (0.75 * prevCbSize) && newCbSize <= (1.5 * prevCbSize);
+        }
+        return false;
+    }
+
     private void trackBackground() { // TODO : what about when want to track bk with invalid
                                      // candidate (so when make valid, will track bk properly)
         LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-        ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
-                .addConstraints(new BackgroundFinder.Origin(cbLength.getMidPoint()),
-                        new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
+        ConstraintMap<BackgroundConstraint<?>> bkConstraints 
+            = new ConstraintMap<BackgroundConstraint<?>>().addConstraints(
+                    new BackgroundFinder.Origin(cbLength.getMidPoint()),
+                    new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
 
         bkConstraints.addConstraints(new BackgroundFinder.PrevTheta(prevPgInfo.getBK().getTheta()));
         bkCand = bkFinder.createFeature(bkConstraints);

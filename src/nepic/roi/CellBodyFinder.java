@@ -65,7 +65,6 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         try {
             roi.setEdgeFinders(processScanlines(seedPixel));
             int minPi = smoothAndDeterminePiThreshold(seedPixel);
-            Nepic.log(EventType.VERBOSE, "minPI = " + minPi);
 
             // Extend edges to MinPi
             extendEdges(roi, minPi);
