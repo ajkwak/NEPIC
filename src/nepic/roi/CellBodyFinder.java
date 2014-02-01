@@ -482,6 +482,9 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                         Pixel pixToAdd = new Pixel(ePixX - 1, ePixY, checkIfAdd);
                         numErrors += tryToAdd(pixToAdd, candEdges, roi);
                         extendedBy.add(pixToAdd);
+                        if (checkIfAdd > roi.getSeedPixel().color) { // Then ePixel is new seedPix.
+                            roi.setSeedPixel(new Pixel(ePixX, ePixY, checkIfAdd));
+                        }
                     }// if add checkIfAdd to cand
                 }// if pixel to left of pixel being examined is not already in cand
                 if (ePixX < img.width - 1 && img.getId(ePixX + 1, ePixY) != roiId) {
@@ -490,6 +493,9 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                         Pixel pixToAdd = new Pixel(ePixX + 1, ePixY, checkIfAdd);
                         numErrors += tryToAdd(pixToAdd, candEdges, roi);
                         extendedBy.add(pixToAdd);
+                        if (checkIfAdd > roi.getSeedPixel().color) { // Then ePixel is new seedPix.
+                            roi.setSeedPixel(new Pixel(ePixX, ePixY, checkIfAdd));
+                        }
                     }// if add checkIfAdd to cand
                 }// if pixel to the right of pixel being examined is not already in cand
                 if (ePixY > 0 && img.getId(ePixX, ePixY - 1) != roiId) {
@@ -498,6 +504,9 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                         Pixel pixToAdd = new Pixel(ePixX, ePixY - 1, checkIfAdd);
                         numErrors += tryToAdd(pixToAdd, candEdges, roi);
                         extendedBy.add(pixToAdd);
+                        if (checkIfAdd > roi.getSeedPixel().color) { // Then ePixel is new seedPix.
+                            roi.setSeedPixel(new Pixel(ePixX, ePixY, checkIfAdd));
+                        }
                     }// if add checkIfAdd to cand
                 }// if pixel above pixel being examined not already in cand
                 if (ePixY < img.height - 1 && img.getId(ePixX, ePixY + 1) != roiId) {
@@ -506,6 +515,9 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
                         Pixel pixToAdd = new Pixel(ePixX, ePixY + 1, checkIfAdd);
                         numErrors += tryToAdd(pixToAdd, candEdges, roi);
                         extendedBy.add(pixToAdd);
+                        if (checkIfAdd > roi.getSeedPixel().color) { // Then ePixel is new seedPix.
+                            roi.setSeedPixel(new Pixel(ePixX, ePixY, checkIfAdd));
+                        }
                     }// if add checkIfAdd to cand
                 }// if pixel below pixel being examined not already in cand
                 if (maxXPix == null || ePixel.x > maxXPix.x) {
