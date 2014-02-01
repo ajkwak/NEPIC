@@ -242,6 +242,7 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         if(bkPts.isEmpty()){
             Nepic.log(EventType.WARNING,
                     "Cannot accept current background, as it contains no pixels.");
+            return false;
         }
 
 
