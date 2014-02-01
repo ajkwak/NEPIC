@@ -89,7 +89,7 @@ public class CellBody extends Roi<CellBodyConstraint<?>> {
 
     @Override
     public boolean isValid() {
-        return cbArea != null && piHist != null;
+        return cbArea != null && cbArea.getSize() > 4 && piHist != null;
     }
 
     public static Label[] getCsvLabels() {
