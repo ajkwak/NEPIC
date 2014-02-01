@@ -93,8 +93,8 @@ public class Tracker {
 
     private boolean selectFileToAnalyze() {
         File fileToAnal = myGUI.selectTiffFile();
-        if (fileToAnal == null) {
-            analFileClassPath = null;
+        if (fileToAnal == null) { // Keep the current file being analyzed.
+            // analFileClassPath = null;
             return false;
         }// if no file selected
         analFileClassPath = fileToAnal.getAbsolutePath();
