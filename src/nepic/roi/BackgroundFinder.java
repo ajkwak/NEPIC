@@ -217,8 +217,6 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
                 piHistBuilder.addValues(rl);
 
                 // edgeHist: add only 2 differences so don't double-count edges
-                System.out.println((rl - img.getPixelIntensity(x + 1, y)) + ", ");
-                System.out.println((rl - img.getPixelIntensity(x, y + 1)) + ", ");
                 edgeHistBuilder.addValues(rl - img.getPixelIntensity(x + 1, y), rl
                         - img.getPixelIntensity(x, y + 1));
 
@@ -240,7 +238,6 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
                 return false;
             }
         }
-        System.out.println();
 
         if(bkPts.isEmpty()){
             Nepic.log(EventType.WARNING,
@@ -252,7 +249,6 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         // Set histograms to BK
         roi.setPiHist(piHistBuilder.build());
         roi.setEdgeHist(edgeHistBuilder.build());
-        System.out.println(roi.getEdgeHist());
         return true;
     }
 
