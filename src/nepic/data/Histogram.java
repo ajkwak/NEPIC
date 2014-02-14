@@ -64,7 +64,7 @@ public class Histogram implements CsvFormattable {
         Verify.argument(minPos <= maxPos, "Invalid bounds given.  maxPos (= " + maxPos
                 + ") < minPos (= " + minPos + ")");
         this.n = n;
-        this.offset = offset;
+        this.offset = offset + minPos;
         this.sum = sum;
         this.numModeInstances = numModeInstances;
         this.modePositions = new LinkedList<Integer>();
