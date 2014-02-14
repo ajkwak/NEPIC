@@ -40,6 +40,7 @@ import nepic.geo.Blob;
 import nepic.geo.LineSegment;
 import nepic.geo.Polygon;
 import nepic.util.Pair;
+import nepic.util.Range;
 import nepic.util.Verify;
 
 /**
@@ -626,7 +627,8 @@ public class Tracker {
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            JOptionPane.showMessageDialog(myGUI, new HistogramViewPanel(hist, 350, 2));
+            JOptionPane.showMessageDialog(myGUI, new HistogramViewPanel(hist, 350, 2, new Range(0,
+                    255)));
         }
 
     }

@@ -9,6 +9,7 @@ import javax.swing.JTextArea;
 
 import nepic.io.Label;
 import nepic.data.Histogram;
+import nepic.util.Range;
 import nepic.util.Verify;
 
 /**
@@ -29,14 +30,18 @@ public class HistogramViewPanel extends JPanel {
 
     private JTextArea histInfoTA;
 
-    public HistogramViewPanel(Histogram hist, int desiredHistHeight, int desiredColumnWidth) {
+    public HistogramViewPanel(
+            Histogram hist,
+            int height,
+            int desiredColumnWidth,
+            Range rangeToDisplay) {
         Verify.notNull(hist, "Histogram to display cannot be null");
-        Verify.argument(desiredHistHeight > 0, "Desired height of histogram must be positive");
+        Verify.argument(height > 0, "Desired height of histogram must be positive");
         Verify.argument(desiredColumnWidth > 0, "Desired column width must be positive");
-        histHeight = desiredHistHeight;
+        histHeight = height;
         columnWidth = desiredColumnWidth;
 
-        int width = columnWidth * hist.getDomainSize();
+        int width = columnWidth * (rangeToDisplay.max - rangeToDisplay.min + 1);
         histImg = new BufferedImage(width, histHeight, BufferedImage.TYPE_INT_RGB);
         histImgL = new JLabel(new ImageIcon(histImg));
         histImgL.setSize(width, histHeight);
@@ -47,7 +52,7 @@ public class HistogramViewPanel extends JPanel {
         int xPos = 0;
         int maxNumDataPtsInColumn = hist.getNumberModeInstances();
         // System.out.println("Print histogram.");
-        for (int i = hist.getMin(); i <= hist.getMax(); i++) {
+        for (int i = rangeToDisplay.min; i <= rangeToDisplay.max; i++) {
             int columnHeight = hist.getMagnitudeAt(i) * histHeight / maxNumDataPtsInColumn;
             // System.out.println(i + "\t" + hist.numDataAt(i));
             for (int x = xPos; x < xPos + columnWidth; x++) {
