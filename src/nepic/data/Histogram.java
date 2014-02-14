@@ -8,9 +8,8 @@ import com.google.common.collect.Lists;
 
 import nepic.io.Label;
 import nepic.util.CsvFormattable;
+import nepic.util.Range;
 import nepic.util.Verify;
-
-// TODO: convert this into a Histogram interface, with two implementations (mutable and immutable).
 
 /**
  * A class representing a histogram of single-dimensional data within a given range of values.
@@ -114,12 +113,8 @@ public class Histogram implements CsvFormattable {
                         (int) Math.ceil(mean - 2 * stDev), (int) Math.floor(mean + 2 * stDev)) };
     }
 
-    /**
-     * Get the size of the domain of this histogram (the range of values over which this histogram
-     * has data).
-     */
-    public int getDomainSize() {
-        return hist.length;
+    public Range getRange() {
+        return new Range(getMin(), getMax());
     }
 
     /**
@@ -148,7 +143,7 @@ public class Histogram implements CsvFormattable {
      * Gets the mean of the data in this {@link Histogram}.
      */
     public double getMean() {
-        return ((double) sum) / n + offset;
+        return ((double) sum) / n;
     }
 
     /**
@@ -235,13 +230,20 @@ public class Histogram implements CsvFormattable {
     public int getPercentile(double percentile) {
         Verify.argument(percentile >= 0 && percentile <= 100, "Illegal percentile value "
                 + percentile + ".  Percentiles MUST be between 0 and 100 (inclusive).");
-        long elPos = Math.round(n * percentile / 100);
+        long elPos = (int) (n * percentile / 100);
         int numPassed = 0;
         int elVal = 0;
-        while (numPassed < elPos) {
-            numPassed += hist[elVal];
-            elVal++;
-        }// while
+        for (int i = 0; i < hist.length; i++) {
+            int magnitude = hist[i];
+            if (magnitude > 0) {
+                numPassed += magnitude;
+                if (numPassed > elPos) {
+                    elVal = i;
+                    break;
+                }
+                elVal = i; // For the 100th percentile case.
+            }
+        }
         return elVal + offset;
     }
 
@@ -356,7 +358,7 @@ public class Histogram implements CsvFormattable {
             int numValueInstances = histogram[pos] + 1;
             histogram[pos] = numValueInstances;
             n++;
-            sum += value; // TODO: this varies from previous version of Histogram
+            sum += value;
             if (pos < minPos) {
                 minPos = pos;
             }
