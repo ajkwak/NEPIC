@@ -170,9 +170,19 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         }
     }
 
-    private static final int changePiIncrement = 5;
+    // private static final int changePiIncrement = 5;
+
+    private int determineChangePiIncrementForImg() {
+        int imgPiRangeLength = img.makeHistogram().getRange().length();
+        int changePiIncrement = imgPiRangeLength / 25;
+        if (changePiIncrement < 1) {
+            changePiIncrement = 1;
+        }
+        return changePiIncrement;
+    }
 
     private boolean enlargeToDesiredSize(CellBody roi, int desiredSize, SizeEdgeCase edgeCase) {
+        int changePiIncrement = determineChangePiIncrementForImg();
         int minPi = roi.getMinPi();
         int imgSize = img.getNumPixels();
         int initCbSize = roi.getArea().getSize();
@@ -182,7 +192,6 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             return false;
         }
         int prevSize = size;
-        final int roiNum = roi.getId();
 
         try {
             while (size < desiredSize && size < imgSize) {
@@ -226,6 +235,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
     }
 
     private boolean shrinkToDesiredSize(CellBody roi, int desiredSize, SizeEdgeCase edgeCase) {
+        int changePiIncrement = determineChangePiIncrementForImg();
         final Pixel seedPix = roi.getSeedPixel();
         final int seedPixPi = seedPix.color;
         int minPi = roi.getMinPi();

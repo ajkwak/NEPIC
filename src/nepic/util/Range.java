@@ -2,7 +2,7 @@ package nepic.util;
 
 /**
  * Class representing a one-dimensional range of values, from a lower bound to an upper bound.
- * 
+ *
  * @author AJ Parmidge
  */
 public class Range {
@@ -29,6 +29,10 @@ public class Range {
             this.min = bound2;
             this.max = bound1;
         }
+    }
+
+    public int length() {
+        return max - min + 1;
     }
 
     @Override

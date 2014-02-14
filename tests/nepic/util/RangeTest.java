@@ -6,7 +6,7 @@ import org.junit.Test;
 
 /**
  * JUnit tests for {@link Range}.
- * 
+ *
  * @author AJ Parmidge
  */
 public class RangeTest {
@@ -29,4 +29,10 @@ public class RangeTest {
         assertEquals(10, range.max);
     }
 
+    @Test
+    public void length() {
+        assertEquals(6, new Range(5, 10).length());
+        assertEquals(1, new Range(10, 10).length());
+        assertEquals(6, new Range(10, 5).length());
+    }
 }
