@@ -10,7 +10,7 @@ import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_ALpha_v0-9_122212 (Called Constants until AutoCBFinder_Alpha_v0-9-2013-01-27)
  * @version AutoCBFinder_Alpha_v0-9-2013-01-16_newGui
@@ -28,6 +28,8 @@ public class IniConstants { // TODO: change when constants become constant!
     public final Property<Integer> SCREEN_POS_Y = new Property<Integer>("SCREEN_POS_Y", 0);
     public final Property<Integer> WINDOW_WIDTH = new Property<Integer>("WINDOW_WIDTH", 0);
     public final Property<Integer> WINDOW_HEIGHT = new Property<Integer>("WINDOW_HEIGHT", 0);
+    public final Property<Boolean> EQUALIZE_HISTOGRAM = new Property<Boolean>(
+            "EQUALIZE_HISTOGRAM", false);;
 
     private void propertiesToConstants(Properties props) {
         updateProperty(LOG_VERBOSE, asBoolean(getProperty(props, LOG_VERBOSE)));
@@ -39,6 +41,8 @@ public class IniConstants { // TODO: change when constants become constant!
         updateProperty(SCREEN_POS_Y, asInteger(getProperty(props, SCREEN_POS_Y)));
         updateProperty(WINDOW_WIDTH, asInteger(getProperty(props, WINDOW_WIDTH)));
         updateProperty(WINDOW_HEIGHT, asInteger(getProperty(props, WINDOW_HEIGHT)));
+        updateProperty(EQUALIZE_HISTOGRAM, asBoolean(getProperty(props,
+                EQUALIZE_HISTOGRAM)));
     }
 
     private Properties constantsToProperties() {
@@ -53,6 +57,7 @@ public class IniConstants { // TODO: change when constants become constant!
         setProperty(props, SCREEN_POS_Y);
         setProperty(props, WINDOW_WIDTH);
         setProperty(props, WINDOW_HEIGHT);
+        setProperty(props, EQUALIZE_HISTOGRAM);
 
         return props;
     }
@@ -73,7 +78,7 @@ public class IniConstants { // TODO: change when constants become constant!
 
     private String getProperty(Properties props, Property<?> prop) {
         String property = props.getProperty(prop.name);
-        if (property.equals("null")) {
+        if (property == null || property.equals("null")) {
             return null;
         }
         return property;

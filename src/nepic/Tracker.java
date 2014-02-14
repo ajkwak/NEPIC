@@ -77,7 +77,8 @@ public class Tracker {
     public Tracker() {
         Nepic.INI_CONSTANTS.initialize();
         myGUI = new Interface(ImagePage.MAX_CAND_ID, new ExitHandler(), new ChooseFileHandler(),
-                new SaveDataHandler(), new IncrementPageHandler(-1), new IncrementPageHandler(1),
+                new SaveDataHandler(), new ToggleImageContrastHandler(),
+                new IncrementPageHandler(-1), new IncrementPageHandler(1),
                 new ClickHandler(), new DragHandler(), new BkCharacterizer(), new CBFinder(),
                 new EnlargeCandHandler(), new ShrinkCandHandler(), new AcceptRoiHandler());
         Nepic.eLogger.registerObserver(myGUI);
@@ -146,11 +147,16 @@ public class Tracker {
     private void updateDisplayedPage(int pgNum) {
         ImagePage imageBeingAnalyzed = myOpener.openTiffPage(pgNum);
         updatePage(TiffOpener.getName(analFileClassPath), pgNum, imageBeingAnalyzed);
-        myGUI.setPage(pgNum, pages.getNumPages(), currPg.displayImg(true));
+        paintCurrentPage();
         myGUI.clearDisplayedActions();
+        Nepic.log(EventType.INFO, "Page " + (pgNum + 1) + " displayed.");
+    }
+
+    private void paintCurrentPage() {
+        myGUI.setPage(currPgNum, pages.getNumPages(),
+                currPg.displayImg(myGUI.shouldEqualizeHistogram()));
         redrawCbCand();
         redrawBkCand();
-        Nepic.log(EventType.INFO, "Page " + (pgNum + 1) + " displayed.");
     }
 
     public boolean updatePage(String imgName, int pgNum, ImagePage page) {
@@ -699,9 +705,19 @@ public class Tracker {
     // User Interactions with GUI
     // *********************************************************************************************
 
+    public class ToggleImageContrastHandler implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            paintCurrentPage();
+        }
+    }
+
     public class ClickHandler implements MouseListener {
         @Override
         public void mouseClicked(MouseEvent e) {
+            if(currPg == null){
+                return;
+            }
             clickLoc = null;
             dragLoc = null;
             myGUI.erase(Nepic.MOUSE_ACTION_ID);

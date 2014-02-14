@@ -19,13 +19,44 @@ public class AnnotatableImage {
     private final Stack<Annotation> annotationStack; // The stack of annotations to the image.
 
     /**
-     * Creates an empty {@code AnnotatableImage}.
+     * Creates an empty {@code AnnotatableImage} with the given image as background.
      */
-    public AnnotatableImage(BufferedImage img) {
-        this.img = img;
+    public AnnotatableImage(BufferedImage imgBk) {
+        this.img = imgBk;
         annotationStack = new Stack<Annotation>();
     }
 
+    public void resetImageBk(BufferedImage newImgBk) {
+        Verify.notNull(newImgBk, "newImgBk");
+        Verify.argument(newImgBk.getWidth() == img.getWidth()
+                && newImgBk.getHeight() == img.getHeight(),
+                "The newImageBk must have the same dimensions as the current background image ! ("
+                        + img.getWidth() + " x " + img.getHeight() + ")");
+
+        // Erase all annotations on the old background image.
+        Stack<Annotation> otherStack = new Stack<Annotation>();
+        while (!annotationStack.empty()) {
+            otherStack.push(pop());
+        }
+
+        // Draw all annotations on the new background image.
+        this.img = newImgBk;
+        while (!otherStack.empty()) {
+            push(otherStack.pop());
+        }
+    }
+
+    /**
+     * TODO
+     *
+     * <p>
+     * <b> IMPORTANT: </b> Though the {@link BufferedImage} representation of this
+     * {@link AnnotatableImage} is accessible though this method so that the image can be displayed,
+     * this {@link BufferedImage} representation should *NOT* be mutated by any other than this
+     * class.
+     *
+     * @return
+     */
     public BufferedImage getImage() {
         return img;
     }

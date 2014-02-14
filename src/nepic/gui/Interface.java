@@ -30,6 +30,7 @@ public class Interface extends JFrame implements LoggerObserver {
 
     // Main menu
     private JMenuItem chooseFileMI, saveDataMI;
+    private JCheckBoxMenuItem equalizeHistogramMI;
 
     // Image Display
     private AnnotatableImage img;
@@ -52,6 +53,7 @@ public class Interface extends JFrame implements LoggerObserver {
             WindowListener exitHandler,
             ActionListener fileChooser,
             ActionListener saveDataHandler,
+            ActionListener imgContrastHandler,
             ActionListener pgDecrementor,
             ActionListener pgIncrementor,
             MouseListener clickHandler,
@@ -67,7 +69,7 @@ public class Interface extends JFrame implements LoggerObserver {
         addComponentListener(new ResizeHandler());
 
         // Main Menu
-        JMenuBar myMainMenu = makeMainMenu(fileChooser, saveDataHandler);
+        JMenuBar myMainMenu = makeMainMenu(fileChooser, saveDataHandler, imgContrastHandler);
         setJMenuBar(myMainMenu);
 
         // Image Display
@@ -118,6 +120,7 @@ public class Interface extends JFrame implements LoggerObserver {
         iniConsts.SCREEN_POS_Y.setValue(this.getY());
         iniConsts.WINDOW_WIDTH.setValue(this.getWidth());
         iniConsts.WINDOW_HEIGHT.setValue(this.getHeight());
+        iniConsts.EQUALIZE_HISTOGRAM.setValue(shouldEqualizeHistogram());
         iniConsts.saveConstants();
     }
 
@@ -188,9 +191,11 @@ public class Interface extends JFrame implements LoggerObserver {
     // Main Menu
     // **************************************************
 
-    private JMenuBar makeMainMenu(ActionListener fileChooser, ActionListener saveDataHandler) {
+    private JMenuBar makeMainMenu(ActionListener fileChooser, ActionListener saveDataHandler,
+            ActionListener imageContrastHandler) {
         JMenuBar toReturn = new JMenuBar();
 
+        // "File" Menu.
         JMenu menu = new JMenu("File");
         toReturn.add(menu);
 
@@ -203,7 +208,16 @@ public class Interface extends JFrame implements LoggerObserver {
         saveDataMI.setEnabled(false);
         menu.add(saveDataMI);
 
-        // Build "Help" menu in the menu bar.
+        // "Image" menu.
+        menu = new JMenu("Image");
+        toReturn.add(menu);
+        equalizeHistogramMI = new JCheckBoxMenuItem("Enhance Contrast");
+        equalizeHistogramMI.setState(Nepic.INI_CONSTANTS.EQUALIZE_HISTOGRAM.getValue());
+        equalizeHistogramMI.addActionListener(imageContrastHandler);
+        menu.add(equalizeHistogramMI);
+        // TODO
+
+        // "Help" menu.
         menu = new JMenu("Help");
         toReturn.add(menu);
 
@@ -218,6 +232,10 @@ public class Interface extends JFrame implements LoggerObserver {
         toReturn.setVisible(true);
         return toReturn;
     }// Toolbar
+
+    public boolean shouldEqualizeHistogram() {
+        return equalizeHistogramMI.getState();
+    }
 
     public File selectTiffFile() {
         String whereToLoadImg = Nepic.INI_CONSTANTS.LOAD_IMG_LOC.getValue();
