@@ -146,7 +146,7 @@ public class Tracker {
     private void updateDisplayedPage(int pgNum) {
         ImagePage imageBeingAnalyzed = myOpener.openTiffPage(pgNum);
         updatePage(TiffOpener.getName(analFileClassPath), pgNum, imageBeingAnalyzed);
-        myGUI.setPage(pgNum, pages.getNumPages(), currPg.displayImg(ImagePage.ORIG_IMG));
+        myGUI.setPage(pgNum, pages.getNumPages(), currPg.displayImg(true));
         myGUI.clearDisplayedActions();
         redrawCbCand();
         redrawBkCand();
@@ -584,7 +584,7 @@ public class Tracker {
                                      // candidate (so when make valid, will track bk properly)
         LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-        ConstraintMap<BackgroundConstraint<?>> bkConstraints 
+        ConstraintMap<BackgroundConstraint<?>> bkConstraints
             = new ConstraintMap<BackgroundConstraint<?>>().addConstraints(
                     new BackgroundFinder.Origin(cbLength.getMidPoint()),
                     new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));

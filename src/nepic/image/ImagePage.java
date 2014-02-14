@@ -8,13 +8,6 @@ import nepic.geo.BoundingBox;
 import nepic.roi.ConflictingRoisException;
 import nepic.util.Verify;
 
-/**
- *
- * @author AJ Parmidge
- * @since AutoCBFinder_Alpha_v0-6_093012 (Called ImgMatrix until AutoCBFinder_Alpha_v0-9-2013-01-29)
- * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- *
- */
 // assumes 32-bit processor
 public class ImagePage implements IdTaggedImage {
 
@@ -31,25 +24,12 @@ public class ImagePage implements IdTaggedImage {
 
     // CONSTRUCTOR AND ASSOCIATED METHODS
 
-    /**
-     * Creates an empty ImageModel object
-     *
-     * @param thePgWidth
-     * @param thePgHeight
-     */
     public ImagePage(int thePgWidth, int thePgHeight) {
         imgToAnal = new int[thePgWidth][thePgHeight];
         width = thePgWidth;
         height = thePgHeight;
-    }// PictureModel constructor
+    }
 
-    /**
-     *
-     * @param x
-     * @param y
-     * @return true if the specified coordinate is within the boundaries of the image; otherwise
-     *         false
-     */
     @Override
     public boolean contains(int x, int y) {
         return x > -1 && x < width && y > -1 && y < height;
@@ -96,49 +76,29 @@ public class ImagePage implements IdTaggedImage {
 
     // Set RGB values initially
 
-    public void setRGB(int x, int y, byte relLum) {
+    public void setRGB(int x, int y, byte relLum) { // TODO: don't really like this
         imgToAnal[x][y] = 255 & relLum;
     }
 
     // DISPLAY IMAGE
 
-    /*
-     * FOR THE displayImg() METHOD: bits 0-4 describe 31 - the number of pixels to grab for the
-     * displayed image (doing this subtraction decreases calculation of bitsToGrab by 1 flop bits
-     * 5-9 describe how many pixels to shift to get bits corresponding to img to display
-     */
-    public static final int ORIG_IMG = 0x17;// shift 0, grab 8 bits; binary = 00000 10111 = 00 0001
-                                            // 0111
-    public static final int GAUS_IMG = 0x117;// shift 8, grab 8 bits; binary = 01000 10111 = 01 0001
-                                             // 0111
-    public static final int EDGE_IMG = 0x215;// shift 16, grab 10 bits; binary = 10000 10101 = 10
-                                             // 0001 0101
-
-    public BufferedImage displayImg(int whichImg) {
-        int bitsToGrab = ~(0x80000000 >> (31 & whichImg));// Gives 1's only in the last (number of
-                                                          // bits to grab) positions
-        int bitsToShft = 31 & (whichImg >> 5);
+    public BufferedImage displayImg(boolean equalizeHistogram) {
         BufferedImage toDisplay = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        double multiplier = 1;
+        int offset = 0;
+        if(equalizeHistogram){
+            Histogram imgHist = makeHistogram();
+            offset = imgHist.getMin();
+            multiplier = 255.0 / (imgHist.getMax() - offset);
+        }
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                toDisplay.setRGB(x, y, piToRgb((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
-            }// for all y
-        }// for all x
+                int pi = (int) Math.round(multiplier * (this.getPixelIntensity(x, y) - offset));
+                toDisplay.setRGB(x, y, piToRgb(pi));
+            }
+        }
         return toDisplay;
-    }// displayImg
-
-    protected BufferedImage displayImgSec(int[] corners, int magFactor, int whichImg) {
-        int bitsToGrab = ~(0x80000000 >> (31 & whichImg));// Gives 1's only in the last (number of
-                                                          // bits to grab) positions
-        int bitsToShft = 31 & (whichImg >> 5);
-        BufferedImage toDisplay = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                toDisplay.setRGB(x, y, piToRgb((bitsToGrab & (imgToAnal[x][y] >> bitsToShft))));
-            }// for all y
-        }// for all x
-        return toDisplay;
-    }// displayImg
+    }
 
     /**
      * Converts the given pixel intensity (PI) to an RGB-formatted color. If the pixel intensity is
@@ -164,123 +124,7 @@ public class ImagePage implements IdTaggedImage {
 
     public int getPixelIntensity(int x, int y) {
         return (255 & imgToAnal[x][y]);
-    }// getRelLum
-
-    // REL LUM (gauss)
-
-    private static final short[] GAUSSIAN_FILTER = new short[] {
-            1,
-            4,
-            7,
-            4,
-            1,
-            4,
-            16,
-            26,
-            16,
-            4,
-            7,
-            26,
-            41,
-            26,
-            7,
-            4,
-            16,
-            26,
-            16,
-            4,
-            1,
-            4,
-            7,
-            4,
-            1 };
-
-    protected int getSmoothedRL(int x, int y) {
-        if ((1 & (imgToAnal[x][y] >> 16)) == 0)// if Gauss dirty bit still dirty
-            setSmoothedRL(x, y, applyGauss5Filter(x, y));
-        return (0xff & (imgToAnal[x][y] >> 8));
-    }// getSmoothedRL
-
-    private void setSmoothedRL(int x, int y, int rl) {
-        rl = 0x100 | rl;// set dirty bit for Gauss image to 1
-        imgToAnal[x][y] = (imgToAnal[x][y] & 0xffff00ff) | ((0x1ff & rl) << 8);
-    }// setSmoothedRL
-
-    public int applyGauss5Filter(int x, int y) {
-        int newVal = 0;
-        for (int row = 0; row < 5; row++) {
-            int yLoc = y + row - 2;
-            if (yLoc > -1 && yLoc < height) {
-                for (int column = 0; column < 5; column++) {
-                    int xLoc = x + column - 2;
-                    if (xLoc > -1 && xLoc < width) {
-                        newVal = newVal + GAUSSIAN_FILTER[row * 5 + column]
-                                * getPixelIntensity(xLoc, yLoc);
-                    }// if should include element
-                }// for all columns in filter
-            }// if yLoc is within range
-        }// for all rows in filter
-        return newVal / 273;// divide by the sum of the elements in the filter
-    }// applyFilter
-
-    protected int[] generateGausHistogram(int[] corners) {
-        int[] hist = new int[256];
-        for (int x = corners[0]; x <= corners[1]; x++) {
-            for (int y = corners[2]; y <= corners[3]; y++) {
-                hist[getSmoothedRL(x, y)]++;
-            }// for all y in img
-        }// for all x in img
-        return hist;
-    }// generateHistogram
-
-    // SOBEL IMG
-
-    public int getEdgeMag(int x, int y) {
-        if ((1 & (imgToAnal[x][y] >> 27)) == 0)// if Sobel dirty bit still dirty
-            setEdgeMag(x, y, applySobelFilter(x, y));
-        return 0x3ff & (imgToAnal[x][y] >> 17);// returns bits 17-26
-    }// getEdgeMag
-
-    private void setEdgeMag(int x, int y, int edgeMag) {
-        edgeMag = 0x400 | edgeMag;// put 1 in Sobel dirty bit section
-        imgToAnal[x][y] = ((imgToAnal[x][y] & 0xf801ffff) | ((0x7ff & edgeMag) << 17));// also sets
-                                                                                       // dirty bit
-                                                                                       // to one
-    }// setEdgeMag
-
-    public void makeSobelImg(int[] corners) {
-        for (int x = corners[0]; x <= corners[1]; x++) {
-            for (int y = corners[2]; y <= corners[3]; y++) {
-                setEdgeMag(x, y, applySobelFilter(x, y));
-            }// for all non-edge y in image
-        }// for all non-edge x in image
-    }// makeGaussAndSorbellImgs
-
-    private int applySobelFilter(int x, int y) {
-        if (x < 1 || x > width - 1 || y < 1 || y > height - 1)// if given invalid parameter (can't
-                                                              // apply Sobel filter to edgePix)
-            return 0;
-        int gradX = -1 * getSmoothedRL(x - 1, y - 1) + 1 * getSmoothedRL(x - 1, y + 1) + -2
-                * getSmoothedRL(x, y - 1) + 2 * getSmoothedRL(x, y + 1) + -1
-                * getSmoothedRL(x + 1, y - 1) + 1 * getSmoothedRL(x + 1, y + 1);
-        int gradY = -1 * getSmoothedRL(x - 1, y - 1) + -2 * getSmoothedRL(x - 1, y) + -1
-                * getSmoothedRL(x - 1, y + 1) + 1 * getSmoothedRL(x + 1, y - 1) + 2
-                * getSmoothedRL(x + 1, y) + 1 * getSmoothedRL(x + 1, y + 1);
-        return (Math.abs(gradX) + Math.abs(gradY)) / 2;// since result will always be even
-    }// makeEdgeImage
-
-    protected int[] generateEdgeHistogram(int[] corners) {
-        int[] hist = new int[256];
-        for (int x = corners[0]; x <= corners[1]; x++) {
-            for (int y = corners[2]; y <= corners[3]; y++) {
-                int edgeMag = getEdgeMag(x, y);
-                if (edgeMag > 255)
-                    edgeMag = 255;
-                hist[edgeMag]++;
-            }// for all y in img
-        }// for all x in img
-        return hist;
-    }// generateHistogram
+    }
 
     // CAND NUM
 
@@ -309,16 +153,6 @@ public class ImagePage implements IdTaggedImage {
             nxtAvailable++;
             return requestedHandle;
         }
-
-        // private Roi<?> getHandleOwner(int roiId) {
-        // Verify.argument(candNumLegal(roiId), "Given ROI ID is illegal");
-        // for (int i = 0; i < nxtAvailable; i++) {
-        // if (handles[i].id == roiId) {
-        // return handles[i].owner;
-        // }
-        // }
-        // return null;
-        // }
 
         private void releaseIdHandle(Object caller, RoiIdHandle handle)
                 throws IllegalAccessException {
@@ -352,11 +186,6 @@ public class ImagePage implements IdTaggedImage {
         return roiIds.requestIdHandle(caller);
     }
 
-    // public Roi<?> getRoiAt(Point pt) {
-    // int roiId = getId(pt.x, pt.y);
-    // return roiIds.getHandleOwner(roiId);
-    // }
-
     public class RoiIdHandle {
         public final int id;
         private Roi<?> owner;
@@ -385,7 +214,7 @@ public class ImagePage implements IdTaggedImage {
     @Override
     public int getId(int x, int y) {
         return (15 & imgToAnal[x][y] >> 28);
-    }// getCandNum
+    }
 
     public void setId(int x, int y, Roi<?> roi) throws ConflictingRoisException {
         RoiIdHandle roiHandle = roi.getIdHandle();
@@ -408,11 +237,11 @@ public class ImagePage implements IdTaggedImage {
                     .toString());
         }
         imgToAnal[x][y] = (imgToAnal[x][y] | (newRoiNum << 28));// set new cand num
-    }// setCandNum
+    }
 
     public void noLongerCand(int x, int y) {
         imgToAnal[x][y] = (imgToAnal[x][y] & 0x0fffffff);// set cand num back to zero
-    }// setCandNum
+    }
 
     public Histogram makeHistogram() {
         Histogram.Builder imgHistBuilder = new Histogram.Builder(0, 255);
@@ -426,7 +255,7 @@ public class ImagePage implements IdTaggedImage {
 
     public int[] getDimensions() {
         return new int[] { width, height };
-    }// getDimensions
+    }
 
     public boolean contains(Point pt) {
         int x = pt.x;
@@ -444,5 +273,4 @@ public class ImagePage implements IdTaggedImage {
         }
         return builder.toString();
     }
-
-}// ImgModel
+}
