@@ -1,5 +1,7 @@
 package nepic.testing.util;
 
+import java.util.Collection;
+
 import junit.framework.AssertionFailedError;
 
 /**
@@ -34,6 +36,19 @@ public class Assertions {
                 || !string.toLowerCase().contains(substring.toLowerCase())) {
             throw new AssertionFailedError("Expected \"" + string + "\" to contain substring \""
                     + substring + "\"");
+        }
+    }
+
+    /**
+     * Asserts that the given {@link Collection} contains the given element.
+     *
+     * @param element the element to check
+     * @param collection the collection to check
+     */
+    public static <E> void assertContains(E element, Collection<E> collection) {
+        if (collection == null || !collection.contains(element)) {
+            throw new AssertionFailedError("Expected " + collection + " to contain element <"
+                    + element + ">");
         }
     }
 }
