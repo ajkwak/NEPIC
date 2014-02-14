@@ -197,8 +197,12 @@ public class DataScanner {
                 bucketDataSet2.add(new Point(bucketDomain.max, bucketPI));
             }
         }
-        data.setDataSet("02 Bucket Set 1", bucketDataSet1, 0x008800 /* Dark Green */);
-        data.setDataSet("03 Bucket Set 2", bucketDataSet2, 0x00aa00 /* Green */);
+        if (!bucketDataSet1.isEmpty()) {
+            data.setDataSet("02 Bucket Set 1", bucketDataSet1, 0x008800 /* Dark Green */);
+        }
+        if (!bucketDataSet2.isEmpty()) {
+            data.setDataSet("03 Bucket Set 2", bucketDataSet2, 0x00aa00 /* Green */);
+        }
     }
 
     private void processBucketizedData() {
@@ -250,7 +254,9 @@ public class DataScanner {
             int bucketPI = bucketSet.getPI(bucketIdx);
             processedBucketSet.add(new Point(bucketPos, bucketPI));
         }
-        data.setDataSet("04 Processed Bucket Set", processedBucketSet, 0xff0000 /* Red */);
+        if (!processedBucketSet.isEmpty()) {
+            data.setDataSet("04 Processed Bucket Set", processedBucketSet, 0xff0000 /* Red */);
+        }
     }
 
     private void processRisingRegion(int startPos, int endPos) {
