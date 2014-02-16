@@ -27,8 +27,9 @@ public class Preferences {
 
     /**
      * Constructs a {@link Preferences} object with values loaded from the given {@link Properties}
-     * file.
-     *
+     * file. If a value for one of the {@link Preferences} fields is missing from the given
+     * {@link Properties} file, a default value is used.
+     * 
      * @param props the properties to load from
      * @return the preferences with values corresponding to those in the given properties file
      */
