@@ -444,7 +444,7 @@ public class Interface extends JFrame implements LoggerObserver {
         if (releaseDate != null) {
             appInfoBuilder.append("\r\n").append("Released:  ").append(releaseDate);
         } else {
-            appInfoBuilder.append("\r\n").append("IN DEVELOPMENT");
+            appInfoBuilder.append("\r\n").append("Status: IN DEVELOPMENT (Not Released)");
         }
 
         JOptionPane.showMessageDialog(this, appInfoBuilder.toString(), "About This Program",
