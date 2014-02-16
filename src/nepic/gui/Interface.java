@@ -9,8 +9,8 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import javax.swing.*;
 
+import nepic.Preferences;
 import nepic.TitledActionListener;
-import nepic.IniConstants;
 import nepic.Nepic;
 import nepic.data.DataSet;
 import nepic.io.TiffOpener;
@@ -61,7 +61,7 @@ public class Interface extends JFrame implements LoggerObserver {
             TitledActionListener... functionButtonHandlers) {
 
         // General
-        super(Nepic.getFullAppName());
+        super(Nepic.getName() + ' ' + Nepic.getMainVersion());
         setVisible(true);
         setLayout(null);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -90,13 +90,9 @@ public class Interface extends JFrame implements LoggerObserver {
         initializeOutputTA();
 
         // From INI constants
-        int windowLocX = Nepic.INI_CONSTANTS.SCREEN_POS_X.getValue();
-        int windowLocY = Nepic.INI_CONSTANTS.SCREEN_POS_Y.getValue();
-        setLocation(windowLocX, windowLocY);
-
-        int windowWidth = Nepic.INI_CONSTANTS.WINDOW_WIDTH.getValue();
-        int windowHeight = Nepic.INI_CONSTANTS.WINDOW_HEIGHT.getValue();
-        setMySize(windowWidth, windowHeight);
+        Preferences prefs = Nepic.getPrefs();
+        setLocation(prefs.getWindowX(), prefs.getWindowY());
+        setMySize(prefs.getWindowWidth(), prefs.getWindowHeight());
     }// Interface
 
     // **************************************************
@@ -104,10 +100,12 @@ public class Interface extends JFrame implements LoggerObserver {
     // **************************************************
 
     public void close() {
-        Nepic.endLog();
         saveGuiIniConstants();
+        if (Nepic.getEventLogger().errorsRecorded()) {
+            errorMessageLogged("Errors have been detected and logged during this session.");
+        }
         dispose();
-        System.exit(0);
+        Nepic.exit();
     }
 
     private void enableStartAnal(boolean allow) {// allows user to start analysis if true (by
@@ -115,13 +113,12 @@ public class Interface extends JFrame implements LoggerObserver {
     }// enableStartAnal
 
     private void saveGuiIniConstants() {
-        IniConstants iniConsts = Nepic.INI_CONSTANTS;
-        iniConsts.SCREEN_POS_X.setValue(this.getX());
-        iniConsts.SCREEN_POS_Y.setValue(this.getY());
-        iniConsts.WINDOW_WIDTH.setValue(this.getWidth());
-        iniConsts.WINDOW_HEIGHT.setValue(this.getHeight());
-        iniConsts.EQUALIZE_HISTOGRAM.setValue(shouldEqualizeHistogram());
-        iniConsts.saveConstants();
+        Preferences prefs = Nepic.getPrefs();
+        prefs.setWindowX(getX());
+        prefs.setWindowY(getY());
+        prefs.setWindowWidth(getWidth());
+        prefs.setWindowHeight(getHeight());
+        prefs.setHistogramEqualizationDesired(shouldEqualizeHistogram());
     }
 
     // Look @ component resize() method with same args? override?
@@ -182,7 +179,7 @@ public class Interface extends JFrame implements LoggerObserver {
             questionTitle = "NEPIC: Question";
         }
 
-        int response = JOptionPane.showConfirmDialog(this, question, Nepic.APP_NAME + ": "
+        int response = JOptionPane.showConfirmDialog(this, question, Nepic.getName() + ": "
                 + questionTitle, JOptionPane.YES_NO_OPTION);
 
         return response == JOptionPane.YES_OPTION;
@@ -213,7 +210,7 @@ public class Interface extends JFrame implements LoggerObserver {
         menu = new JMenu("Image");
         toReturn.add(menu);
         equalizeHistogramMI = new JCheckBoxMenuItem("Enhance Contrast");
-        equalizeHistogramMI.setState(Nepic.INI_CONSTANTS.EQUALIZE_HISTOGRAM.getValue());
+        equalizeHistogramMI.setState(Nepic.getPrefs().isHistogramEqualizationDesired());
         equalizeHistogramMI.addActionListener(imageContrastHandler);
         menu.add(equalizeHistogramMI);
         // TODO
@@ -222,7 +219,7 @@ public class Interface extends JFrame implements LoggerObserver {
         menu = new JMenu("Help");
         toReturn.add(menu);
 
-        JMenuItem otherMI = new JMenuItem("About " + Nepic.APP_NAME);
+        JMenuItem otherMI = new JMenuItem("About " + Nepic.getName());
         otherMI.addActionListener(new WormAnalInfoHandler());
         menu.add(otherMI);
 
@@ -239,7 +236,8 @@ public class Interface extends JFrame implements LoggerObserver {
     }
 
     public File selectTiffFile() {
-        String whereToLoadImg = Nepic.INI_CONSTANTS.LOAD_IMG_LOC.getValue();
+        Preferences prefs = Nepic.getPrefs();
+        String whereToLoadImg = prefs.getImageLoadLocation();
         JFileChooser chooser = new JFileChooser(whereToLoadImg);
         chooser.setAcceptAllFileFilterUsed(false);
         chooser.addChoosableFileFilter(new NepicFileFilter(NepicFileFilter.TIFS_ONLY));
@@ -249,7 +247,7 @@ public class Interface extends JFrame implements LoggerObserver {
             enableStartAnal(true);
             File toReturn = chooser.getSelectedFile();
             String directory = TiffOpener.getDir(toReturn.getAbsolutePath());
-            Nepic.INI_CONSTANTS.LOAD_IMG_LOC.setValue(directory);
+            prefs.setImageLoadLocation(directory);
 
             Nepic.log(EventType.INFO, EventLogger.LOG_ONLY, "File selected:", toReturn.getName());
             return toReturn;
@@ -262,7 +260,8 @@ public class Interface extends JFrame implements LoggerObserver {
     }
 
     public File selectCsvSaveLocation() {
-        String whereToSave = Nepic.INI_CONSTANTS.DATA_SAVE_LOC.getValue();
+        Preferences prefs = Nepic.getPrefs();
+        String whereToSave = prefs.getDataSaveLocation();
         JFileChooser chooser = new JFileChooser(whereToSave);
         chooser.setAcceptAllFileFilterUsed(false);
         chooser.addChoosableFileFilter(new NepicFileFilter(NepicFileFilter.CSV_ONLY));
@@ -271,7 +270,7 @@ public class Interface extends JFrame implements LoggerObserver {
         if (folderSelected == JFileChooser.APPROVE_OPTION) {
             String classpath = chooser.getSelectedFile().getAbsolutePath();
             String directory = TiffOpener.getDir(classpath);
-            Nepic.INI_CONSTANTS.DATA_SAVE_LOC.setValue(directory);
+            prefs.setDataSaveLocation(directory);
             String fileExt = EventLogger.getFileExtention(classpath);
             if (fileExt == null || !fileExt.equals("csv")) {
                 classpath = classpath + ".csv";
@@ -356,7 +355,10 @@ public class Interface extends JFrame implements LoggerObserver {
 
     @Override
     public void verboseMessageLogged(String message) {
-        if (message != null && (Nepic.INI_CONSTANTS.LOG_VERBOSE.getValue() || !Nepic.canLog())) {
+        if (message != null
+                && (Nepic.getPrefs().isVerboseEventLogged() || !Nepic
+                        .getEventLogger()
+                        .haveLoggingFile())) {
             displayCurrentAction("DIAGNOSTIC: " + message);
         }
     }
@@ -381,16 +383,17 @@ public class Interface extends JFrame implements LoggerObserver {
     @Override
     public void errorMessageLogged(String message) {
         if (message != null) {
-            String toDisplay = (message.isEmpty() ? Nepic.APP_NAME
+            String appName = Nepic.getName();
+            String toDisplay = (message.isEmpty() ? appName
                     + " has encountered an error in its performance." : message);
-            if (Nepic.canLog()) {
-                toDisplay += "\r\n\r\nWhen you close " + Nepic.APP_NAME + ", please send \r\n'"
-                        + Nepic.getLogName()
+            if (Nepic.getEventLogger().haveLoggingFile()) {
+                toDisplay += "\r\n\r\nWhen you close " + appName + ", please send \r\n'"
+                        + Nepic.getEventLogger().getLogFileName()
                         + "' (which is located in the same directory as this \r\n"
-                        + "application's executable file) to " + Nepic.AUTHOR + " at "
-                        + Nepic.AUTHOR_EMAIL;
+                        + "application's executable file) to " + appName + " developers at "
+                        + Nepic.getDeveloperContactInfo();
             }
-            JOptionPane.showMessageDialog(this, toDisplay, Nepic.APP_NAME + ": Error Detected",
+            JOptionPane.showMessageDialog(this, toDisplay, appName + ": Error Detected",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -398,18 +401,19 @@ public class Interface extends JFrame implements LoggerObserver {
     @Override
     public void fatalErrorMessageLogged(String message) {
         // Display fatal error message
-        String toDisplay = Nepic.APP_NAME + " has encountered a fatal error and needs to close";
+        String appName = Nepic.getName();
+        String toDisplay = appName + " has encountered a fatal error and needs to close";
         if (message != null) {
             toDisplay += ":\r\n" + message;
         }
-        if (Nepic.canLog()) {
-            toDisplay += "\r\n\r\nPlease send '" + Nepic.getLogName()
+        if (Nepic.getEventLogger().haveLoggingFile()) {
+            toDisplay += "\r\n\r\nPlease send '" + Nepic.getEventLogger().getLogFileName()
                     + "' (which is located in the same\r\n"
-                    + "directory as this application's executable file) to " + Nepic.AUTHOR
-                    + " at " + Nepic.AUTHOR_EMAIL;
+                    + "directory as this application's executable file) to " + appName
+                    + " developers at " + Nepic.getDeveloperContactInfo();
         }
 
-        JOptionPane.showMessageDialog(this, toDisplay, Nepic.APP_NAME + ": Fatal Error Detected",
+        JOptionPane.showMessageDialog(this, toDisplay, appName + ": Fatal Error Detected",
                 JOptionPane.ERROR_MESSAGE);
 
         // Quit application (data not stored)
@@ -438,22 +442,19 @@ public class Interface extends JFrame implements LoggerObserver {
      */
     private void displayProgramInfo() {
         StringBuilder appInfoBuilder = new StringBuilder("App Name:  ")
-                .append(Nepic.APP_NAME)
+                .append(Nepic.getName())
                 .append("\r\n")
                 .append("Version:  ")
-                .append(Nepic.VERSION)
-                .append('.')
-                .append(Nepic.SUB_VERSION)
+                .append(Nepic.getFullVersion())
                 .append("\r\n")
-                .append("Author:  ")
-                .append(Nepic.AUTHOR)
-                .append("\r\n")
-                .append("Contact Info:  ")
-                .append(Nepic.AUTHOR_EMAIL);
+                .append("Developer Contact Info:  ")
+                .append(Nepic.getDeveloperContactInfo());
 
-        String releaseDate = Nepic.RELEASE_DATE;
+        String releaseDate = Nepic.getReleaseDate();
         if (releaseDate != null) {
             appInfoBuilder.append("\r\n").append("Released:  ").append(releaseDate);
+        } else {
+            appInfoBuilder.append("\r\n").append("IN DEVELOPMENT");
         }
 
         JOptionPane.showMessageDialog(this, appInfoBuilder.toString(), "About This Program",
@@ -468,7 +469,7 @@ public class Interface extends JFrame implements LoggerObserver {
     private class OpenUserManualHandler implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            String userManualLoc = Nepic.INI_CONSTANTS.USER_MANUAL_LOC.getValue();
+            String userManualLoc = "NepicUserManual.pdf"; // TODO: don't hard code
             if (userManualLoc != null && !userManualLoc.isEmpty()) {
                 File manualFile = new File(userManualLoc);
                 if (manualFile.exists()) {

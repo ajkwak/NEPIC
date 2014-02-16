@@ -109,7 +109,9 @@ public class EventLogger {
 
     private String makeStartingLogLine() {
         return new StringBuilder("\n\n*****************************************************\n\n# ")
-                .append(Nepic.getFullAppName())
+                .append(Nepic.getName())
+                .append(' ')
+                .append(Nepic.getFullVersion())
                 .append(" ")
                 .append(this.getClass().getName())
                 .append(" initialized ")
@@ -206,7 +208,7 @@ public class EventLogger {
         try {
             for (Log event : events) {
                 if (!event.type.equals(EventType.VERBOSE)
-                        || Nepic.INI_CONSTANTS.LOG_VERBOSE.getValue()) {
+                        || Nepic.getPrefs().isVerboseEventLogged()) {
                     writer.println(event);
                 }
             }

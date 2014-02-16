@@ -76,17 +76,16 @@ public class Tracker {
     boolean bkCorrected; // True if the background correction has been done for this page.img
 
     public Tracker() {
-        Nepic.INI_CONSTANTS.initialize();
         myGUI = new Interface(ImagePage.MAX_CAND_ID, new ExitHandler(), new ChooseFileHandler(),
                 new SaveDataHandler(), new ToggleImageContrastHandler(),
                 new IncrementPageHandler(-1), new IncrementPageHandler(1),
                 new ClickHandler(), new DragHandler(), new BkCharacterizer(), new CBFinder(),
                 new EnlargeCandHandler(), new ShrinkCandHandler(), new AcceptRoiHandler());
-        Nepic.eLogger.registerObserver(myGUI);
+        Nepic.getEventLogger().registerObserver(myGUI);
         myOpener = new TiffOpener();
         cbFinder = new CellBodyFinder();
         bkFinder = new BackgroundFinder();
-        Nepic.log(EventType.INFO, Nepic.APP_NAME + " successfully initialized.");
+        Nepic.log(EventType.INFO, Nepic.getName() + " successfully initialized.");
         myGUI.displayCurrentAction("Please select image to analyze.");
     }
 
@@ -120,7 +119,9 @@ public class Tracker {
         if (myOpener.loadTiffInfo(classpath)) {
             int totNumPgs = myOpener.getNumPagesInTiff();
             updateImageBeingAnalyzed(totNumPgs);
-            myGUI.setTitle(new StringBuilder(Nepic.getFullAppName())
+            myGUI.setTitle(new StringBuilder(Nepic.getName())
+                    .append(' ')
+                    .append(Nepic.getMainVersion())
                     .append(" (")
                     .append(TiffOpener.getName(analFileClassPath))
                     .append(")")
@@ -475,7 +476,7 @@ public class Tracker {
         if (!unsavedDataOnCurrentImg) {
             return;
         }
-        DataWriter dataWriter = Nepic.dWriter;
+        DataWriter dataWriter = Nepic.getDataWriter();
         for (PageInfo page : pages) {
             if (page != null && page.hasValidRois()) {
                 dataWriter.addDataRow(page.getCsvData());
@@ -818,7 +819,7 @@ public class Tracker {
         File whereToSave = myGUI.selectCsvSaveLocation();
         if (canSaveData(whereToSave)) {
             // Save the data
-            boolean dataSaved = Nepic.dWriter.saveData(whereToSave);
+            boolean dataSaved = Nepic.getDataWriter().saveData(whereToSave);
             if (dataSaved) {
                 if (myGUI.userAgrees("Open Data File?",
                         "Would you like to open the data file you just saved?")) {
@@ -842,7 +843,7 @@ public class Tracker {
     }
 
     private boolean canSaveData(File whereToSave) {
-        if (whereToSave == null || !Nepic.dWriter.canSaveData(whereToSave)) {
+        if (whereToSave == null || !Nepic.getDataWriter().canSaveData(whereToSave)) {
             return false;
         }
         if (whereToSave.exists()) {
@@ -880,22 +881,13 @@ public class Tracker {
         }
 
         private boolean saveDataIfNecessary() {
-            if ((Nepic.dWriter.dataLogged() || unsavedDataOnCurrentImg)
+            if ((Nepic.getDataWriter().dataLogged() || unsavedDataOnCurrentImg)
                     && myGUI.userAgrees("Save Data",
                             "Do you want to save the data generated since starting "
-                                    + Nepic.APP_NAME + "?")) {
+                                    + Nepic.getName() + "?")) {
                 return saveData();
             }
             return true;
         }
-    }
-
-    // *********************************************************************************************
-    // Main Method
-    // *********************************************************************************************
-
-    public static void main(String args[]) {
-        @SuppressWarnings("unused")
-        Tracker myAppF = new Tracker();
     }
 }
