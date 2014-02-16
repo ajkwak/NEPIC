@@ -222,7 +222,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             }
         } catch (ConflictingRoisException e) {
             // This should never happen!!
-            Nepic.log(EventType.ERROR_FATAL, "Shrink during candidate enlargement failed!",
+            Nepic.log(EventType.FATAL_ERROR, "Shrink during candidate enlargement failed!",
                     EventLogger.formatException(e));
             return false;
         }
@@ -280,7 +280,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             return true;
         } catch (ConflictingRoisException e) {
             // THIS SHOULD NEVER HAPPEN.
-            Nepic.log(EventType.ERROR_FATAL, "Edge extention during CB shrinkage failed!",
+            Nepic.log(EventType.FATAL_ERROR, "Edge extention during CB shrinkage failed!",
                     EventLogger.formatException(e));
             return false;
         }

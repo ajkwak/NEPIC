@@ -28,5 +28,5 @@ public enum EventType {
     /**
      * Message describing a severe error that necessitates this application to close
      */
-    ERROR_FATAL;
+    FATAL_ERROR;
 }

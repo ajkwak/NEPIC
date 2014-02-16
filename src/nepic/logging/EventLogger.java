@@ -132,7 +132,7 @@ public class EventLogger {
         }
 
         // If error, record that error has occurred
-        if (eventType.equals(EventType.ERROR) || eventType.equals(EventType.ERROR_FATAL)) {
+        if (eventType.equals(EventType.ERROR) || eventType.equals(EventType.FATAL_ERROR)) {
             errorRecorded = true;
         } else if (eventType.equals(EventType.WARNING)) {
             warningRecorded = true;
@@ -181,16 +181,14 @@ public class EventLogger {
 
     private void notifyObservers(EventType type, String message) {
         for (LoggerObserver observer : observers) {
-            if (type.equals(EventType.VERBOSE)) {
-                observer.verboseMessageLogged(message);
-            } else if (type.equals(EventType.INFO)) {
-                observer.infoMessageLogged(message);
+            if (type.equals(EventType.INFO)) {
+                observer.respondToInfo(message);
             } else if (type.equals(EventType.WARNING)) {
-                observer.warningMessageLogged(message);
+                observer.respondToWarning(message);
             } else if (type.equals(EventType.ERROR)) {
-                observer.errorMessageLogged(message);
-            } else if (type.equals(EventType.ERROR_FATAL)) {
-                observer.fatalErrorMessageLogged(message);
+                observer.respondToError(message);
+            } else if (type.equals(EventType.FATAL_ERROR)) {
+                observer.respondToFatalError(message);
             }
         }
     }

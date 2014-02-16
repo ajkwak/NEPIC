@@ -102,7 +102,7 @@ public class Interface extends JFrame implements LoggerObserver {
     public void close() {
         saveGuiIniConstants();
         if (Nepic.getEventLogger().errorsRecorded()) {
-            errorMessageLogged("Errors have been detected and logged during this session.");
+            respondToError("Errors have been detected and logged during this session.");
         }
         dispose();
         Nepic.exit();
@@ -354,24 +354,14 @@ public class Interface extends JFrame implements LoggerObserver {
     // **************************************************
 
     @Override
-    public void verboseMessageLogged(String message) {
-        if (message != null
-                && (Nepic.getPrefs().isVerboseEventLogged() || !Nepic
-                        .getEventLogger()
-                        .haveLoggingFile())) {
-            displayCurrentAction("DIAGNOSTIC: " + message);
-        }
-    }
-
-    @Override
-    public void infoMessageLogged(String message) {
+    public void respondToInfo(String message) {
         if (message != null) {
             displayCurrentAction(message);
         }
     }
 
     @Override
-    public void warningMessageLogged(String message) {
+    public void respondToWarning(String message) {
         if (message != null) {
             displayCurrentAction("WARNING: " + message);
         }
@@ -381,7 +371,7 @@ public class Interface extends JFrame implements LoggerObserver {
      * @version AutoCBFinder_Alpha_v0-9-2013-02-10
      */
     @Override
-    public void errorMessageLogged(String message) {
+    public void respondToError(String message) {
         if (message != null) {
             String appName = Nepic.getName();
             String toDisplay = (message.isEmpty() ? appName
@@ -399,7 +389,7 @@ public class Interface extends JFrame implements LoggerObserver {
     }
 
     @Override
-    public void fatalErrorMessageLogged(String message) {
+    public void respondToFatalError(String message) {
         // Display fatal error message
         String appName = Nepic.getName();
         String toDisplay = appName + " has encountered a fatal error and needs to close";

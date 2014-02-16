@@ -1,22 +1,39 @@
 package nepic.logging;
 
 /**
- * 
- * @author AJ Parmidge
- * @since AutoCBFinder_Alpha_v0-8_NewLogger
- * @version AutoCBFinder_Alpha_v0-9-2013-01-16_newGui
- * 
+ * Interface that allows implementing classes to observe and respond to {@link EventLogger} logs.
  */
 public interface LoggerObserver {
 
-    public void verboseMessageLogged(String message);
+    /**
+     * Respond to an {@link EventType#INFO} message being logged.
+     *
+     * @param message the {@code INFO} message
+     */
+    public void respondToInfo(String message);
 
-    public void infoMessageLogged(String message);
+    /**
+     * Respond to an {@link EventType#WARNING} message being logged.
+     *
+     * @param message the {@code WARNING} message
+     */
+    public void respondToWarning(String message);
 
-    public void warningMessageLogged(String message);
+    /**
+     * Respond to an {@link EventType#ERROR} message being logged.
+     *
+     * @param message the {@code ERROR} message
+     */
+    public void respondToError(String message);
 
-    public void errorMessageLogged(String message);
-
-    public void fatalErrorMessageLogged(String message);
+    /**
+     * Respond to an {@link EventType#FATAL_ERROR} message being logged. Most {@link LoggerObserver}
+     * s will
+     * have no body to this method (only if it is TRULY necessary should a {@link LoggerObserver}
+     * attempt to run code after a fatal error has been logged.
+     * 
+     * @param message the {@code FATAL_ERROR} message
+     */
+    public void respondToFatalError(String message);
 
 }
