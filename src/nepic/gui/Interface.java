@@ -124,6 +124,7 @@ public class Interface extends JFrame implements LoggerObserver {
         iniConsts.saveConstants();
     }
 
+    // Look @ component resize() method with same args? override?
     private void setMySize(int width, int height) {
         final int widthBuffer = 5; // Make up for borders
         final int heightBuffer = 50; // Make up for menu bar, borders
@@ -438,11 +439,11 @@ public class Interface extends JFrame implements LoggerObserver {
     private void displayProgramInfo() {
         StringBuilder appInfoBuilder = new StringBuilder("App Name:  ")
                 .append(Nepic.APP_NAME)
-                .append("\r\n");
-
-        appInfoBuilder
+                .append("\r\n")
                 .append("Version:  ")
                 .append(Nepic.VERSION)
+                .append('.')
+                .append(Nepic.SUB_VERSION)
                 .append("\r\n")
                 .append("Author:  ")
                 .append(Nepic.AUTHOR)

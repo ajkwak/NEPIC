@@ -16,7 +16,9 @@ import nepic.logging.EventType;
 public class Nepic {
     public static final String APP_NAME = "NEPIC";
 
-    public static final String VERSION = "v1.1.20141402";
+    public static final String VERSION = "v1.1";
+
+    public static final String SUB_VERSION = "20141402";
 
     public static final String RELEASE_DATE = "14 February 2014";
 
