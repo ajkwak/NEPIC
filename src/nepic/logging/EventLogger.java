@@ -14,7 +14,6 @@ import nepic.Nepic;
 import nepic.util.Verify;
 
 /**
- *
  * @author AJ Parmidge
  * @since AutoCBFinder_Alpha_v0-8_NewLogger
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
@@ -287,14 +286,4 @@ public class EventLogger {
         }
 
     }
-
-    public static String getFileExtention(String fileName) {
-        String ext = null;
-        int i = fileName.lastIndexOf('.');
-        if (i > 0 && i < fileName.length() - 1) {
-            ext = fileName.substring(i + 1).toLowerCase();
-        }// if found extention
-        return ext;
-    }// getFileExtension
-
 }

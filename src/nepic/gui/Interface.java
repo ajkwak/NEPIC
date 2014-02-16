@@ -13,7 +13,7 @@ import nepic.Preferences;
 import nepic.TitledActionListener;
 import nepic.Nepic;
 import nepic.data.DataSet;
-import nepic.io.TiffOpener;
+import nepic.io.Files;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.logging.LoggerObserver;
@@ -246,7 +246,7 @@ public class Interface extends JFrame implements LoggerObserver {
         if (folderSelected == JFileChooser.APPROVE_OPTION) {
             enableStartAnal(true);
             File toReturn = chooser.getSelectedFile();
-            String directory = TiffOpener.getDir(toReturn.getAbsolutePath());
+            String directory = Files.getDir(toReturn.getAbsolutePath());
             prefs.setImageLoadLocation(directory);
 
             Nepic.log(EventType.INFO, EventLogger.LOG_ONLY, "File selected:", toReturn.getName());
@@ -269,9 +269,9 @@ public class Interface extends JFrame implements LoggerObserver {
 
         if (folderSelected == JFileChooser.APPROVE_OPTION) {
             String classpath = chooser.getSelectedFile().getAbsolutePath();
-            String directory = TiffOpener.getDir(classpath);
+            String directory = Files.getDir(classpath);
             prefs.setDataSaveLocation(directory);
-            String fileExt = EventLogger.getFileExtention(classpath);
+            String fileExt = Files.getFileExtension(classpath);
             if (fileExt == null || !fileExt.equals("csv")) {
                 classpath = classpath + ".csv";
             }

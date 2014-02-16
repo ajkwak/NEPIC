@@ -80,14 +80,13 @@ public class DataWriter {
 
     public boolean canSaveData(File file) {
         Verify.notNull(file, "file");
-        return EventLogger.getFileExtention(file.getAbsolutePath()).equals("csv");
+        return Files.getFileExtension(file.getAbsolutePath()).equals("csv");
     }
 
     public boolean saveData(File file) {
         Verify.notNull(file, "file");
         String classpath = file.getAbsolutePath();
-        Verify
-                .argument(EventLogger.getFileExtention(classpath).equals("csv"),
+        Verify.argument(Files.getFileExtension(classpath).equals("csv"),
                         "File must be a csv");
 
         try {

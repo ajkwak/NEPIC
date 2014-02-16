@@ -7,13 +7,12 @@ import nepic.Nepic;
 import nepic.image.ImagePage;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
-import nepic.util.Verify;
 
 /**
  * Allows WormAnal to successfully load Pixel information from Tagged-Image-File-Format (TIFF)
  * files. Adapted from ImageJ ij.io.Opener and ij.io.FileOpener classes (see individual methods for
  * specifics on origin).
- * 
+ *
  * @author AJ Parmidge
  * @since ManualCBFinder_v1-6
  * @version AutoCBFinder_Alpha_v0-9120112
@@ -23,11 +22,6 @@ public class TiffOpener {
      * Information about the TIFF file that this TiffOpener is going to try to read.
      */
     private FileInfo tiffInfo = null;
-    /**
-     * String representation of the character used to denote separators in the classpath ('\' in
-     * Windows, '/' in Unix).
-     */
-    private final static String sep = java.io.File.separator;
 
     // dummy constructor
 
@@ -42,12 +36,12 @@ public class TiffOpener {
     /**
      * Attempts to open the specified file as a TIFF. Adapted from: openTiff method and openTiff2
      * method of ImageJ ij.io.Opener class, open method of ImageJ ij.io.FileOpener class.
-     * 
+     *
      * @param directory The class path of the directory of the file to open.
      * @param name The name of the file to open.
      */
     public boolean loadTiffInfo(String classPath) {
-        TiffDecoder td = new TiffDecoder(getDir(classPath), getName(classPath));
+        TiffDecoder td = new TiffDecoder(Files.getDir(classPath), Files.getName(classPath));
         FileInfo[] info = null;
         try {
             info = td.getTiffInfo();
@@ -115,7 +109,7 @@ public class TiffOpener {
 
     /**
      * Gets the height of the last image opened by this TiffOpener (in Pixels)
-     * 
+     *
      * @return The height of the pages in the last TIFF file opened. If no TIFF file has been opened
      *         successfully, returns -1.
      */
@@ -128,7 +122,7 @@ public class TiffOpener {
 
     /**
      * Gets the width of the last image opened by this TiffOpener (in Pixels)
-     * 
+     *
      * @return The width of the pages in the last TIFF file opened. If no TIFF file has been opened
      *         successfully, returns -1.
      */
@@ -142,7 +136,7 @@ public class TiffOpener {
     /**
      * Creates an image (that can be displayed on screen) of the indicated page of the currently
      * loaded TIFF.
-     * 
+     *
      * @param pageNum The page of the TIFF of which to make a displayable image.
      * @return Pictorial representation of the indicated page of the loaded image. Returns null if
      *         no TIFF has been loaded.
@@ -172,7 +166,7 @@ public class TiffOpener {
     /**
      * Converts an array of bytes (representing pixel luminosity for images saved in 8-bit
      * grayscale) to an array of RGB (32-bit color) values
-     * 
+     *
      * @param pixels Represents the array of bytes describing the 8-bit grayscale coloring of each
      *        pixel in the page being processed
      * @return The RGB values of each pixel in the page being processed
@@ -197,7 +191,7 @@ public class TiffOpener {
     /**
      * Converts an array of bytes (representing pixel luminosity for images saved in 8-bit
      * grayscale) to an array of RGB (32-bit color) values
-     * 
+     *
      * @param pixels Represents the array of bytes describing the 8-bit grayscale coloring of each
      *        pixel in the page being processed
      * @return The RGB values of each pixel in the page being processed
@@ -235,7 +229,7 @@ public class TiffOpener {
     /**
      * Converts an array of bytes (representing pixel luminosity for images saved in 8-bit
      * grayscale) to an array of RGB (32-bit color) values
-     * 
+     *
      * @param pixels Represents the array of bytes describing the 8-bit grayscale coloring of each
      *        pixel in the page being processed
      * @return The RGB values of each pixel in the page being processed
@@ -274,12 +268,13 @@ public class TiffOpener {
     /**
      * Creates an InputStream for loading the TIFF based on the FileInfo generated for the TIFF (the
      * tiffInfo value) From createInputStream method of ImageJ ij.io.FileOpener class.
-     * 
+     *
      * @return An InputStream for the image described by tiffInfo (assumes tiffInfo has already been
      *         initialized).
      * @throws IOException
      */
     private InputStream createInputStream() throws IOException {
+        String sep = File.separator;
         if (tiffInfo.inputStream != null) {// does this ever happen?
             return tiffInfo.inputStream;
         }// if tiffInfo includes the input information
@@ -294,38 +289,9 @@ public class TiffOpener {
     }// createInputStream
 
     /**
-     * Removes the name of a file from the class path for that file. Adapted from: getDir method of
-     * ImageJ ij.io.Opener class.
-     * 
-     * @param classPath The class path of the file to be opened.
-     * @return The class path of the directory in which the file is located.
-     */
-    public static String getDir(String classPath) {
-        int i = classPath.lastIndexOf(sep);
-        if (i > 0)
-            return classPath.substring(0, i + 1);
-        return "";
-    }// getDir
-
-    /**
-     * Gets the name of a file from its class path. Adapted from: getName method of ImageJ
-     * ij.io.Opener class.
-     * 
-     * @param classPath The class path of the file to be opened.
-     * @return The name of the file.
-     */
-    public static String getName(String classPath) {// adapted from ImageJ ij.io.Opener class
-        Verify.notNull(classPath, "Classpath for which to get file name cannot be null.");
-        int i = classPath.lastIndexOf(sep);
-        if (i > 0)
-            return classPath.substring(i + 1);
-        return classPath;
-    }// getName
-
-    /**
      * Verifies that the FileInfo about the TIFF to be loaded is accurate (that the TIFF is possible
      * to load) Adapted from static validateFileInfo method of ImageJ from ij.io.FileOpener.
-     * 
+     *
      * @param toCheck The file that needs to be validated
      * @return true if the FileInfo about the TIFF to be loaded is valid; otherwise false
      */

@@ -25,6 +25,7 @@ import nepic.image.ImagePage;
 import nepic.image.MultiPageImageInfo;
 import nepic.image.PageInfo;
 import nepic.io.DataWriter;
+import nepic.io.Files;
 import nepic.io.TiffOpener;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
@@ -123,7 +124,7 @@ public class Tracker {
                     .append(' ')
                     .append(Nepic.getMainVersion())
                     .append(" (")
-                    .append(TiffOpener.getName(analFileClassPath))
+                    .append(Files.getName(analFileClassPath))
                     .append(")")
                     .toString());
             updateDisplayedPage(0); // open the first page of the image
@@ -148,7 +149,7 @@ public class Tracker {
 
     private void updateDisplayedPage(int pgNum) {
         ImagePage imageBeingAnalyzed = myOpener.openTiffPage(pgNum);
-        updatePage(TiffOpener.getName(analFileClassPath), pgNum, imageBeingAnalyzed);
+        updatePage(Files.getName(analFileClassPath), pgNum, imageBeingAnalyzed);
         paintCurrentPage();
         myGUI.clearDisplayedActions();
         Nepic.log(EventType.INFO, "Page " + (pgNum + 1) + " displayed.");
