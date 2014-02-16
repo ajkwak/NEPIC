@@ -1,5 +1,5 @@
 /**
- * Contains classes for loading images and for reading and writing files.
+ * Contains classes for loading files into NEPIC and for saving files generated/modified by NEPIC.
  *
  * @author AJ Parmidge
  */
