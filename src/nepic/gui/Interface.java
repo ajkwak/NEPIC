@@ -101,7 +101,7 @@ public class Interface extends JFrame implements LoggerObserver {
 
     public void close() {
         saveGuiIniConstants();
-        if (Nepic.getEventLogger().errorsRecorded()) {
+        if (Nepic.getEventLogger().isErrorRecorded()) {
             respondToError("Errors have been detected and logged during this session.");
         }
         dispose();
@@ -376,7 +376,7 @@ public class Interface extends JFrame implements LoggerObserver {
             String appName = Nepic.getName();
             String toDisplay = (message.isEmpty() ? appName
                     + " has encountered an error in its performance." : message);
-            if (Nepic.getEventLogger().haveLoggingFile()) {
+            if (Nepic.getEventLogger().canLog()) {
                 toDisplay += "\r\n\r\nWhen you close " + appName + ", please send \r\n'"
                         + Nepic.getEventLogger().getLogFileName()
                         + "' (which is located in the same directory as this \r\n"
@@ -396,7 +396,7 @@ public class Interface extends JFrame implements LoggerObserver {
         if (message != null) {
             toDisplay += ":\r\n" + message;
         }
-        if (Nepic.getEventLogger().haveLoggingFile()) {
+        if (Nepic.getEventLogger().canLog()) {
             toDisplay += "\r\n\r\nPlease send '" + Nepic.getEventLogger().getLogFileName()
                     + "' (which is located in the same\r\n"
                     + "directory as this application's executable file) to " + appName
