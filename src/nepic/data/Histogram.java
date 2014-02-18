@@ -267,6 +267,30 @@ public class Histogram implements CsvFormattable {
         return var / (n - 1); // Variance for sample (for entire population, divide by n, not n-1)
     }
 
+    /**
+     * Gets the overlapping region between this {@link Histogram} and the given {@link Histogram} as
+     * a fraction of the size of this histogram, between {@code 0.0} (no overlap) and {@code 1.0}
+     * (full overlap) inclusive.
+     * <p>
+     * Note that the result of this method will <b> not </b> necessarily be the same if the invoking
+     * object and the parameter are switched.
+     * 
+     * @param other the histogram with which to find overlap
+     * @return the area of the overlapping region between the two histograms as a percentage of the
+     *         summed areas of the two histograms.
+     */
+    public double getOverlapWith(Histogram other) {
+        Verify.notNull(other, "otherHistogram");
+        int overlapMin = Math.max(getMin(), other.getMin());
+        int overlapMax = Math.min(getMax(), other.getMax());
+        int overlapArea = 0;
+        for (int i = overlapMin; i <= overlapMax; i++) {
+            overlapArea += Math.min(getMagnitudeAt(i), other.getMagnitudeAt(i));
+        }
+
+        return ((double) overlapArea) / getNumValues();
+    }
+
     @Override
     public String toString() {
         return "Hist (n = " + n + ", range " + getMin() + "-" + getMax() + "): med = "

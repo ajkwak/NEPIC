@@ -14,7 +14,7 @@ import com.google.common.collect.Lists;
 
 /**
  * JUnit tests for {@link Histogram}.
- * 
+ *
  * @author AJ Parmidge
  */
 public class HistogramTest {
@@ -110,6 +110,33 @@ public class HistogramTest {
     @Test
     public void getStDev() {
         assertEquals(6.469, histogram.getStDev(), 0.001);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void getPercentileOverlapWith_null_throws() {
+        histogram.getOverlapWith(null);
+    }
+
+    @Test
+    public void getOverlapWith() {
+        // CASE: Two histograms DO NOT overlap.
+        Histogram other = new Histogram.Builder(200, 203).addValues(200, 201, 201, 203).build();
+        assertEquals(0.0, histogram.getOverlapWith(other), 0.001);
+        assertEquals(0.0, other.getOverlapWith(histogram), 0.001);
+
+        // CASE: Two histograms are equivalent (have 100% overlap)
+        assertEquals(1.0, histogram.getOverlapWith(histogram), 0.001);
+        assertEquals(1.0, other.getOverlapWith(other), 0.001);
+
+        // CASE: One histogram is within the range of the other histogram.
+        other = new Histogram.Builder(13, 16).addValues(13, 13, 15, 16).build();
+        assertEquals(4.0 / histogram.getNumValues(), histogram.getOverlapWith(other), 0.001);
+        assertEquals(1.0, other.getOverlapWith(histogram), 0.001);
+
+        // CASE: Two histograms overlap.
+        other = new Histogram.Builder(20, 29).addValues(20, 23, 24, 24, 25, 27, 27, 29).build();
+        assertEquals(3.0 / histogram.getNumValues(), histogram.getOverlapWith(other), 0.001);
+        assertEquals(3.0 / other.getNumValues(), other.getOverlapWith(histogram), 0.001);
     }
 
     @Test
