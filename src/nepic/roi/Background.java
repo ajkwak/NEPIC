@@ -87,7 +87,7 @@ public class Background extends Roi<BackgroundConstraint<?>> {
         int elNum = 0;
         int eThresh = edgeHist.getMin();
         while (elNum < threshElPos) {
-            elNum += edgeHist.getMagnitudeAt(eThresh);
+            elNum += edgeHist.getNumValuesAt(eThresh);
             eThresh++;
         }// while
         return eThresh;

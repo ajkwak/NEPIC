@@ -36,13 +36,13 @@ public class HistogramTest {
     }
 
     @Test
-    public void getMagnitudeAt() {
-        assertEquals(1, histogram.getMagnitudeAt(-5));
-        assertEquals(8, histogram.getMagnitudeAt(6));
-        assertEquals(8, histogram.getMagnitudeAt(6));
-        assertEquals(3, histogram.getMagnitudeAt(10));
-        assertEquals(1, histogram.getMagnitudeAt(14));
-        assertEquals(2, histogram.getMagnitudeAt(25));
+    public void getNumValuesAt() {
+        assertEquals(1, histogram.getNumValuesAt(-5));
+        assertEquals(8, histogram.getNumValuesAt(6));
+        assertEquals(8, histogram.getNumValuesAt(6));
+        assertEquals(3, histogram.getNumValuesAt(10));
+        assertEquals(1, histogram.getNumValuesAt(14));
+        assertEquals(2, histogram.getNumValuesAt(25));
     }
 
     @Test

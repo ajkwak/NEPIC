@@ -123,7 +123,7 @@ public class Histogram implements CsvFormattable {
      * @param value the value of the column for which to get the magnitude
      * @return the magnitude of the specified column
      */
-    public int getMagnitudeAt(int value) {
+    public int getNumValuesAt(int value) {
         int pos = value - offset;
         if (pos < 0 || pos >= hist.length) { // If the given value is outside the Histogram's
                                              // bounds.
@@ -285,7 +285,7 @@ public class Histogram implements CsvFormattable {
         int overlapMax = Math.min(getMax(), other.getMax());
         int overlapArea = 0;
         for (int i = overlapMin; i <= overlapMax; i++) {
-            overlapArea += Math.min(getMagnitudeAt(i), other.getMagnitudeAt(i));
+            overlapArea += Math.min(getNumValuesAt(i), other.getNumValuesAt(i));
         }
 
         return ((double) overlapArea) / getNumValues();
