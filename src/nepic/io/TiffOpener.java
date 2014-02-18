@@ -23,13 +23,12 @@ public class TiffOpener {
      */
     private FileInfo tiffInfo = null;
 
-    // dummy constructor
-
     /**
      * Creates an instance of the TiffOpener class.
      */
     public TiffOpener() {
-    }// no-parameter constructor of TiffOpener
+        // Dummy constructor.
+    }
 
     // public methods
 
@@ -158,6 +157,10 @@ public class TiffOpener {
     }// rgbToBufferedImage
 
     public int getNumPagesInTiff() {
+        if (tiffInfo.nImages == 0) {
+            // Then the TIFF file is not paginated. TODO: is this right??
+            return 1;
+        }
         return tiffInfo.nImages;
     }// getNumPagesInTiff
 
