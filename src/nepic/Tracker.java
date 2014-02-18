@@ -82,7 +82,7 @@ public class Tracker {
                 new IncrementPageHandler(-1), new IncrementPageHandler(1),
                 new ClickHandler(), new DragHandler(), new BkCharacterizer(), new CBFinder(),
                 new EnlargeCandHandler(), new ShrinkCandHandler(), new AcceptRoiHandler());
-        Nepic.getEventLogger().registerObserver(myGUI);
+        Nepic.getEventLogger().setObserver(myGUI);
         myOpener = new TiffOpener();
         cbFinder = new CellBodyFinder();
         bkFinder = new BackgroundFinder();

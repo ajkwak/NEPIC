@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 import nepic.Nepic;
@@ -28,7 +27,7 @@ public class EventLogger {
      * The number of {@link Log} events that can be maintained before saving the events to the
      * current log file.
      */
-    private static final int NUM_EVENTS_BEFORE_SAVE = 100;
+    private static final int NUM_EVENTS_BEFORE_SAVE = 100; // Must be > 0.
     /**
      * The list of unsaved log events.
      */
@@ -40,15 +39,15 @@ public class EventLogger {
     /**
      * The file to which this {@link EventLogger}'s log is saved.
      */
-    private File logFile;
+    private File logFile = null;
     /**
      * The object that writes this {@link EventLogger}'s logs to the file where it should be saved.
      */
     private PrintWriter writer = null;
     /**
-     * The list of observers to notify when an event is logged by this {@link EventLogger}.
+     * The observer to notify when an event is logged by this {@link EventLogger}.
      */
-    private LinkedList<LoggerObserver> observers = new LinkedList<LoggerObserver>();
+    private LoggerObserver observer = null;
 
     /**
      * Creates an {@link EventLogger} that writes to a file with the given name.
@@ -66,16 +65,13 @@ public class EventLogger {
             try {
                 writer = new PrintWriter(new BufferedWriter(new FileWriter(logFile, true)));
                 writer.println(makeStartingLogLine());
-            } catch (IOException e) {
+            } catch (IOException e) { // Fail silently.
+                if (writer != null) {
+                    writer.close();
+                    writer = null;
+                }
                 logFile = null;
-                logEvent(EventType.ERROR,
-                        "Unable to initialize log!  All log events will be displayed in their "
-                                + "entirety during this session.", formatException(e));
             }
-        } else {
-            logEvent(EventType.ERROR,
-                    "Unable to initialize log!  All log events will be displayed in their "
-                            + "entirety during this session.");
         }
     }
 
@@ -106,7 +102,7 @@ public class EventLogger {
     /**
      * Returns whether or not events logged by this {@link EventLogger} can be saved to a file.
      */
-    public boolean canLog() {
+    public boolean canSaveLog() {
         return logFile != null;
     }
 
@@ -114,7 +110,7 @@ public class EventLogger {
      * Adds an ending line to the log, and saves all as-yet unsaved portions of the log.
      */
     public void endLog() {
-        if (canLog()) {
+        if (canSaveLog()) {
             saveLog(); // save any unsaved Log events before closing the out stream
             writer.print("# Session ended and log successfully completed at " + new Date());
             writer.flush();
@@ -148,57 +144,54 @@ public class EventLogger {
      *        {@link EventLogger#LOG_ONLY}.
      * @param furtherInfo any further information about this event that should be logged, but not
      *        passed to this logger's observers and/or displayed to the user
-     * @return
      */
     public void logEvent(EventType eventType, String messageForUser, Object... furtherInfo) {
-        boolean haveLoggingFile = canLog();
-
-        if (haveLoggingFile && events.size() >= NUM_EVENTS_BEFORE_SAVE) {
-            saveLog();
-        }
-
         Log currentEvent = new Log(eventType, messageForUser, furtherInfo);
-        if (haveLoggingFile || observers.isEmpty()) {
+        if (canSaveLog()) {
             events.add(currentEvent);
+            if(events.size() >= NUM_EVENTS_BEFORE_SAVE){
+                saveLog();
+            }
         }
 
         // If error, record that error has occurred
-        if (eventType.equals(EventType.ERROR) || eventType.equals(EventType.FATAL_ERROR)) {
+        if (eventType == EventType.ERROR || eventType == EventType.FATAL_ERROR) {
             errorRecorded = true;
         }
 
-        // Inform observers
-        if (!observers.isEmpty()) {
-            if (!haveLoggingFile && !events.isEmpty()) {
-                for (Log event : events) {
-                    notifyObservers(event.type, event.toString());
-                }
-                events.clear();
+        // Inform observer of event.
+        if (observer != null && messageForUser != null) {
+            switch (eventType) {
+            case INFO:
+                observer.respondToInfo(messageForUser);
+                break;
+            case WARNING:
+                observer.respondToWarning(messageForUser);
+                break;
+            case ERROR:
+                observer.respondToError(messageForUser);
+                break;
+            case FATAL_ERROR:
+                observer.respondToFatalError(messageForUser);
+                break;
+            case VERBOSE: // Do nothing.
+                break;
             }
-            notifyObservers(eventType, (haveLoggingFile ? messageForUser : currentEvent.toString()));
+        }
+
+        if (eventType == EventType.FATAL_ERROR) { // Close NEPIC upon fatal error.
+            Nepic.exit();
         }
     }
 
     /**
-     * Registers (adds) the given {@link LoggerObserver} to the observers that this
-     * {@link EventLogger} informs of events.
+     * Sets the given {@link LoggerObserver} as the observer that this {@link EventLogger} informs
+     * of events.
      *
-     * @param observer the observer to add
-     * @return whether the given observer was registered successfully with this {@link EventLogger}
+     * @param observer the observer to set
      */
-    public boolean registerObserver(LoggerObserver observer) {
-        return observers.add(observer);
-    }
-
-    /**
-     * Removes the given {@link LoggerObserver} from the observers that this {@link EventLogger}
-     * informs of events.
-     *
-     * @param observer the observer to remove
-     * @return whether the given observer was removed successfully from this {@link EventLogger}
-     */
-    public boolean removeObserver(LoggerObserver observer) {
-        return observers.remove(observer);
+    public void setObserver(LoggerObserver observer) {
+        this.observer = observer;
     }
 
     private File getLogFile(String name) {
@@ -218,15 +211,10 @@ public class EventLogger {
         if (!fileExists) {
             try {
                 if (!logFile.createNewFile()) {
-                    Nepic.log(EventType.ERROR, "Attempt to create new log file "
-                            + logFile.getName() + " has failed.");
-                    return null;
+                    return null; // Fail silently.
                 }
             } catch (IOException e) {
-                Nepic.log(EventType.ERROR,
-                        "Exception occurred while trying to create new log file "
-                                + logFile.getName(), formatException(e));
-                return null;
+                return null; // Fail silently.
             }
         }
 
@@ -243,20 +231,6 @@ public class EventLogger {
                 .append(" initialized ")
                 .append(new Date())
                 .toString();
-    }
-
-    private void notifyObservers(EventType type, String message) {
-        for (LoggerObserver observer : observers) { // Don't notify of VERBOSE messages.
-            if (type.equals(EventType.INFO)) {
-                observer.respondToInfo(message);
-            } else if (type.equals(EventType.WARNING)) {
-                observer.respondToWarning(message);
-            } else if (type.equals(EventType.ERROR)) {
-                observer.respondToError(message);
-            } else if (type.equals(EventType.FATAL_ERROR)) {
-                observer.respondToFatalError(message);
-            }
-        }
     }
 
     private boolean saveLog() { // will only be called if have logging file
@@ -302,7 +276,9 @@ public class EventLogger {
             StringBuilder builder = new StringBuilder(type.toString()).append(";\t");
 
             // Info about method generating message to be logged
-            appendMessage(builder, beginLog());
+            for (Object o : beginLog()) {
+                builder.append(separator).append(o);
+            }
             builder.append(" ::");
 
             // Include message to user, if necessary
@@ -312,15 +288,11 @@ public class EventLogger {
             }
 
             // Include all given further info
-            appendMessage(builder, furtherInfo);
+            for (Object o : furtherInfo) {
+                builder.append(separator).append(o);
+            }
 
             message = builder.toString();
-        }
-
-        private void appendMessage(StringBuilder messageBuilder, Object[] furtherInfo) {
-            for (Object o : furtherInfo) {
-                messageBuilder.append(separator).append(o);
-            }
         }
 
         private Object[] beginLog() {
