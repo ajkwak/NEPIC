@@ -77,11 +77,16 @@ public class PageInfo implements CsvFormattable, Validatable {
         return cb.getPiHist().getMean() / bk.getPiHist().getMean();
     }
 
+    public double getHistogramOverlap() {
+        return cb.getPiHist().getOverlapWith(bk.getPiHist());
+    }
+
     public static Label[] getCsvLabels() {
         return new Label[] {
                 new Label("Name"),
                 new Label("Pg_Num"),
                 new Label("PI Ratio (Cell Body/Background)"),
+                new Label("CB:BK Histogram Overlap"),
                 new ComplexLabel("ImgHist", Histogram.getCsvLabels()),
                 new ComplexLabel("Cell Body", CellBody.getCsvLabels()),
                 new ComplexLabel("Background", Background.getCsvLabels()), };
@@ -93,6 +98,7 @@ public class PageInfo implements CsvFormattable, Validatable {
                 imgName,
                 pgNum,
                 getPiRatio(),
+                getHistogramOverlap(),
                 imgHist.getCsvData(),
                 cb.getCsvData(),
                 bk.getCsvData() };
