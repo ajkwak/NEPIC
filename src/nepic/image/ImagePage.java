@@ -82,7 +82,7 @@ public class ImagePage implements IdTaggedImage {
 
     // DISPLAY IMAGE
 
-    public BufferedImage displayImg(boolean equalizeHistogram) {
+    public BufferedImage asImage(boolean equalizeHistogram) {
         BufferedImage toDisplay = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         double multiplier = 1;
         int offset = 0;

@@ -157,7 +157,7 @@ public class Tracker {
 
     private void paintCurrentPage() {
         myGUI.setPage(currPgNum, pages.getNumPages(),
-                currPg.displayImg(myGUI.shouldEqualizeHistogram()));
+                currPg.asImage(myGUI.shouldEqualizeHistogram()));
         redrawCbCand();
         redrawBkCand();
     }

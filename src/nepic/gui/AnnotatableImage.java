@@ -15,7 +15,7 @@ import nepic.util.Verify;
  * @author AJ Parmidge
  */
 public class AnnotatableImage {
-    private BufferedImage img; // The image being annotated.
+    private final BufferedImage img; // The image being annotated.
     private final Stack<Annotation> annotationStack; // The stack of annotations to the image.
 
     /**
@@ -24,26 +24,6 @@ public class AnnotatableImage {
     public AnnotatableImage(BufferedImage imgBk) {
         this.img = imgBk;
         annotationStack = new Stack<Annotation>();
-    }
-
-    public void resetImageBk(BufferedImage newImgBk) {
-        Verify.notNull(newImgBk, "newImgBk");
-        Verify.argument(newImgBk.getWidth() == img.getWidth()
-                && newImgBk.getHeight() == img.getHeight(),
-                "The newImageBk must have the same dimensions as the current background image ! ("
-                        + img.getWidth() + " x " + img.getHeight() + ")");
-
-        // Erase all annotations on the old background image.
-        Stack<Annotation> otherStack = new Stack<Annotation>();
-        while (!annotationStack.empty()) {
-            otherStack.push(pop());
-        }
-
-        // Draw all annotations on the new background image.
-        this.img = newImgBk;
-        while (!otherStack.empty()) {
-            push(otherStack.pop());
-        }
     }
 
     /**
@@ -57,7 +37,7 @@ public class AnnotatableImage {
      *
      * @return
      */
-    public BufferedImage getImage() {
+    BufferedImage getImage() {
         return img;
     }
 
