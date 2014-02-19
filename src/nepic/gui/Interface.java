@@ -240,7 +240,7 @@ public class Interface extends JFrame implements LoggerObserver {
         String whereToLoadImg = prefs.getImageLoadLocation();
         JFileChooser chooser = new JFileChooser(whereToLoadImg);
         chooser.setAcceptAllFileFilterUsed(false);
-        chooser.addChoosableFileFilter(new NepicFileFilter(NepicFileFilter.TIFS_ONLY));
+        chooser.addChoosableFileFilter(NepicFileFilter.TIF_ONLY);
         int folderSelected = chooser.showDialog(this, "Select Image");
 
         if (folderSelected == JFileChooser.APPROVE_OPTION) {
@@ -264,7 +264,7 @@ public class Interface extends JFrame implements LoggerObserver {
         String whereToSave = prefs.getDataSaveLocation();
         JFileChooser chooser = new JFileChooser(whereToSave);
         chooser.setAcceptAllFileFilterUsed(false);
-        chooser.addChoosableFileFilter(new NepicFileFilter(NepicFileFilter.CSV_ONLY));
+        chooser.addChoosableFileFilter(NepicFileFilter.CSV_ONLY);
         int folderSelected = chooser.showSaveDialog(this);
 
         if (folderSelected == JFileChooser.APPROVE_OPTION) {
