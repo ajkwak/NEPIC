@@ -35,9 +35,9 @@ public class NepicFileFilter extends FileFilter {
     public boolean accept(File theFile) {
         String extension = Files.getFileExtension(theFile.getName());
         switch (filterType) {
+        case CSV_ONLY:
+            return extension.equals("csv");
             case TIF_ONLY:
-                return extension.equals("csv");
-            case CSV_ONLY:
                 return extension.equals("tif") || extension.equals("tiff");
             default:
                 return false;
