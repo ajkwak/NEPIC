@@ -14,6 +14,7 @@ import nepic.TitledActionListener;
 import nepic.Nepic;
 import nepic.data.DataSet;
 import nepic.io.Files;
+import nepic.io.NepicFileFilter;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.logging.LoggerObserver;
@@ -240,7 +241,7 @@ public class Interface extends JFrame implements LoggerObserver {
         String whereToLoadImg = prefs.getImageLoadLocation();
         JFileChooser chooser = new JFileChooser(whereToLoadImg);
         chooser.setAcceptAllFileFilterUsed(false);
-        chooser.addChoosableFileFilter(NepicFileFilter.TIF_ONLY);
+        chooser.addChoosableFileFilter(NepicFileFilter.TIFF_ONLY);
         int folderSelected = chooser.showDialog(this, "Select Image");
 
         if (folderSelected == JFileChooser.APPROVE_OPTION) {

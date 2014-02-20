@@ -1,9 +1,8 @@
-package nepic.gui;
+package nepic.io;
 
 import java.io.File;
 import javax.swing.filechooser.FileFilter;
 
-import nepic.io.Files;
 
 /**
  * Immutable collection of {@link FileFilter}s used by NEPIC.
@@ -14,7 +13,7 @@ public class NepicFileFilter extends FileFilter {
     /**
      * A {@link FileFilter} that only accepts TIFF files.
      */
-    public static final NepicFileFilter TIF_ONLY = new NepicFileFilter(FilterType.TIF_ONLY);
+    public static final NepicFileFilter TIFF_ONLY = new NepicFileFilter(FilterType.TIF_ONLY);
     /**
      * A {@link FileFilter} that only accepts CSV files.
      */
@@ -35,8 +34,8 @@ public class NepicFileFilter extends FileFilter {
     public boolean accept(File theFile) {
         String extension = Files.getFileExtension(theFile.getName());
         switch (filterType) {
-        case CSV_ONLY:
-            return extension.equals("csv");
+            case CSV_ONLY:
+                return extension.equals("csv");
             case TIF_ONLY:
                 return extension.equals("tif") || extension.equals("tiff");
             default:
@@ -47,10 +46,10 @@ public class NepicFileFilter extends FileFilter {
     @Override
     public String getDescription() {
         switch (filterType) {
-            case TIF_ONLY:
-                return "Tagged Image File Format (*.tif, *.tiff)";
             case CSV_ONLY:
                 return "Comma-Separated Value File Format (*.csv)";
+            case TIF_ONLY:
+                return "Tagged Image File Format (*.tif, *.tiff)";
             default:
                 return null;
         }
