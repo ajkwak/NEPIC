@@ -1,9 +1,11 @@
 package nepic;
 
+import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -12,7 +14,13 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 
+import javax.swing.AbstractAction;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
 
 import nepic.data.DataSet;
 import nepic.data.GraphData;
@@ -26,6 +34,7 @@ import nepic.image.MultiPageImageInfo;
 import nepic.image.PageInfo;
 import nepic.io.DataWriter;
 import nepic.io.Files;
+import nepic.io.NepicFileFilter;
 import nepic.io.TiffOpener;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
@@ -55,7 +64,7 @@ public class Tracker {
     private TiffOpener myOpener;
     private String analFileClassPath = null;
 
-    private Interface myGUI;
+    private Interface myGui;
     private Point clickLoc = null;
     private Point dragLoc = null;
 
@@ -74,20 +83,55 @@ public class Tracker {
     private CellBody cbCand = null;
     private Background bkCand = null;
 
-    boolean bkCorrected; // True if the background correction has been done for this page.img
-
     public Tracker() {
-        myGUI = new Interface(ImagePage.MAX_CAND_ID, new ExitHandler(), new ChooseFileHandler(),
-                new SaveDataHandler(), new ToggleImageContrastHandler(),
-                new IncrementPageHandler(-1), new IncrementPageHandler(1),
-                new ClickHandler(), new DragHandler(), new BkCharacterizer(), new CBFinder(),
-                new EnlargeCandHandler(), new ShrinkCandHandler(), new AcceptRoiHandler());
-        Nepic.getEventLogger().setObserver(myGUI);
+        myGui = setUpInterface();
+        Nepic.getEventLogger().setObserver(myGui);
         myOpener = new TiffOpener();
         cbFinder = new CellBodyFinder();
         bkFinder = new BackgroundFinder();
         Nepic.log(EventType.INFO, Nepic.getName() + " successfully initialized.");
-        myGUI.displayCurrentAction("Please select image to analyze.");
+        myGui.respondToInfo("Please select image to analyze.");
+    }
+
+    private Interface setUpInterface() { // TODO
+        Interface gui = new Interface();
+        gui.getChooseFileMenuItem().addActionListener(new ChooseFileHandler());
+        gui.getSaveDataMenuItem().addActionListener(new SaveDataHandler());
+        gui.getEqualizeHistogramMenuItem().addActionListener(new ToggleImageContrastHandler());
+        gui.getAboutNepicMenuItem().addActionListener(new DisplayProgramInfoHandler());
+        setUpChangePage(gui);
+        setUpIncrementPage(gui);
+        gui.getImageLabel().addMouseListener(new ClickHandler());
+        gui.getImageLabel().addMouseMotionListener(new DragHandler());
+        gui.getDefineBackgroundButton().addActionListener(new BkCharacterizer());
+        gui.getFindCellBodyButton().addActionListener(new CBFinder());
+        gui.getEnlargeCellBodyButton().addActionListener(new EnlargeCandHandler());
+        gui.getShrinkCellBodyButton().addActionListener(new ShrinkCandHandler());
+        gui.getAcceptCandidatesButton().addActionListener(new AcceptRoiHandler());
+        gui.addWindowListener(new ExitHandler());
+        gui.setVisible(true);
+        return gui;
+    }
+
+    private void setUpChangePage(Interface gui) {
+        JButton changePgButton = gui.getPrevPgButton();
+        AbstractAction changePgButtonHandler = new IncrementPageHandler(-1);
+        changePgButton.addActionListener(changePgButtonHandler);
+        String actionKey = "LEFT_pressed";
+        changePgButton.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).
+                put(KeyStroke.getKeyStroke(KeyEvent.VK_A, 0), actionKey); // TODO: tie to left/up
+        changePgButton.getActionMap().put(actionKey, changePgButtonHandler);
+
+        changePgButton = gui.getNextPgButton();
+        changePgButtonHandler = new IncrementPageHandler(1);
+        changePgButton.addActionListener(changePgButtonHandler);
+        actionKey = "RIGHT_pressed";
+        changePgButton.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).
+                put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0), actionKey); // TODO: tie to right/down
+        changePgButton.getActionMap().put(actionKey, changePgButtonHandler);
+    }
+
+    private void setUpIncrementPage(Interface gui) {
     }
 
     // *********************************************************************************************
@@ -95,12 +139,16 @@ public class Tracker {
     // *********************************************************************************************
 
     private boolean selectFileToAnalyze() {
-        File fileToAnal = myGUI.selectTiffFile();
-        if (fileToAnal == null) { // Keep the current file being analyzed.
-            return false;
+        Preferences prefs = Nepic.getPrefs();
+        File fileToAnal = myGui.selectFile("Select Image", prefs.getImageLoadLocation(),
+                NepicFileFilter.TIFF_ONLY);
+        if (fileToAnal != null) {
+            analFileClassPath = fileToAnal.getAbsolutePath();
+            prefs.setImageLoadLocation(Files.getDir(analFileClassPath));
+            Nepic.log(EventType.INFO, EventLogger.LOG_ONLY, "Image selected:", analFileClassPath);
+            return true;
         }
-        analFileClassPath = fileToAnal.getAbsolutePath();
-        return true;
+        return false;
     }
 
     // *********************************************************************************************
@@ -120,9 +168,7 @@ public class Tracker {
         if (myOpener.loadTiffInfo(classpath)) {
             int totNumPgs = myOpener.getNumPagesInTiff();
             updateImageBeingAnalyzed(totNumPgs);
-            myGUI.setTitle(new StringBuilder(Nepic.getName())
-                    .append(' ')
-                    .append(Nepic.getMainVersion())
+            myGui.setTitle(new StringBuilder(Interface.TITLE)
                     .append(" (")
                     .append(Files.getName(analFileClassPath))
                     .append(")")
@@ -134,7 +180,7 @@ public class Tracker {
         return false;
     }
 
-    public void updateImageBeingAnalyzed(int numPages) {
+    private void updateImageBeingAnalyzed(int numPages) {
         if (unsavedDataOnCurrentImg) {
             logImageData();
         }
@@ -151,18 +197,19 @@ public class Tracker {
         ImagePage imageBeingAnalyzed = myOpener.openTiffPage(pgNum);
         updatePage(Files.getName(analFileClassPath), pgNum, imageBeingAnalyzed);
         paintCurrentPage();
-        myGUI.clearDisplayedActions();
-        Nepic.log(EventType.INFO, "Page " + (pgNum + 1) + " displayed.");
+        myGui.clearOutput();
+        int displayedPageNumber = pgNum + 1;
+        myGui.getPageNumberTextField().setText(displayedPageNumber + "/" + pages.getNumPages());
+        Nepic.log(EventType.INFO, "Page " + displayedPageNumber + " displayed.");
     }
 
     private void paintCurrentPage() {
-        myGUI.setPage(currPgNum, pages.getNumPages(),
-                currPg.asImage(myGUI.shouldEqualizeHistogram()));
+        myGui.getImageLabel().displayImage(currPg.asImage(myGui.isHistogramEqualizationDesired()));
         redrawCbCand();
         redrawBkCand();
     }
 
-    public boolean updatePage(String imgName, int pgNum, ImagePage page) {
+    private boolean updatePage(String imgName, int pgNum, ImagePage page) {
         Verify.notNull(imgName, "Image name cannot be null.");
         pages.verifyPageNumLegal(pgNum);
         Verify.notNull(page, "ImagePage to update cannot be null.");
@@ -199,7 +246,6 @@ public class Tracker {
     }
 
     /**
-     *
      * @param numPgsSearch the number of pages before the previous page to go back and search for
      *        for a valid {@link PageInfo} with valid ROI candidates.
      * @return
@@ -220,8 +266,8 @@ public class Tracker {
     // Find Background
     // *********************************************************************************************
 
-    public class BkCharacterizer extends TitledActionListener {
-        public BkCharacterizer() {
+    private class BkCharacterizer extends TitledActionListener {
+        private BkCharacterizer() {
             super("Re-Define BK");
         }
 
@@ -235,18 +281,18 @@ public class Tracker {
                         new Point(clickLoc.x, dragLoc.y) });
                 clickLoc = null;
                 dragLoc = null;
-                myGUI.erase(Nepic.MOUSE_ACTION_ID);
+                myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
                 if (userAcceptAsBackground(bkArea)) {
                     Nepic.log(EventType.INFO, "Background information recorded.", bkArea);
                 }
                 redrawBkCand();
             } else {
-                myGUI.displayCurrentAction("Background not chosen.  Unable to accept.");
+                myGui.respondToInfo("Background not chosen.  Unable to accept.");
             }
         }
     }
 
-    public boolean userAcceptAsBackground(Polygon p) {
+    private boolean userAcceptAsBackground(Polygon p) {
         Verify.state(currPg != null, "Cannot accept background on null image page");
 
         ConstraintMap<BackgroundConstraint<?>> map = new ConstraintMap<BackgroundConstraint<?>>()
@@ -274,8 +320,8 @@ public class Tracker {
     // Find CellBody
     // *********************************************************************************************
 
-    public class CBFinder extends TitledActionListener {
-        public CBFinder() {
+    private class CBFinder extends TitledActionListener {
+        private CBFinder() {
             super("Find Cell Body");
         }
 
@@ -285,7 +331,7 @@ public class Tracker {
             if (clickLoc == null || dragLoc == null) {
                 redrawBK = findCB();
             } else {
-                myGUI.erase(Nepic.MOUSE_ACTION_ID);
+                myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
                 Polygon secCorners = new Polygon(new Point[] {
                         clickLoc,
                         new Point(dragLoc.x, clickLoc.y),
@@ -299,16 +345,15 @@ public class Tracker {
                 redrawCbCand();
                 redrawBkCand();
             } else {
-                myGUI.displayCurrentAction("Unable to find cell body in indicated region.");
+                myGui.respondToError("Unable to find cell body in indicated region.");
             }
         }
     }
 
     /**
-     *
      * @return true if background updated, otherwise false
      */
-    public boolean findCB() {
+    private boolean findCB() {
         Point[] polygonCorners = new Point[] {
                 new Point(0, 0),
                 new Point(currPg.width - 1, 0),
@@ -318,11 +363,10 @@ public class Tracker {
     }
 
     /**
-     *
      * @param corners
      * @return true if background updated, otherwise false
      */
-    public boolean findCB(Polygon corners) {
+    private boolean findCB(Polygon corners) {
         ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>()
                 .addConstraints(new CellBodyFinder.SeedPolygon(corners));
         if (prevPgInfo != null && prevPgInfo.hasValidCB()) {
@@ -332,7 +376,7 @@ public class Tracker {
         }
 
         if (cbCand != null) { // Then must edit the current cand
-            myGUI.erase(cbCand.getId());
+            myGui.getImageLabel().eraseImageAnnotation(cbCand.getId());
             cbFinder.removeFeature(cbCand);
             // TODO: relase ROI number!
         }
@@ -341,10 +385,10 @@ public class Tracker {
         if (bkCand != null) {
             LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-            ConstraintMap<BackgroundConstraint<?>> bkConstraints
-            = new ConstraintMap<BackgroundConstraint<?>>().addConstraints(
-                    new BackgroundFinder.Origin(cbLength.getMidPoint()),
-                    new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
+            ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
+                    .addConstraints(
+                            new BackgroundFinder.Origin(cbLength.getMidPoint()),
+                            new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
 
             bkFinder.editFeature(bkCand, bkConstraints);
         }
@@ -355,8 +399,8 @@ public class Tracker {
     // Modify CellBody
     // *********************************************************************************************
 
-    public class EnlargeCandHandler extends TitledActionListener {
-        public EnlargeCandHandler() {
+    private class EnlargeCandHandler extends TitledActionListener {
+        private EnlargeCandHandler() {
             super("Enlarge Candidate");
         }
 
@@ -367,13 +411,13 @@ public class Tracker {
                 redrawCbCand();
                 redrawBkCand();
             } else {
-                myGUI.displayCurrentAction("Cannot enlarge a candidate until has been selected.");
+                myGui.respondToInfo("Cannot enlarge a candidate until has been selected.");
             }
         }
     }
 
-    public class ShrinkCandHandler extends TitledActionListener {
-        public ShrinkCandHandler() {
+    private class ShrinkCandHandler extends TitledActionListener {
+        private ShrinkCandHandler() {
             super("Shrink Candidate");
         }
 
@@ -383,13 +427,12 @@ public class Tracker {
                 changeCbCandSize(false);
                 redrawCbCand();
             } else {
-                myGUI.displayCurrentAction("Cannot shrink a candidate until "
-                        + "candidate has been selected.");
+                myGui.respondToInfo("Cannot shrink a candidate until candidate has been selected.");
             }
         }
     }
 
-    public void changeCbCandSize(boolean enlarge) {
+    private void changeCbCandSize(boolean enlarge) {
         int desiredSize = cbCand.getArea().getSize();
         Pair<Integer, CellBodyFinder.SizeEdgeCase> constraint;
         if (enlarge) {
@@ -406,19 +449,15 @@ public class Tracker {
     // Accept ROIs
     // *********************************************************************************************
 
-    public class AcceptRoiHandler extends TitledActionListener {
-        Point midpoint = new Point(200, 200);
-        double theta = 0;
-        final double phi = Math.PI / 12;
-
-        public AcceptRoiHandler() {
+    private class AcceptRoiHandler extends TitledActionListener {
+        private AcceptRoiHandler() {
             super("Accept Candidate");
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
             if (acceptRoiCandidates()) {
-                myGUI.enableSaveData(true);
+                myGui.getSaveDataMenuItem().setEnabled(true);
                 if (incrementPage(1)) {
                     if (!hasValidCandidates()) {
                         if (canTrackFromPrevPage()) {
@@ -426,7 +465,7 @@ public class Tracker {
                                 Nepic.log(EventType.INFO, "Found CellBody candidate.", "MinPi =",
                                         cbCand.getMinPi());
                             } else {
-                                myGUI.displayCurrentAction("Unable to find cell body.  "
+                                myGui.respondToInfo("Unable to find cell body.  "
                                         + "Please re-indicate cell body location.");
                             }
                         }
@@ -435,13 +474,13 @@ public class Tracker {
                 redrawCbCand();
                 redrawBkCand();
             } else {
-                myGUI.displayCurrentAction("Must have valid background and cell"
+                myGui.respondToInfo("Must have valid background and cell"
                         + " body candidates before accepting.");
             }
         }
     }
 
-    public boolean acceptRoiCandidates() {
+    private boolean acceptRoiCandidates() {
         if (!hasValidCandidates()) {
             return false;
         }
@@ -461,8 +500,8 @@ public class Tracker {
                 cbCand.getMinPi(), "Background: corners =", bkCand.getArea());
 
         // Remove candidates (since have already been accepted)
-        myGUI.erase(bkCand.getId());
-        myGUI.erase(cbCand.getId());
+        myGui.getImageLabel().eraseImageAnnotation(bkCand.getId());
+        myGui.getImageLabel().eraseImageAnnotation(cbCand.getId());
         bkFinder.removeFeature(bkCand);
         cbFinder.removeFeature(cbCand);
         bkCand = null;
@@ -473,7 +512,7 @@ public class Tracker {
         return true;
     }
 
-    public void logImageData() {
+    private void logImageData() {
         if (!unsavedDataOnCurrentImg) {
             return;
         }
@@ -486,15 +525,15 @@ public class Tracker {
         unsavedDataOnCurrentImg = false;
     }
 
-    public boolean cbCandValid() {
+    private boolean cbCandValid() {
         return cbCand != null && cbCand.isValid();
     }
 
-    public boolean bkCandValid() {
+    private boolean bkCandValid() {
         return bkCand != null && bkCand.isValid();
     }
 
-    public boolean hasValidCandidates() {
+    private boolean hasValidCandidates() {
         return cbCandValid() && bkCandValid();
     }
 
@@ -503,10 +542,9 @@ public class Tracker {
     // *********************************************************************************************
 
     /**
-     *
      * @return true if the previous page had valid ROIs; otherwise false
      */
-    public boolean canTrackFromPrevPage() {
+    private boolean canTrackFromPrevPage() {
         return prevPgInfo != null && prevPgInfo.hasValidRois();
     }
 
@@ -520,7 +558,7 @@ public class Tracker {
      * @return true if the CellBody was successfully tracked from the last page; otherwise false
      * @throws IllegalStateException if the previous page did not have valid ROIs
      */
-    public boolean trackFromPrevPage() {
+    private boolean trackFromPrevPage() {
         Verify.state(canTrackFromPrevPage(),
                 "Unable to track ROIs.  ROIs from previous page were not indicated or invalid.");
 
@@ -576,10 +614,10 @@ public class Tracker {
                                      // candidate (so when make valid, will track bk properly)
         LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-        ConstraintMap<BackgroundConstraint<?>> bkConstraints
-            = new ConstraintMap<BackgroundConstraint<?>>().addConstraints(
-                    new BackgroundFinder.Origin(cbLength.getMidPoint()),
-                    new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
+        ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
+                .addConstraints(
+                        new BackgroundFinder.Origin(cbLength.getMidPoint()),
+                        new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
 
         bkConstraints.addConstraints(new BackgroundFinder.PrevTheta(prevPgInfo.getBK().getTheta()));
         bkCand = bkFinder.createFeature(bkConstraints);
@@ -598,7 +636,7 @@ public class Tracker {
             } else {
                 cbCandPixels.setRgb(Nepic.CELL_BODY_COLOR);
             }
-            myGUI.draw(cbCand.getId(), cbCandPixels);
+            myGui.getImageLabel().annotateImage(cbCand.getId(), cbCandPixels);
             return true;
         }
         return false;
@@ -613,32 +651,32 @@ public class Tracker {
             } else {
                 bkCandPixels.setRgb(Nepic.BACKGROUND_COLOR);
             }
-            myGUI.draw(bkCand.getId(), bkCandPixels);
+            myGui.getImageLabel().annotateImage(bkCand.getId(), bkCandPixels);
             return true;
         }
         return false;
     }
 
-    public class ViewHistHandler extends TitledActionListener {
+    private class ViewHistHandler extends TitledActionListener {
         private Histogram hist;
 
-        public ViewHistHandler(String name, Histogram hist) {
+        private ViewHistHandler(String name, Histogram hist) {
             super(name);
             this.hist = hist;
         }
 
         @Override
         public void actionPerformed(ActionEvent arg0) {
-            JOptionPane.showMessageDialog(myGUI, new HistogramViewPanel(hist, 350, 2, new Range(0,
+            JOptionPane.showMessageDialog(myGui, new HistogramViewPanel(hist, 350, 2, new Range(0,
                     255)));
         }
 
     }
 
-    public class ViewScanlineHandler extends TitledActionListener {
+    private class ViewScanlineHandler extends TitledActionListener {
         private GraphData data;
 
-        public ViewScanlineHandler(String name, DataScanner scanner) {
+        private ViewScanlineHandler(String name, DataScanner scanner) {
             super(name);
             this.data = scanner.getGraphData();
         }
@@ -649,7 +687,7 @@ public class Tracker {
             minPiData.add(new Point(data.getMinX(), cbCand.getMinPi()));
             minPiData.add(new Point(data.getMaxX(), cbCand.getMinPi()));
             data.setDataSet("minPI", minPiData, 0xffff00 /* yellow */);
-            JOptionPane.showMessageDialog(myGUI,
+            JOptionPane.showMessageDialog(myGui,
                     new Graph(800, 600, 0x000000).setData(data).setYGridlineInterval(5).refresh());
             data.removeDataSet("minPI");
         }
@@ -660,17 +698,24 @@ public class Tracker {
     // Change Current Page
     // *********************************************************************************************
 
-    public class IncrementPageHandler implements ActionListener {
+    private class IncrementPageHandler extends AbstractAction {
+        /**
+         * Generated serialVersionUID.
+         */
+        private static final long serialVersionUID = -8676160433655842348L;
         int incrementFactor;
 
-        public IncrementPageHandler(int amntIncrementBy) {
+        private IncrementPageHandler(int amntIncrementBy) {
+            super();
             Verify.argument(amntIncrementBy != 0, "Illegal incrementation amount: 0");
             incrementFactor = amntIncrementBy;
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            incrementPage(incrementFactor);
+            if (pages != null) {
+                incrementPage(incrementFactor);
+            }
         }
     }
 
@@ -679,7 +724,7 @@ public class Tracker {
         boolean continueToNextPage = true;
         int totNumPgs = pages.getNumPages();
         if (newPgNum < 0) {
-            if (myGUI.userAgrees("Reached First Page",
+            if (myGui.userAgrees("Reached First Page",
                     "You have reached the first page in the image.\n"
                             + "Would you like to go to the last page?")) {
                 newPgNum = totNumPgs - 1;
@@ -688,7 +733,7 @@ public class Tracker {
                 continueToNextPage = false;
             }
         } else if (newPgNum >= totNumPgs) {
-            if (myGUI.userAgrees("Reached Last Page",
+            if (myGui.userAgrees("Reached Last Page",
                     "You have reached the last page in the image.\n"
                             + "Would you like to return to the first page?")) {
                 newPgNum = 0;
@@ -709,22 +754,31 @@ public class Tracker {
     // User Interactions with GUI
     // *********************************************************************************************
 
-    public class ToggleImageContrastHandler implements ActionListener {
+    private class ToggleImageContrastHandler implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            paintCurrentPage();
+            if (currPg != null) {
+                paintCurrentPage();
+            }
         }
     }
 
-    public class ClickHandler implements MouseListener {
+    private class DisplayProgramInfoHandler implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            myGui.displayProgramInfo();
+        }
+    }
+
+    private class ClickHandler implements MouseListener {
         @Override
         public void mouseClicked(MouseEvent e) {
-            if(currPg == null){
+            if (currPg == null) {
                 return;
             }
             clickLoc = null;
             dragLoc = null;
-            myGUI.erase(Nepic.MOUSE_ACTION_ID);
+            myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
 
             if (e.getButton() == MouseEvent.BUTTON3) {
                 Point clickPt = e.getPoint();
@@ -732,7 +786,7 @@ public class Tracker {
                     int roiId = currPg.getId(clickPt.x, clickPt.y);
                     if (ImagePage.candNumLegal(roiId)) {
                         if (cbCand != null && roiId == cbCand.getId()) {
-                            myGUI.openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
+                            openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
                                     new ViewHistHandler("View CB Hist", cbCand.getPiHist()),
                                     new ViewScanlineHandler("0 Deg", cbCand.getEdgeFinder(0)),
                                     new ViewScanlineHandler("45 Deg", cbCand.getEdgeFinder(1)),
@@ -740,21 +794,31 @@ public class Tracker {
                                     new ViewScanlineHandler("135 Deg", cbCand.getEdgeFinder(3)));
                             // TODO: also allow users to see the scanlines.
                         } else if (bkCand != null && roiId == bkCand.getId()) {
-                            myGUI.openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
+                            openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
                                     new ViewHistHandler("View BK Hist", bkCand.getPiHist()),
                                     new ViewHistHandler("View BK Edge Hist", bkCand.getEdgeHist()));
                         } else {
-                            myGUI.displayCurrentAction(
-                                    "Unable to determine identity of clicked ROI");
+                            myGui.respondToInfo("Unable to determine identity of clicked ROI");
                         }
                     } else {
-                        myGUI.openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
+                        openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
                                 new ViewHistHandler("View Image Hist", pages
                                         .getPage(currPgNum)
                                         .getPiHist()));
                     }
                 }
             }
+        }
+
+        private void openJPopupMenu(Component invoker, int x, int y,
+                TitledActionListener... handlers) {
+            JPopupMenu popup = new JPopupMenu();
+            for (TitledActionListener handler : handlers) {
+                JMenuItem menuItem = new JMenuItem(handler.getText());
+                menuItem.addActionListener(handler);
+                popup.add(menuItem);
+            }
+            popup.show(invoker, x, y);
         }
 
         @Override
@@ -772,7 +836,7 @@ public class Tracker {
         public void mouseReleased(MouseEvent e) {}
     }
 
-    public class DragHandler implements MouseMotionListener {
+    private class DragHandler implements MouseMotionListener {
         @Override
         public void mouseDragged(MouseEvent e) {
             if (currPg != null) {
@@ -788,9 +852,9 @@ public class Tracker {
                     DataSet mouseActionPixels = new MutableDataSet();
                     mouseActionPixels.addAll(newRec.getEdges());
                     mouseActionPixels.setRgb(Nepic.MOUSE_ACTION_COLOR);
-                    myGUI.draw(Nepic.MOUSE_ACTION_ID, mouseActionPixels);
+                    myGui.getImageLabel().annotateImage(Nepic.MOUSE_ACTION_ID, mouseActionPixels);
                 } else {
-                    myGUI.erase(Nepic.MOUSE_ACTION_ID);
+                    myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
                 }
             }
         }
@@ -803,11 +867,11 @@ public class Tracker {
     // Save CSV Data
     // *********************************************************************************************
 
-    public class SaveDataHandler implements ActionListener {
+    private class SaveDataHandler implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             if (saveData()) {
-                myGUI.enableSaveData(false);
+                myGui.getSaveDataMenuItem().setEnabled(false);
             }
         }
     }
@@ -817,12 +881,12 @@ public class Tracker {
             logImageData();
         }
 
-        File whereToSave = myGUI.selectCsvSaveLocation();
+        File whereToSave = selectCsvSaveLocation();
         if (canSaveData(whereToSave)) {
             // Save the data
             boolean dataSaved = Nepic.getDataWriter().saveData(whereToSave);
             if (dataSaved) {
-                if (myGUI.userAgrees("Open Data File?",
+                if (myGui.userAgrees("Open Data File?",
                         "Would you like to open the data file you just saved?")) {
                     openDataFile(whereToSave);
                 }
@@ -832,6 +896,19 @@ public class Tracker {
             return dataSaved;
         }
         return false;
+    }
+
+    private File selectCsvSaveLocation() {
+        Preferences prefs = Nepic.getPrefs();
+        File file = myGui.selectFile("Save Data", prefs.getDataSaveLocation(),
+                NepicFileFilter.CSV_ONLY);
+        if (file != null) {
+            if (!Files.getFileExtension(file.getName()).equals("csv")) {
+                file = new File(file.getAbsolutePath() + ".csv");
+            }
+            prefs.setDataSaveLocation(Files.getDir(file.getAbsolutePath()));
+        }
+        return file;
     }
 
     private void openDataFile(File toOpen) {
@@ -849,7 +926,7 @@ public class Tracker {
         }
         if (whereToSave.exists()) {
             if (whereToSave.canWrite()) {
-                int overwrite = JOptionPane.showConfirmDialog(myGUI,
+                int overwrite = JOptionPane.showConfirmDialog(myGui,
                         "The indicated file already exists.  Would you like to overwrite it?",
                         "Overwrite File?", JOptionPane.YES_NO_OPTION);
                 return (overwrite == JOptionPane.YES_OPTION);
@@ -863,7 +940,7 @@ public class Tracker {
     // Exit Program
     // *********************************************************************************************
 
-    public class ExitHandler extends WindowAdapter implements ActionListener {
+    private class ExitHandler extends WindowAdapter implements ActionListener {
         @Override
         public void windowClosing(WindowEvent e) {
             exit();
@@ -877,13 +954,13 @@ public class Tracker {
         private void exit() {
             boolean canClose = saveDataIfNecessary();
             if (canClose) {
-                myGUI.close();
+                myGui.close();
             }
         }
 
         private boolean saveDataIfNecessary() {
             if ((Nepic.getDataWriter().dataLogged() || unsavedDataOnCurrentImg)
-                    && myGUI.userAgrees("Save Data",
+                    && myGui.userAgrees("Save Data",
                             "Do you want to save the data generated since starting "
                                     + Nepic.getName() + "?")) {
                 return saveData();
