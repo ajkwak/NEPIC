@@ -13,11 +13,11 @@ import nepic.util.Validatable;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_ALpha_v0-9_122212
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
+ *
  * @param <C>
  */
 public abstract class Roi<C extends Constraint<?>> implements CsvFormattable, Validatable {
@@ -40,6 +40,19 @@ public abstract class Roi<C extends Constraint<?>> implements CsvFormattable, Va
         return idHandle;
     }
 
+    /**
+     * Releases the ID of this ROI. Note that this makes the ROI invalid, so this should only be
+     * done when the ROI is about to be deleted.
+     */
+    public void release() {
+        try {
+            idHandle.release(this);
+        } catch (IllegalAccessException e) {
+            Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "Unable to release handle with id =",
+                    idHandle.id, EventLogger.formatException(e));
+        }
+    }
+
     public boolean isModified() {
         return modifiedSinceAccepted;
     }
@@ -53,7 +66,7 @@ public abstract class Roi<C extends Constraint<?>> implements CsvFormattable, Va
     public abstract List<Point> getInnards();
 
     /**
-     * 
+     *
      * @param img
      * @since AutoCBFinder_Alpha_v0-9-2013-02-10
      */

@@ -83,6 +83,8 @@ public class Tracker {
     private CellBody cbCand = null;
     private Background bkCand = null;
 
+    private boolean bkAccepted = false;
+
     public Tracker() {
         myGui = setUpInterface();
         Nepic.getEventLogger().setObserver(myGui);
@@ -199,6 +201,7 @@ public class Tracker {
         paintCurrentPage();
         myGui.clearOutput();
         int displayedPageNumber = pgNum + 1;
+        bkAccepted = false;
         myGui.getPageNumberTextField().setText(displayedPageNumber + "/" + pages.getNumPages());
         Nepic.log(EventType.INFO, "Page " + displayedPageNumber + " displayed.");
     }
@@ -311,6 +314,7 @@ public class Tracker {
         }
 
         if (bkCand != null && bkCand.getArea() != null) {
+            bkAccepted = true;
             return true;
         }
         return false;
@@ -369,28 +373,23 @@ public class Tracker {
     private boolean findCB(Polygon corners) {
         ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>()
                 .addConstraints(new CellBodyFinder.SeedPolygon(corners));
-        if (prevPgInfo != null && prevPgInfo.hasValidCB()) {
-            int desiredSize = prevPgInfo.getCB().getArea().getSize();
-            cbConstraints.addConstraints(new CellBodyFinder.DesiredSize(Pair.newPair(desiredSize,
-                    CellBodyFinder.SizeEdgeCase.AS_CLOSE_AS_POSSIBLE)));
-        }
+        // if (prevPgInfo != null && prevPgInfo.hasValidCB()) {
+        // int desiredSize = prevPgInfo.getCB().getArea().getSize();
+        // cbConstraints.addConstraints(new CellBodyFinder.DesiredSize(Pair.newPair(desiredSize,
+        // CellBodyFinder.SizeEdgeCase.AS_CLOSE_AS_POSSIBLE)));
+        // }
 
         if (cbCand != null) { // Then must edit the current cand
             myGui.getImageLabel().eraseImageAnnotation(cbCand.getId());
             cbFinder.removeFeature(cbCand);
-            // TODO: relase ROI number!
+            cbCand.release(); // TODO: also release bkCand when necessary.
         }
         cbCand = cbFinder.createFeature(cbConstraints);
 
-        if (bkCand != null) {
-            LineSegment cbLength = cbCand.getArea().getMaxDiameter();
-
-            ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
-                    .addConstraints(
-                            new BackgroundFinder.Origin(cbLength.getMidPoint()),
-                            new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
-
-            bkFinder.editFeature(bkCand, bkConstraints);
+        if (!bkAccepted) {
+            if (canTrackFromPrevPage()) {
+                trackBackground();
+            }
         }
         return cbCandValid();
     }
@@ -426,6 +425,7 @@ public class Tracker {
             if (cbCand != null) {
                 changeCbCandSize(false);
                 redrawCbCand();
+                redrawBkCand();
             } else {
                 myGui.respondToInfo("Cannot shrink a candidate until candidate has been selected.");
             }
@@ -443,6 +443,9 @@ public class Tracker {
         ConstraintMap<CellBodyConstraint<?>> constraints = new ConstraintMap<CellBodyConstraint<?>>()
                 .addConstraints(new CellBodyFinder.DesiredSize(constraint));
         cbFinder.editFeature(cbCand, constraints);
+        if (canTrackFromPrevPage()) {
+            trackBackground();
+        }
     }
 
     // *********************************************************************************************
@@ -481,6 +484,17 @@ public class Tracker {
     }
 
     private boolean acceptRoiCandidates() {
+        if (bkAccepted && cbCand.isValid()) { // TODO: is this right?
+            LineSegment cbLength = cbCand.getArea().getMaxDiameter();
+
+            ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
+                    .addConstraints(
+                            new BackgroundFinder.Origin(cbLength.getMidPoint()),
+                            new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
+
+            bkFinder.editFeature(bkCand, bkConstraints);
+        }
+
         if (!hasValidCandidates()) {
             return false;
         }
@@ -489,6 +503,8 @@ public class Tracker {
         PageInfo currPgInfo = pages.getPage(currPgNum);
         currPgInfo.setBK(bkCand);
         currPgInfo.setCB(cbCand);
+
+
         bkCand.setModified(false);
         cbCand.setModified(false);
         Verify.state(pages.getPage(currPgNum).hasValidRois(),
@@ -610,17 +626,25 @@ public class Tracker {
         return false;
     }
 
-    private void trackBackground() { // TODO : what about when want to track bk with invalid
-                                     // candidate (so when make valid, will track bk properly)
-        LineSegment cbLength = cbCand.getArea().getMaxDiameter();
+    private void trackBackground() {
+        if (!bkAccepted) {
+            if (bkCand != null) {
+                bkFinder.removeFeature(bkCand);
+                myGui.getImageLabel().eraseImageAnnotation(bkCand.getId());
+                bkCand = null;
+            }
+            LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-        ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
-                .addConstraints(
-                        new BackgroundFinder.Origin(cbLength.getMidPoint()),
-                        new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
+            ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
+                    .addConstraints(
+                            new BackgroundFinder.Origin(cbLength.getMidPoint()),
+                            new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
 
-        bkConstraints.addConstraints(new BackgroundFinder.PrevTheta(prevPgInfo.getBK().getTheta()));
-        bkCand = bkFinder.createFeature(bkConstraints);
+            bkConstraints.addConstraints(new BackgroundFinder.PrevTheta(prevPgInfo
+                    .getBK()
+                    .getTheta()));
+            bkCand = bkFinder.createFeature(bkConstraints);
+        }
     }
 
     // *********************************************************************************************
