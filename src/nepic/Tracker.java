@@ -519,7 +519,9 @@ public class Tracker {
         myGui.getImageLabel().eraseImageAnnotation(bkCand.getId());
         myGui.getImageLabel().eraseImageAnnotation(cbCand.getId());
         bkFinder.removeFeature(bkCand);
+        bkCand.release();
         cbFinder.removeFeature(cbCand);
+        cbCand.release();
         bkCand = null;
         cbCand = null;
         Nepic.log(EventType.INFO,
@@ -631,6 +633,7 @@ public class Tracker {
             if (bkCand != null) {
                 bkFinder.removeFeature(bkCand);
                 myGui.getImageLabel().eraseImageAnnotation(bkCand.getId());
+                bkCand.release();
                 bkCand = null;
             }
             LineSegment cbLength = cbCand.getArea().getMaxDiameter();
