@@ -192,10 +192,12 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             return false;
         }
         int prevSize = size;
+        Pixel prevSeedPixel = roi.getSeedPixel(); // Kept in case need to revert last enlargement.
 
         try {
             while (size < desiredSize && size < imgSize) {
                 prevSize = size;
+                prevSeedPixel = roi.getSeedPixel();
                 minPi -= changePiIncrement;
                 extendEdges(roi, minPi);
                 size = roi.getArea().getSize();
@@ -208,14 +210,13 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
 
         try {
             // Re-shrink once, if necessary
-            if (edgeCase == SizeEdgeCase.SMALLER
-                    || (edgeCase == SizeEdgeCase.AS_CLOSE_AS_POSSIBLE && (desiredSize - prevSize < size
-                            - desiredSize))) {
+            if (edgeCase == SizeEdgeCase.SMALLER || (edgeCase == SizeEdgeCase.AS_CLOSE_AS_POSSIBLE
+                    && (desiredSize - prevSize < size - desiredSize))) {
                 removeFeatureFromImage(roi);
                 minPi += changePiIncrement;
-                Point seedPix = roi.getSeedPixel();
-                img.setId(seedPix.x, seedPix.y, roi);
-                roi.setEdges(new Blob(Lists.newArrayList(seedPix)));
+                roi.setSeedPixel(prevSeedPixel); // Don't retain seed pixel from latest enlargement.
+                img.setId(prevSeedPixel.x, prevSeedPixel.y, roi);
+                roi.setEdges(new Blob(Lists.newArrayList(prevSeedPixel)));
                 if (prevSize > 1) {
                     extendEdges(roi, minPi);
                 }
