@@ -331,6 +331,10 @@ public class Tracker {
 
         @Override
         public void actionPerformed(ActionEvent e) {
+            if (currPg == null) {
+                myGui.respondToInfo("Unable to find cell body until image chosen.");
+                return;
+            }
             boolean redrawBK; // TODO: what if CB doesn't exist
             if (clickLoc == null || dragLoc == null) {
                 redrawBK = findCB();
