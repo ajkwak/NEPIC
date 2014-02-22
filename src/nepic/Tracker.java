@@ -505,8 +505,8 @@ public class Tracker {
                 if (incrementPage(1)) {
                     if (!hasValidCandidates()) {
                         if (canTrackFromPrevPage()) {
+                            currentCellBodyTracked = true;
                             if (trackFromPrevPage()) {
-                                currentCellBodyTracked = true;
                                 autoTrackedSeedPixel = cbCand.getSeedPixel();
                                 Nepic.log(EventType.INFO, "Found CellBody candidate.", "MinPi =",
                                         cbCand.getMinPi());
