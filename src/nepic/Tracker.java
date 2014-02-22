@@ -63,6 +63,7 @@ import nepic.util.Verify;
 public class Tracker {
     private TiffOpener myOpener;
     private String analFileClassPath = null;
+    private DataWriter dataWriter;
 
     private Interface myGui;
     private Point clickLoc = null;
@@ -89,6 +90,7 @@ public class Tracker {
         myGui = setUpInterface();
         Nepic.getEventLogger().setObserver(myGui);
         myOpener = new TiffOpener();
+        dataWriter = new DataWriter(PageInfo.getCsvLabels());
         cbFinder = new CellBodyFinder();
         bkFinder = new BackgroundFinder();
         Nepic.log(EventType.INFO, Nepic.getName() + " successfully initialized.");
@@ -538,7 +540,6 @@ public class Tracker {
         if (!unsavedDataOnCurrentImg) {
             return;
         }
-        DataWriter dataWriter = Nepic.getDataWriter();
         for (PageInfo page : pages) {
             if (page != null && page.hasValidRois()) {
                 dataWriter.addDataRow(page.getCsvData());
@@ -915,7 +916,7 @@ public class Tracker {
         File whereToSave = selectCsvSaveLocation();
         if (canSaveData(whereToSave)) {
             // Save the data
-            boolean dataSaved = Nepic.getDataWriter().saveData(whereToSave);
+            boolean dataSaved = dataWriter.saveData(whereToSave);
             if (dataSaved) {
                 if (myGui.userAgrees("Open Data File?",
                         "Would you like to open the data file you just saved?")) {
@@ -952,7 +953,7 @@ public class Tracker {
     }
 
     private boolean canSaveData(File whereToSave) {
-        if (whereToSave == null || !Nepic.getDataWriter().canSaveData(whereToSave)) {
+        if (whereToSave == null || !dataWriter.canSaveData(whereToSave)) {
             return false;
         }
         if (whereToSave.exists()) {
@@ -990,7 +991,7 @@ public class Tracker {
         }
 
         private boolean saveDataIfNecessary() {
-            if ((Nepic.getDataWriter().dataLogged() || unsavedDataOnCurrentImg)
+            if ((dataWriter.dataLogged() || unsavedDataOnCurrentImg)
                     && myGui.userAgrees("Save Data",
                             "Do you want to save the data generated since starting "
                                     + Nepic.getName() + "?")) {

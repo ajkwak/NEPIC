@@ -1,7 +1,5 @@
 package nepic;
 
-import nepic.image.PageInfo;
-import nepic.io.DataWriter;
 import nepic.io.IniLoader;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
@@ -20,7 +18,6 @@ public class Nepic {
     private static final String DEVELOPER_CONTACT_INFO = "aparmidge@mills.edu";
     private static Preferences prefs;
     private static EventLogger eventLogger;
-    private static DataWriter dataWriter;
 
     // This class should never be instantiated.
     private Nepic() {
@@ -56,10 +53,6 @@ public class Nepic {
         return eventLogger;
     }
 
-    public static DataWriter getDataWriter() {
-        return dataWriter;
-    }
-
     // TODO: what if eLogger not yet initialized
     public static void log(EventType eventType, String messageForUser, Object... furtherInfo) {
         eventLogger.logEvent(eventType, messageForUser, furtherInfo);
@@ -74,7 +67,6 @@ public class Nepic {
     public static void main(String args[]) {
         eventLogger = new EventLogger("nepicEvents");
         prefs = IniLoader.load();
-        dataWriter = new DataWriter(PageInfo.getCsvLabels());
         new Tracker();
     }
 
