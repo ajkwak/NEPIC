@@ -95,6 +95,8 @@ public class CellBody extends Roi<CellBodyConstraint<?>> {
     public static Label[] getCsvLabels() {
         Label[] histLabels = Histogram.getCsvLabels();
         return new Label[] {
+                new Label("seedPixelX"),
+                new Label("seedPixelY"),
                 new Label("minX"),
                 new Label("maxX"),
                 new Label("minY"),
@@ -106,6 +108,8 @@ public class CellBody extends Roi<CellBodyConstraint<?>> {
     @Override
     public Object[] getCsvData() {
         return new Object[] {
+                seedPixel.x,
+                seedPixel.y,
                 cbArea.getMinX(),
                 cbArea.getMaxX(),
                 cbArea.getMinY(),
