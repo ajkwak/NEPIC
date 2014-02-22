@@ -32,8 +32,10 @@ import nepic.image.ConstraintMap;
 import nepic.image.ImagePage;
 import nepic.image.MultiPageImageInfo;
 import nepic.image.PageInfo;
+import nepic.io.ComplexLabel;
 import nepic.io.DataWriter;
 import nepic.io.Files;
+import nepic.io.Label;
 import nepic.io.NepicFileFilter;
 import nepic.io.TiffOpener;
 import nepic.logging.EventLogger;
@@ -68,6 +70,33 @@ public class Tracker {
     private Interface myGui;
     private Point clickLoc = null;
     private Point dragLoc = null;
+
+    // Nepic success stats.
+    private DataWriter segmentationSuccessDataWriter = new DataWriter(new Label[] {
+            new Label("AutoSegment_Success"),
+            new Label("AutoSegment_MinPi"),
+            new Label("Actual_MinPi"),
+            new Label("AutoSegment_Size"),
+            new Label("Actual_Size"),
+            new ComplexLabel("img", PageInfo.getCsvLabels()) });
+    private int autoSegmentationMinPi = 256;
+    private int autoSegmentationSize = -1;
+    private DataWriter trackingSuccessDataWriter = new DataWriter(new Label[] {
+            new Label("AutoTrack_Success"),
+            new Label("AutoTrack_SeedPixX"),
+            new Label("AutoTrack_SeedPixY"),
+            new Label("Actual_SeedPixX"),
+            new Label("Actual_SeedPixY"),
+            new ComplexLabel("img", PageInfo.getCsvLabels()) });
+    private boolean currentCellBodyTracked = false;
+    private Point autoTrackedSeedPixel = null;
+
+    private void resetSuccessStatsForPage() {
+        autoSegmentationMinPi = 256; // Set to invalid value.
+        autoSegmentationSize = -1; // Set to invalid value.
+        currentCellBodyTracked = false;
+        autoTrackedSeedPixel = null;
+    }
 
     // For tracking
     private final BackgroundFinder bkFinder;
@@ -203,6 +232,7 @@ public class Tracker {
         paintCurrentPage();
         myGui.clearOutput();
         int displayedPageNumber = pgNum + 1;
+        resetSuccessStatsForPage();
         bkAccepted = false;
         myGui.getPageNumberTextField().setText(displayedPageNumber + "/" + pages.getNumPages());
         Nepic.log(EventType.INFO, "Page " + displayedPageNumber + " displayed.");
@@ -392,12 +422,17 @@ public class Tracker {
         }
         cbCand = cbFinder.createFeature(cbConstraints);
 
-        if (!bkAccepted) {
-            if (canTrackFromPrevPage()) {
+        if (cbCandValid()) {
+            autoSegmentationMinPi = cbCand.getMinPi();
+            autoSegmentationSize = cbCand.getArea().getSize();
+
+            if (!bkAccepted && canTrackFromPrevPage()) {
                 trackBackground();
             }
+            return true;
         }
-        return cbCandValid();
+        return false;
+
     }
 
     // *********************************************************************************************
@@ -471,6 +506,8 @@ public class Tracker {
                     if (!hasValidCandidates()) {
                         if (canTrackFromPrevPage()) {
                             if (trackFromPrevPage()) {
+                                currentCellBodyTracked = true;
+                                autoTrackedSeedPixel = cbCand.getSeedPixel();
                                 Nepic.log(EventType.INFO, "Found CellBody candidate.", "MinPi =",
                                         cbCand.getMinPi());
                             } else {
@@ -510,6 +547,31 @@ public class Tracker {
         currPgInfo.setBK(bkCand);
         currPgInfo.setCB(cbCand);
 
+        // Determine if found and tracked CB successfully.
+        Object[] currPgCsvData = pages.getPage(currPgNum).getCsvData();
+        boolean segmentationSucceeded = autoSegmentationMinPi == cbCand.getMinPi();
+        segmentationSuccessDataWriter.addDataRow(new Object[] {
+                segmentationSucceeded ? 1 : 0,
+                autoSegmentationMinPi,
+                cbCand.getMinPi(),
+                autoSegmentationSize,
+                cbCand.getArea().getSize(),
+                currPgCsvData
+        });
+        if (autoTrackedSeedPixel != null) {
+            // Then tracked the cell body.
+            Point seedPix = cbCand.getSeedPixel();
+            boolean trackingSucceeded = autoTrackedSeedPixel.x == seedPix.x
+                    && autoTrackedSeedPixel.y == seedPix.y;
+            trackingSuccessDataWriter.addDataRow(new Object[] {
+                    trackingSucceeded ? 1 : 0,
+                    autoTrackedSeedPixel.x,
+                    autoTrackedSeedPixel.y,
+                    seedPix.x,
+                    seedPix.y,
+                    currPgCsvData
+            });
+        }
 
         bkCand.setModified(false);
         cbCand.setModified(false);
@@ -590,7 +652,7 @@ public class Tracker {
             if (!bkCandValid()) {
                 trackBackground();
             }
-            return true;
+            return false;
         }
 
         // If need to find the CB
@@ -984,6 +1046,7 @@ public class Tracker {
         }
 
         private void exit() {
+            saveSuccessStatsData();
             boolean canClose = saveDataIfNecessary();
             if (canClose) {
                 myGui.close();
@@ -998,6 +1061,30 @@ public class Tracker {
                 return saveData();
             }
             return true;
+        }
+
+        private void saveSuccessStatsData() {
+            if (segmentationSuccessDataWriter.dataLogged()) {
+                // Then save segmentation success data.
+                String fileName = "segmentationSuccessStats";
+                int i = 0;
+                File file = new File(fileName + i + ".csv");
+                while (file.exists()) {
+                    i++;
+                }
+                segmentationSuccessDataWriter.saveData(file);
+            }
+
+            if (trackingSuccessDataWriter.dataLogged()) {
+                // Then save tracking success data.
+                String fileName = "trackingSuccessStats";
+                int i = 0;
+                File file = new File(fileName + i + ".csv");
+                while (file.exists()) {
+                    i++;
+                }
+                trackingSuccessDataWriter.saveData(file);
+            }
         }
     }
 }
