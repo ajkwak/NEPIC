@@ -24,6 +24,7 @@ import javax.swing.KeyStroke;
 import javax.swing.LayoutStyle;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -202,6 +203,7 @@ public class Interface extends JFrame implements LoggerObserver {
         saveDataMenuItem = menu.add(new JMenuItem("Save Data"));
         saveDataMenuItem.setAccelerator(KeyStroke
                 .getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+        saveDataMenuItem.setEnabled(false);
 
         // "Image" Menu (Mnemonic = 'I').
         menu = menuBar.add(new JMenu("Image"));
@@ -305,6 +307,8 @@ public class Interface extends JFrame implements LoggerObserver {
 
     private JScrollPane constructOutputScrollPane() {
         outputTextPane = new JTextPane();
+        DefaultCaret caret = (DefaultCaret) outputTextPane.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
         outputTextPane.setEditable(false);
 
         JScrollPane ouptutScrollPane = new JScrollPane(outputTextPane,
