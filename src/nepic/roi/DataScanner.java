@@ -558,7 +558,7 @@ public class DataScanner {
             11, 11, 10, 11, 11, 8, 11);
 
     public static void main(String[] args) {
-        DataScanner dataScanner = new DataScanner(IMG_000000_90DEG);
+        DataScanner dataScanner = new DataScanner(IMG_419_1_0DEG);
         JOptionPane.showMessageDialog(null,
                 new Graph(800, 600, 0x000000)
                         .setData(dataScanner.getGraphData()).setYGridlineInterval(5).refresh(),

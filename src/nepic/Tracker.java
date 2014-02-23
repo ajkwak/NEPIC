@@ -11,6 +11,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 
@@ -83,11 +84,20 @@ public class Tracker {
     private int autoSegmentationSize = -1;
     private DataWriter trackingSuccessDataWriter = new DataWriter(new Label[] {
             new Label("AutoTrack_Success"),
+            new Label("CB_Length"),
+            new Label("RectangleCenter_MovedX"),
+            new Label("RectangleCenter_MovedY"),
+            new Label("SeedPixel_MovedX"),
+            new Label("SeedPixel_MovedY"),
+            new Label("CB_minX"),
+            new Label("CB_maxX"),
+            new Label("CB_minY"),
+            new Label("CB_maxY"),
             new Label("AutoTrack_SeedPixX"),
-            new Label("AutoTrack_SeedPixY"),
             new Label("Actual_SeedPixX"),
-            new Label("Actual_SeedPixY"),
-            new ComplexLabel("img", PageInfo.getCsvLabels()) });
+            new Label("AutoTrack_SeedPixY"),
+            new Label("Actual_SeedPixY")
+    });
     private boolean currentCellBodyTracked = false;
     private Point autoTrackedSeedPixel = null;
 
@@ -505,7 +515,6 @@ public class Tracker {
                 if (incrementPage(1)) {
                     if (!hasValidCandidates()) {
                         if (canTrackFromPrevPage()) {
-                            currentCellBodyTracked = true;
                             if (trackFromPrevPage()) {
                                 autoTrackedSeedPixel = cbCand.getSeedPixel();
                                 Nepic.log(EventType.INFO, "Found CellBody candidate.", "MinPi =",
@@ -513,6 +522,10 @@ public class Tracker {
                             } else {
                                 myGui.respondToInfo("Unable to find cell body.  "
                                         + "Please re-indicate cell body location.");
+                            }
+                            currentCellBodyTracked = true;
+                            if (cbCand != null) {
+                                autoTrackedSeedPixel = cbCand.getSeedPixel();
                             }
                         }
                     }
@@ -558,18 +571,32 @@ public class Tracker {
                 cbCand.getArea().getSize(),
                 currPgCsvData
         });
-        if (autoTrackedSeedPixel != null) {
+        if (currentCellBodyTracked) {
             // Then tracked the cell body.
+            Point prevSeedPix = prevPgInfo.getCB().getSeedPixel();
+            Blob prevCbArea = prevPgInfo.getCB().getArea();
+            Point2D prevRecCenter = prevCbArea.getBoundingBox().getMidPoint();
             Point seedPix = cbCand.getSeedPixel();
-            boolean trackingSucceeded = autoTrackedSeedPixel.x == seedPix.x
+            Blob cbArea = cbCand.getArea();
+            Point2D recCenter = cbArea.getBoundingBox().getMidPoint();
+            boolean trackingSucceeded = autoTrackedSeedPixel != null
+                    && autoTrackedSeedPixel.x == seedPix.x
                     && autoTrackedSeedPixel.y == seedPix.y;
             trackingSuccessDataWriter.addDataRow(new Object[] {
                     trackingSucceeded ? 1 : 0,
-                    autoTrackedSeedPixel.x,
-                    autoTrackedSeedPixel.y,
+                    cbArea.getMaxDiameter().getLength(),
+                    recCenter.getX() - prevRecCenter.getX(),
+                    recCenter.getY() - prevRecCenter.getY(),
+                    seedPix.x - prevSeedPix.x,
+                    seedPix.y - prevSeedPix.y,
+                    cbArea.getMinX(),
+                    cbArea.getMaxX(),
+                    cbArea.getMinY(),
+                    cbArea.getMaxY(),
+                    autoTrackedSeedPixel != null ? autoTrackedSeedPixel.x : "",
                     seedPix.x,
+                    autoTrackedSeedPixel != null ? autoTrackedSeedPixel.y : "",
                     seedPix.y,
-                    currPgCsvData
             });
         }
 
@@ -1071,6 +1098,7 @@ public class Tracker {
                 File file = new File(fileName + i + ".csv");
                 while (file.exists()) {
                     i++;
+                    file = new File(fileName + i + ".csv");
                 }
                 segmentationSuccessDataWriter.saveData(file);
             }
@@ -1082,6 +1110,7 @@ public class Tracker {
                 File file = new File(fileName + i + ".csv");
                 while (file.exists()) {
                     i++;
+                    file = new File(fileName + i + ".csv");
                 }
                 trackingSuccessDataWriter.saveData(file);
             }

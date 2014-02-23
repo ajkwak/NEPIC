@@ -1,15 +1,15 @@
 package nepic.geo;
 
 import java.awt.Point;
-
+import java.awt.geom.Point2D;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since ???
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
+ *
  */
 public class BoundingBox implements BoundedRegion {
     private int minX;
@@ -25,7 +25,7 @@ public class BoundingBox implements BoundedRegion {
      * Constructs the {@link BoundingBox} from two points. These points must be either represent
      * top-left corner and bottom-right corner of the bounding box, or the top-right corner and the
      * bottom-left corner. The order of the two parameters of this method does not matter.
-     * 
+     *
      * @param p1 one of the points defining the {@link BoundingBox}
      * @param p2 the other point defining the {@link BoundingBox}
      */
@@ -171,8 +171,8 @@ public class BoundingBox implements BoundedRegion {
         return new BoundingBox(minX, maxX, minY, maxY);
     }
 
-    public Point getMidPoint() {
-        return new Point((maxX + minX) / 2, (maxY + minY) / 2);
+    public Point2D getMidPoint() {
+        return new Point2D.Double(((double) maxX + minX) / 2, ((double) maxY + minY) / 2);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package nepic.geo;
 
 import java.awt.Point;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -10,11 +11,11 @@ import java.util.List;
 import nepic.util.Verify;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since ???
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
+ *
  */
 public class Polygon implements BoundedRegion {
     private final Point[] vertices;
@@ -270,7 +271,7 @@ public class Polygon implements BoundedRegion {
     }
 
     // Gets the midpoint of the boundaries of the polygon
-    public Point getMidpoint() {
+    public Point2D getMidpoint() {
         return boundaries.getMidPoint();
     }
 
@@ -278,9 +279,9 @@ public class Polygon implements BoundedRegion {
     // Enlarges / shrinks the polygon to the given factor (enlarges around the midpoint of the
     // polygon's boundaries)
     public Polygon changeSize(double factor) {
-        Point midpoint = getMidpoint();
-        int midX = midpoint.x;
-        int midY = midpoint.y;
+        Point2D midpoint = getMidpoint();
+        double midX = midpoint.getX();
+        double midY = midpoint.getY();
 
         int numVertices = vertices.length;
         Point[] resizedVertices = new Point[numVertices];
@@ -295,7 +296,7 @@ public class Polygon implements BoundedRegion {
 
     /**
      * Creates an identical polygon that has been rotated the given angle about the given origin.
-     * 
+     *
      * @param phi angle through which to rotate the polygon (in radians)
      * @param origin
      */
