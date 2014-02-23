@@ -4,6 +4,8 @@ package nepic.gui;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.util.List;
+
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -249,9 +251,15 @@ public class Graph extends JPanel {
                 for (Point datum : convolvedData) {
                     Point endPt = datum;
                     if (startPt != null) {
-                        connectedData.addAll(
-                                new LineSegment(startPt, endPt).draw(IncludeStart.YES,
-                                        IncludeEnd.NO));
+                        List<Point> linePoints = new LineSegment(startPt, endPt)
+                                .draw(IncludeStart.YES, IncludeEnd.NO);
+                        for (Point point : linePoints) {
+                            for (int x = Math.max(0, point.x - 1); x < Math.min(img.getWidth(), point.x + 2); x++) {
+                                for (int y = Math.max(0, point.y - 1); y < Math.min(img.getHeight(), point.y + 2); y++) {
+                                    connectedData.add(new Point(x, y));
+                                }
+                            }
+                        }
                     }
                     startPt = endPt;
                 }

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -34,15 +33,16 @@ public class DataScanner {
         // Look through the actual raw data.
         copyRawData(rawData);
         graphRawData();
-        // findTrendsInRawData();
 
         // Bucketize the raw data (does the initial smoothing / simplifying of the data)
         bucketSet = new BucketizedDataSet(rawData);
-        graphBucketizedData();
-        // graphCrossingsInformation();
+        // graphBucketizedData();
 
         // Process the bucketized data.
         processBucketizedData();
+        graphProcessedData();
+
+        graphMinPi();
     }
 
     public List<Integer> getProcessedData() { // TODO: this is a hack!
@@ -74,95 +74,14 @@ public class DataScanner {
             rawDataPoints.add(new Point(idx, datum));
             idx++;
         }
-        data.setDataSet("01 Raw Data", rawDataPoints, 0x0000ff /* Blue */);
+        data.setDataSet("01 Raw Data", rawDataPoints, 0x00cc00 /* lavender */);
         // System.out.println();
     }
 
-    private void findTrendsInRawData() {
-        List<Point> trends = new LinkedList<Point>();
-        int prevPI = -1; // Initialize as invalid.
-        int trendLength = 0;
-        int trendDelta = 0;
-        int startPos = 0;
-        for (int pos = startPos; pos < rawData.size(); pos++) {
-            int currPI = rawData.get(pos);
-            System.out.print("rawData[" + pos + "] = " + currPI);
-            if (prevPI > -1) { // If prevPI is valid.
-                int delta = currPI - prevPI;
-                if (delta != 0 && delta * trendDelta >= 0) { // Continuing current trend.
-                    trendDelta += delta;
-                    trendLength++;
-                    System.out.print((trendDelta > 0 ? " UP  ," : " DOWN,")
-                            + " trendLength = " + trendLength);
-                } else {
-                    // First determine if the current trend is significant.
-                    if (Math.abs(trendDelta) >= 20) { // Is significant trend.
-                        // TODO: now separate this trend from preceding trends/flat regions
-                        // System.out.println("Trend: " + (pos - trendLength) + "-" + pos + " (PI "
-                        // + rawData.getPI(pos - trendLength) + "-" + rawData.getPI(pos)
-                        // + ")");
-                        // processFlatRegion(rawData, startPos, pos - trendLength);
-                        System.out.print(" ADD TREND ");
-                        for (int i = pos - trendLength - 1; i < pos; i++) {
-                            trends.add(new Point(i, rawData.get(i)));
-                            System.out.print("(" + i + ", " + rawData.get(i) + ") ");
-                        }
-                        startPos = pos;// + 1;
-                    }
-
-                    // Begin a new trend.
-                    if (delta == 0) {
-                        trendDelta = 0;
-                        trendLength = 0;
-                    } else {
-                        trendDelta = delta;
-                        trendLength = 1;
-                        System.out.print((trendDelta > 0 ? " UP  ," : " DOWN,")
-                                + " trendLength = " + trendLength);
-                    }
-                }
-            }
-            prevPI = currPI;
-            System.out.println();
-        }
-        if (!trends.isEmpty()) {
-            graphRawDataTrends(trends);
-        }
-    }
-
-    private void graphRawDataTrends(List<Point> rawDataTrends) {
-        List<Point> rawTrendsDataSet = new ArrayList<Point>(rawData.size());
-        int nonTrendY = data.getMinY();
-        int lastGraphedPos = -1;
-        for (Point trendPt : rawDataTrends) {
-            // for (int pos = lastGraphedPos + 1; pos < trendPt.x; pos++) {
-            // rawTrendsDataSet.add(new Point(pos, nonTrendY));
-            // }
-            lastGraphedPos = trendPt.x;
-            rawTrendsDataSet.add(new Point(lastGraphedPos, trendPt.y));
-        }
-        // for (int pos = lastGraphedPos + 1; pos < rawData.size(); pos++) {
-        // rawTrendsDataSet.add(new Point(pos, nonTrendY));
-        // }
-        data.setDataSet("05 Raw Data Trends", rawTrendsDataSet, 0xffff00 /* Yellow */);
-    }
-
-    private void graphCrossingsInformation() {
-        int nonSigY = data.getMinY();
-        LinkedList<Point> crossingsDataSet = new LinkedList<Point>();
-        for (int bucketIdx = 0; bucketIdx < bucketSet.size(); bucketIdx++) {
-            Range bucketDomain = bucketSet.getDomainForBucket(bucketIdx);
-            int bucketPI = bucketSet.getPI(bucketIdx);
-            int numCross = getNumberRawDataCrossings(bucketPI, bucketDomain.min, bucketDomain.max);
-            if (numCross <= 2) {
-                System.out.println("numCrossings = " + numCross);
-                crossingsDataSet.add(new Point(bucketDomain.min, nonSigY));
-                crossingsDataSet.add(new Point(bucketDomain.min, bucketPI));
-                crossingsDataSet.add(new Point(bucketDomain.max, bucketPI));
-                crossingsDataSet.add(new Point(bucketDomain.max, nonSigY));
-            }
-        }
-        data.setDataSet("00 Crossing Information", crossingsDataSet, 0xffff00 /* Yellow */);
+    private void graphMinPi() {
+        List<Point> minPiPoints = Lists.newArrayList(new Point(data.getMinX(), 19), new Point(data
+                .getMaxX(), 19));
+        data.setDataSet("06 MinPi", minPiPoints, 0xffaa00);
     }
 
     /**
@@ -198,10 +117,10 @@ public class DataScanner {
             }
         }
         if (!bucketDataSet1.isEmpty()) {
-            data.setDataSet("02 Bucket Set 1", bucketDataSet1, 0x008800 /* Dark Green */);
+            data.setDataSet("02 Bucket Set 1", bucketDataSet1, 0x8800ff /* Dark Green */);
         }
         if (!bucketDataSet2.isEmpty()) {
-            data.setDataSet("03 Bucket Set 2", bucketDataSet2, 0x00aa00 /* Green */);
+            data.setDataSet("03 Bucket Set 2", bucketDataSet2, 0x8800ff /* Green */);
         }
     }
 
@@ -241,7 +160,6 @@ public class DataScanner {
             prevPI = currPI;
         }
         processFlatRegion(bucketSet, startPos, bucketSet.size() - 1);
-        graphProcessedData();
     }
 
     private void graphProcessedData() {
@@ -560,7 +478,7 @@ public class DataScanner {
     public static void main(String[] args) {
         DataScanner dataScanner = new DataScanner(IMG_419_1_0DEG);
         JOptionPane.showMessageDialog(null,
-                new Graph(800, 600, 0x000000)
+                new Graph(800, 600, 0xffffff)
                         .setData(dataScanner.getGraphData()).setYGridlineInterval(5).refresh(),
                 "Scanline Graph",
                 JOptionPane.PLAIN_MESSAGE, null);

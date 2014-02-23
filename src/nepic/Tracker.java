@@ -717,7 +717,13 @@ public class Tracker {
     private boolean trackCbInGivenArea(Polygon location, int prevCbSize) {
         if (findCB(location) && cbCand.isValid()) {
             int newCbSize = cbCand.getArea().getSize();
-            return newCbSize >= (0.75 * prevCbSize) && newCbSize <= (1.5 * prevCbSize);
+            if (newCbSize >= (0.75 * prevCbSize) && newCbSize <= (1.5 * prevCbSize)) {
+                return true;
+            } else {
+                cbFinder.removeFeature(cbCand);
+                cbCand.release();
+                cbCand = null;
+            }
         }
         return false;
     }
@@ -1091,17 +1097,17 @@ public class Tracker {
         }
 
         private void saveSuccessStatsData() {
-            if (segmentationSuccessDataWriter.dataLogged()) {
-                // Then save segmentation success data.
-                String fileName = "segmentationSuccessStats";
-                int i = 0;
-                File file = new File(fileName + i + ".csv");
-                while (file.exists()) {
-                    i++;
-                    file = new File(fileName + i + ".csv");
-                }
-                segmentationSuccessDataWriter.saveData(file);
-            }
+            // if (segmentationSuccessDataWriter.dataLogged()) {
+            // // Then save segmentation success data.
+            // String fileName = "segmentationSuccessStats";
+            // int i = 0;
+            // File file = new File(fileName + i + ".csv");
+            // while (file.exists()) {
+            // i++;
+            // file = new File(fileName + i + ".csv");
+            // }
+            // segmentationSuccessDataWriter.saveData(file);
+            // }
 
             if (trackingSuccessDataWriter.dataLogged()) {
                 // Then save tracking success data.
