@@ -147,7 +147,7 @@ public class ImagePage implements IdTaggedImage {
             nxtAvailable = 0;
         }
 
-        private RoiIdHandle requestIdHandle(Roi<?> caller) {
+        private RoiIdHandle requestIdHandle(Roi caller) {
             Verify.state(nxtAvailable < handles.length, "No more ROI ID handles available!");
             RoiIdHandle requestedHandle = handles[nxtAvailable];
             requestedHandle.owner = caller;
@@ -183,13 +183,13 @@ public class ImagePage implements IdTaggedImage {
         }
     }
 
-    RoiIdHandle requestIdHandle(Roi<?> caller) {
+    RoiIdHandle requestIdHandle(Roi caller) {
         return roiIds.requestIdHandle(caller);
     }
 
     public class RoiIdHandle {
         public final int id;
-        private Roi<?> owner;
+        private Roi owner;
         private int pos;
 
         private RoiIdHandle(int id, int pos) {
@@ -198,11 +198,11 @@ public class ImagePage implements IdTaggedImage {
             owner = null;
         }
 
-        public void release(Roi<?> caller) throws IllegalAccessException {
+        public void release(Roi caller) throws IllegalAccessException {
             roiIds.releaseIdHandle(caller, this);
         }
 
-        public boolean isOwnedBy(Roi<?> caller) {
+        public boolean isOwnedBy(Roi caller) {
             Verify.notNull(caller, "Owner of RoiIdHandle cannot be null.");
             return caller == owner;
         }
@@ -217,7 +217,7 @@ public class ImagePage implements IdTaggedImage {
         return (15 & imgToAnal[x][y] >> 28);
     }
 
-    public void setId(int x, int y, Roi<?> roi) throws ConflictingRoisException {
+    public void setId(int x, int y, Roi roi) throws ConflictingRoisException {
         RoiIdHandle roiHandle = roi.getIdHandle();
         Verify.argument(roiHandle.owner == roi, "RoiIdHandle owner is " + roiHandle.owner
                 + ", not " + roi + ".  Unable to set ID.");

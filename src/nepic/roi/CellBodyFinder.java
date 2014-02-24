@@ -34,14 +34,22 @@ import nepic.util.Verify;
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
  *
  */
-public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
+public class CellBodyFinder extends RoiFinder<CellBody> {
+    public static final String SEED_POLYGON = "Seed Polygon";
+    public static final String DESIRED_SIZE = "Desired Size";
+
+    public enum SizeEdgeCase {
+        BIGGER,
+        SMALLER,
+        AS_CLOSE_AS_POSSIBLE;
+    }
 
     @Override
-    public CellBody createFeature(ConstraintMap<CellBodyConstraint<?>> constraints) { // XXX
+    public CellBody createFeature(ConstraintMap constraints) { // XXX
         CellBody roi = new CellBody(img);
 
         // SeedPolygon constraint
-        Polygon seedPolygon = constraints.getConstraint(SeedPolygon.class);
+        Polygon seedPolygon = (Polygon) constraints.getConstraint(SEED_POLYGON);
         if (seedPolygon == null) {
             // Use the whole image to find the seedPixel
             seedPolygon = img.getBoundingBox().asPolygon();
@@ -71,7 +79,9 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
             generateNewCellBodyHistogram(roi);
 
             // DesiredSize constraint
-            Pair<Integer, SizeEdgeCase> desiredSize = constraints.getConstraint(DesiredSize.class);
+            @SuppressWarnings("unchecked")
+            Pair<Integer, SizeEdgeCase> desiredSize =
+                    (Pair<Integer, SizeEdgeCase>) constraints.getConstraint(DESIRED_SIZE);
             if (desiredSize != null) {
                 adjustToDesiredSize(roi, desiredSize.first, desiredSize.second);
             }
@@ -86,9 +96,11 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
     }
 
     @Override
-    public boolean editFeature(CellBody roi, ConstraintMap<CellBodyConstraint<?>> constraints) {
+    public boolean editFeature(CellBody roi, ConstraintMap constraints) {
         // Only adjustable CellBody Constraint is currently desiredSize
-        Pair<Integer, SizeEdgeCase> desiredSize = constraints.getConstraint(DesiredSize.class);
+        @SuppressWarnings("unchecked")
+        Pair<Integer, SizeEdgeCase> desiredSize =
+                (Pair<Integer, SizeEdgeCase>) constraints.getConstraint(DESIRED_SIZE);
         if (desiredSize != null) {
             adjustToDesiredSize(roi, desiredSize.first, desiredSize.second);
         }
@@ -588,7 +600,7 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         return false;
     }
 
-    private int tryToAdd(Pixel toAdd, DoubleLinkRing<Point> candEdges, Roi<?> roi)
+    private int tryToAdd(Pixel toAdd, DoubleLinkRing<Point> candEdges, Roi roi)
             throws ConflictingRoisException {
         int numErrors = 0;
 
@@ -607,41 +619,5 @@ public class CellBodyFinder extends RoiFinder<CellBodyConstraint<?>, CellBody> {
         }
 
         return numErrors;
-    }
-
-    // *******************************************************************
-    // SeedPolygon
-    // *******************************************************************
-
-    public static class SeedPolygon extends CellBodyConstraint<Polygon> {
-
-        public SeedPolygon(Polygon val) {
-            super(val);
-        }
-
-    }
-
-    // *******************************************************************
-    // DesiredSize
-    // *******************************************************************
-
-    public enum SizeEdgeCase {
-        BIGGER,
-        SMALLER,
-        AS_CLOSE_AS_POSSIBLE;
-    }
-
-    public static class DesiredSize extends CellBodyConstraint<Pair<Integer, SizeEdgeCase>> {
-
-        public DesiredSize(Pair<Integer, SizeEdgeCase> val) {
-            super(val);
-            int desiredSize = val.first;
-            SizeEdgeCase edgeCase = val.second;
-            Verify.argument(desiredSize > -1,
-                    "Desired size of cell body must be a non-negative integer; instead got "
-                            + desiredSize);
-            Verify.notNull(edgeCase,
-                    "The edge case for how to deal with desiredSize cannot be null.");
-        }
     }
 }

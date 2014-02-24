@@ -20,7 +20,7 @@ import nepic.util.Verify;
  *
  * @param <C>
  */
-public abstract class Roi<C extends Constraint<?>> implements CsvFormattable, Validatable {
+public abstract class Roi implements CsvFormattable, Validatable {
     /**
      * The unique ID number of this {@link Roi}.
      */

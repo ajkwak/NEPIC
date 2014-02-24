@@ -16,7 +16,7 @@ import nepic.data.Histogram;
  * @since AutoCBFinder_ALpha_v0-9_122212
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
  */
-public class Background extends Roi<BackgroundConstraint<?>> {
+public class Background extends Roi {
     private Histogram piHist = null;
     private Histogram edgeHist = null;
 

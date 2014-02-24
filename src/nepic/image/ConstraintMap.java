@@ -3,42 +3,26 @@ package nepic.image;
 import java.util.TreeMap;
 
 /**
- * 
+ *
  * @author AJ Parmidge
  * @since AutoCBFinder_ALpha_v0-9_122212
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
  * @param <C>
  */
-public class ConstraintMap<C extends Constraint<?>> {
-    TreeMap<String, C> map;
+public class ConstraintMap {
+    TreeMap<String, Object> map;
 
     public ConstraintMap() {
-        map = new TreeMap<String, C>();
+        map = new TreeMap<String, Object>();
     }
 
-    private String makeKey(Object el) {
-        return makeKey(el.getClass());
-    }
-
-    private String makeKey(Class<?> clazz) {
-        return clazz.getName();
-    }
-
-    public ConstraintMap<C> addConstraints(C... constraints) {
-        for (C constraint : constraints) {
-            map.put(makeKey(constraint), constraint);
-        }
+    public ConstraintMap addConstraint(String key, Object constraint) {
+        map.put(key, constraint);
         return this;
     }
 
-    public <E> E getConstraint(Class<? extends Constraint<E>> type) {
-        String key = makeKey(type);
-        @SuppressWarnings("unchecked")
-        Constraint<E> cons = (Constraint<E>) map.get(key);
-        if (cons == null) {
-            return null;
-        }
-        return cons.getVal();
+    public Object getConstraint(String key) {
+        return map.get(key);
     }
 
     @Override

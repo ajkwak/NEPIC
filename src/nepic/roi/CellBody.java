@@ -18,7 +18,7 @@ import nepic.util.Pixel;
  * @version AutoCBFinder_Alpha_v0-9-2013-01-29
  *
  */
-public class CellBody extends Roi<CellBodyConstraint<?>> {
+public class CellBody extends Roi {
     private Pixel seedPixel;
     private Blob cbArea;
     private Histogram piHist;

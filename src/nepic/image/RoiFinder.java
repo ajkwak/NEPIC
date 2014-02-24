@@ -13,7 +13,7 @@ import java.util.List;
  * @param <C>
  * @param <RoiImpl>
  */
-public abstract class RoiFinder<C extends Constraint<?>, RoiImpl extends Roi<C>> {
+public abstract class RoiFinder<RoiImpl extends Roi> {
     protected ImagePage img = null;
 
     public RoiFinder() {
@@ -27,9 +27,9 @@ public abstract class RoiFinder<C extends Constraint<?>, RoiImpl extends Roi<C>>
         this.img = img;
     }
 
-    public abstract RoiImpl createFeature(ConstraintMap<C> constraints);
+    public abstract RoiImpl createFeature(ConstraintMap constraints);
 
-    public abstract boolean editFeature(RoiImpl roi, ConstraintMap<C> constraints);
+    public abstract boolean editFeature(RoiImpl roi, ConstraintMap constraints);
 
     public abstract void removeFeature(RoiImpl roi);
 

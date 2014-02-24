@@ -20,7 +20,13 @@ import nepic.util.Verify;
  * @version AutoCBFinder_Alpha_v0-9-2013-02-10
  *
  */
-public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Background> {
+public class BackgroundFinder extends RoiFinder<Background> {
+    // Constraint names.
+    public static final String ORIGIN = "Origin";
+    public static final String CURR_THETA = "Current Theta";
+    public static final String PREV_THETA = "Previous Theta";
+    public static final String AREA = "Area";
+
     // Need to initialize these values in order to track the background
     Polygon origBkArea = null;
     Point origOrigin = null; // Use center of CellBody as the origin (around which bkArea is
@@ -32,13 +38,13 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
     }
 
     @Override
-    public Background createFeature(ConstraintMap<BackgroundConstraint<?>> constraints) {
+    public Background createFeature(ConstraintMap constraints) {
         Background toReturn = new Background(img);
 
         // Set up constraints
-        Polygon bkArea = constraints.getConstraint(BackgroundArea.class);
-        Point origin = constraints.getConstraint(Origin.class);
-        Double currTheta = constraints.getConstraint(CurrTheta.class);
+        Polygon bkArea = (Polygon) constraints.getConstraint(AREA);
+        Point origin = (Point) constraints.getConstraint(ORIGIN);
+        Double currTheta = (Double) constraints.getConstraint(CURR_THETA);
         if (bkArea != null) {
             // Background constraint
             if (!initializeBkArea(toReturn, bkArea)) {
@@ -63,7 +69,7 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
             // CurrTheta constraint
             if (currTheta != null && currTheta != origTheta) { // Need to rotate
                 final double pi = Math.PI;
-                Double prevTheta = constraints.getConstraint(PrevTheta.class);
+                Double prevTheta = (Double) constraints.getConstraint(PREV_THETA);
                 if (prevTheta == null) {
                     prevTheta = origTheta;
                 }
@@ -118,11 +124,11 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
     }
 
     @Override
-    public boolean editFeature(Background roi, ConstraintMap<BackgroundConstraint<?>> constraints) {
+    public boolean editFeature(Background roi, ConstraintMap constraints) {
         roi.setModified(true);
 
         // BackgroundArea constraint
-        Polygon bkArea = constraints.getConstraint(BackgroundArea.class);
+        Polygon bkArea = (Polygon) constraints.getConstraint(AREA);
         if (bkArea != null) {
             Polygon roiBkArea = roi.getArea();
             if (roiBkArea != null) {
@@ -134,13 +140,13 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         }
 
         // Origin constraint
-        Point origin = constraints.getConstraint(Origin.class);
+        Point origin = (Point) constraints.getConstraint(ORIGIN);
         if (origin != null) {
             initializeOrigin(roi, origin);
         }
 
         // CurrTheta constraint
-        Double currTheta = constraints.getConstraint(CurrTheta.class);
+        Double currTheta = (Double) constraints.getConstraint(CURR_THETA);
         if (currTheta != null) {
             initializeTheta(roi, currTheta);
         }
@@ -281,53 +287,4 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         origOrigin = origin;
         toReturn.setOrigin(origin);
     }
-
-    // *******************************************************************
-    // BackgroundArea
-    // *******************************************************************
-
-    public static class BackgroundArea extends BackgroundConstraint<Polygon> {
-
-        public BackgroundArea(Polygon val) {
-            super(val);
-        }
-
-    }
-
-    // *******************************************************************
-    // Origin
-    // *******************************************************************
-
-    public static class Origin extends BackgroundConstraint<Point> {
-
-        public Origin(Point val) {
-            super(val);
-        }
-
-    }
-
-    // *******************************************************************
-    // CurrTheta
-    // *******************************************************************
-
-    public static class CurrTheta extends BackgroundConstraint<Double> {
-
-        public CurrTheta(Double val) {
-            super(val);
-        }
-
-    }
-
-    // *******************************************************************
-    // PrevTheta
-    // *******************************************************************
-
-    public static class PrevTheta extends BackgroundConstraint<Double> {
-
-        public PrevTheta(Double val) {
-            super(val);
-        }
-
-    }
-
 }

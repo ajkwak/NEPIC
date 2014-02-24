@@ -40,10 +40,8 @@ import nepic.io.TiffOpener;
 import nepic.logging.EventLogger;
 import nepic.logging.EventType;
 import nepic.roi.Background;
-import nepic.roi.BackgroundConstraint;
 import nepic.roi.BackgroundFinder;
 import nepic.roi.CellBody;
-import nepic.roi.CellBodyConstraint;
 import nepic.roi.CellBodyFinder;
 import nepic.roi.DataScanner;
 import nepic.data.Histogram;
@@ -301,15 +299,15 @@ public class Tracker {
     private boolean userAcceptAsBackground(Polygon p) {
         Verify.state(currPg != null, "Cannot accept background on null image page");
 
-        ConstraintMap<BackgroundConstraint<?>> map = new ConstraintMap<BackgroundConstraint<?>>()
-                .addConstraints(new BackgroundFinder.BackgroundArea(p));
+        ConstraintMap map = new ConstraintMap()
+                .addConstraint(BackgroundFinder.AREA, p);
 
         if (bkCand == null) {
             if (cbCand != null) {
                 LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-                map.addConstraints(new BackgroundFinder.Origin(cbLength.getMidPoint()),
-                        new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
+                map.addConstraint(BackgroundFinder.ORIGIN, cbLength.getMidPoint())
+                        .addConstraint(BackgroundFinder.CURR_THETA, cbLength.getAngleFromX());
             }
             bkCand = bkFinder.createFeature(map);
         } else {
@@ -338,23 +336,23 @@ public class Tracker {
                 myGui.respondToInfo("Unable to find cell body until image chosen.");
                 return;
             }
-            ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>();
+            ConstraintMap cbConstraints = new ConstraintMap();
             if (clickLoc == null || dragLoc == null || !currPg.contains(clickLoc) ||
                     !currPg.contains(dragLoc)) {
-                cbConstraints.addConstraints(new CellBodyFinder.SeedPolygon(
+                cbConstraints.addConstraint(CellBodyFinder.SEED_POLYGON,
                         new Polygon(new Point[] {
                                 new Point(0, 0),
                                 new Point(currPg.width - 1, 0),
                                 new Point(currPg.width - 1, currPg.height - 1),
-                                new Point(0, currPg.height - 1) })));
+                                new Point(0, currPg.height - 1) }));
             } else {
                 myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
-                cbConstraints.addConstraints(new CellBodyFinder.SeedPolygon(
+                cbConstraints.addConstraint(CellBodyFinder.SEED_POLYGON,
                         new Polygon(new Point[] {
                                 clickLoc,
                                 new Point(dragLoc.x, clickLoc.y),
                                 dragLoc,
-                                new Point(clickLoc.x, dragLoc.y) })));
+                                new Point(clickLoc.x, dragLoc.y) }));
             }
             if (findCB(cbConstraints)) {
                 Nepic.log(EventType.INFO, "Found CellBody candidate.",
@@ -376,7 +374,7 @@ public class Tracker {
      * @param corners
      * @return true if background updated, otherwise false
      */
-    private boolean findCB(ConstraintMap<CellBodyConstraint<?>> constraints) {
+    private boolean findCB(ConstraintMap constraints) {
         if (cbCand != null) { // Then must edit the current cand
             myGui.getImageLabel().eraseImageAnnotation(cbCand.getId());
             cbFinder.removeFeature(cbCand);
@@ -432,8 +430,8 @@ public class Tracker {
         } else { // shrink
             constraint = Pair.newPair(desiredSize - 1, CellBodyFinder.SizeEdgeCase.SMALLER);
         }
-        ConstraintMap<CellBodyConstraint<?>> constraints = new ConstraintMap<CellBodyConstraint<?>>()
-                .addConstraints(new CellBodyFinder.DesiredSize(constraint));
+        ConstraintMap constraints = new ConstraintMap()
+                .addConstraint(CellBodyFinder.DESIRED_SIZE, constraint);
         cbFinder.editFeature(cbCand, constraints);
         if (canTrackFromPrevPage()) {
             trackBackground();
@@ -479,10 +477,9 @@ public class Tracker {
         if (bkAccepted && cbCand.isValid()) {
             LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-            ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
-                    .addConstraints(
-                            new BackgroundFinder.Origin(cbLength.getMidPoint()),
-                            new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
+            ConstraintMap bkConstraints = new ConstraintMap()
+                    .addConstraint(BackgroundFinder.ORIGIN, cbLength.getMidPoint())
+                    .addConstraint(BackgroundFinder.CURR_THETA, cbLength.getAngleFromX());
 
             bkFinder.editFeature(bkCand, bkConstraints);
         }
@@ -612,12 +609,12 @@ public class Tracker {
     }
 
     private boolean trackCbInGivenArea(Polygon location, int prevCbSize) {
-        ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>()
-                .addConstraints(new CellBodyFinder.SeedPolygon(location));
+        ConstraintMap cbConstraints = new ConstraintMap()
+                .addConstraint(CellBodyFinder.SEED_POLYGON, location);
         if (prevPgInfo != null && prevPgInfo.hasValidCB()) {
             int desiredSize = prevPgInfo.getCB().getArea().getSize();
-            cbConstraints.addConstraints(new CellBodyFinder.DesiredSize(Pair.newPair(desiredSize,
-                    CellBodyFinder.SizeEdgeCase.AS_CLOSE_AS_POSSIBLE)));
+            cbConstraints.addConstraint(CellBodyFinder.DESIRED_SIZE, Pair.newPair(desiredSize,
+                    CellBodyFinder.SizeEdgeCase.AS_CLOSE_AS_POSSIBLE));
         }
         if (findCB(cbConstraints) && cbCand.isValid()) {
             int newCbSize = cbCand.getArea().getSize();
@@ -642,14 +639,13 @@ public class Tracker {
             }
             LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
-            ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
-                    .addConstraints(
-                            new BackgroundFinder.Origin(cbLength.getMidPoint()),
-                            new BackgroundFinder.CurrTheta(cbLength.getAngleFromX()));
+            ConstraintMap bkConstraints = new ConstraintMap()
+                    .addConstraint(BackgroundFinder.ORIGIN, cbLength.getMidPoint())
+                    .addConstraint(BackgroundFinder.CURR_THETA, cbLength.getAngleFromX());
 
-            bkConstraints.addConstraints(new BackgroundFinder.PrevTheta(prevPgInfo
+            bkConstraints.addConstraint(BackgroundFinder.PREV_THETA, prevPgInfo
                     .getBK()
-                    .getTheta()));
+                    .getTheta());
             bkCand = bkFinder.createFeature(bkConstraints);
         }
     }
