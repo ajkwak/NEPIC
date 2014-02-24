@@ -105,7 +105,7 @@ public class Interface extends JFrame implements LoggerObserver {
     public void close() {
         saveGuiIniConstants();
         if (Nepic.getEventLogger().isErrorRecorded()) {
-            respondToError("Errors have been detected and logged during this session.");
+            displayErrorPopup("Errors have been detected and logged during this session.");
         }
         dispose();
         Nepic.exit();
@@ -362,9 +362,8 @@ public class Interface extends JFrame implements LoggerObserver {
         StringBuilder msgBuilder = new StringBuilder(message);
         if (Nepic.getEventLogger().canSaveLog()) {
             msgBuilder.append("\r\n\r\nPlease send '")
-                    .append(Nepic.getEventLogger().getLogFileName())
-                    .append("' (which is located in the same\r\n")
-                    .append("directory as this application's executable file) to ")
+                    .append(Nepic.getEventLogger().getLogFilePath())
+                    .append("\r\nto ")
                     .append(Nepic.getName())
                     .append("'s developers at ")
                     .append(Nepic.getDeveloperContactInfo());

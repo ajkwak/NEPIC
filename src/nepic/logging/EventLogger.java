@@ -128,6 +128,13 @@ public class EventLogger {
         return logFile.getName();
     }
 
+    public String getLogFilePath() {
+        if (logFile == null) {
+            return null;
+        }
+        return logFile.getAbsolutePath();
+    }
+
     /**
      * Determines whether or not errors have been recorded by this {@link EventLogger}.
      */
