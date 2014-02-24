@@ -338,19 +338,24 @@ public class Tracker {
                 myGui.respondToInfo("Unable to find cell body until image chosen.");
                 return;
             }
-            boolean foundCellBody;
+            ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>();
             if (clickLoc == null || dragLoc == null) {
-                foundCellBody = findCB();
+                cbConstraints.addConstraints(new CellBodyFinder.SeedPolygon(
+                        new Polygon(new Point[] {
+                                new Point(0, 0),
+                                new Point(currPg.width - 1, 0),
+                                new Point(currPg.width - 1, currPg.height - 1),
+                                new Point(0, currPg.height - 1) })));
             } else {
                 myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
-                Polygon secCorners = new Polygon(new Point[] {
-                        clickLoc,
-                        new Point(dragLoc.x, clickLoc.y),
-                        dragLoc,
-                        new Point(clickLoc.x, dragLoc.y) });
-                foundCellBody = findCB(secCorners);
+                cbConstraints.addConstraints(new CellBodyFinder.SeedPolygon(
+                        new Polygon(new Point[] {
+                                clickLoc,
+                                new Point(dragLoc.x, clickLoc.y),
+                                dragLoc,
+                                new Point(clickLoc.x, dragLoc.y) })));
             }
-            if (foundCellBody) {
+            if (findCB(cbConstraints)) {
                 Nepic.log(EventType.INFO, "Found CellBody candidate.",
                         "MinPi =", cbCand.getMinPi());
                 redrawCbCand();
@@ -367,37 +372,16 @@ public class Tracker {
     }
 
     /**
-     * @return true if background updated, otherwise false
-     */
-    private boolean findCB() {
-        Point[] polygonCorners = new Point[] {
-                new Point(0, 0),
-                new Point(currPg.width - 1, 0),
-                new Point(currPg.width - 1, currPg.height - 1),
-                new Point(0, currPg.height - 1) };
-        return findCB(new Polygon(polygonCorners));
-    }
-
-    /**
      * @param corners
      * @return true if background updated, otherwise false
      */
-    private boolean findCB(Polygon corners) {
-        ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>()
-                .addConstraints(new CellBodyFinder.SeedPolygon(corners));
-        // if (prevPgInfo != null && prevPgInfo.hasValidCB()) {
-        // int desiredSize = prevPgInfo.getCB().getArea().getSize();
-        // cbConstraints.addConstraints(new CellBodyFinder.DesiredSize(Pair.newPair(desiredSize,
-        // CellBodyFinder.SizeEdgeCase.AS_CLOSE_AS_POSSIBLE)));
-        // }
-
+    private boolean findCB(ConstraintMap<CellBodyConstraint<?>> constraints) {
         if (cbCand != null) { // Then must edit the current cand
             myGui.getImageLabel().eraseImageAnnotation(cbCand.getId());
             cbFinder.removeFeature(cbCand);
             cbCand.release();
         }
-        cbCand = cbFinder.createFeature(cbConstraints);
-
+        cbCand = cbFinder.createFeature(constraints);
         return cbCandValid();
     }
 
@@ -627,7 +611,14 @@ public class Tracker {
     }
 
     private boolean trackCbInGivenArea(Polygon location, int prevCbSize) {
-        if (findCB(location) && cbCand.isValid()) {
+        ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>()
+                .addConstraints(new CellBodyFinder.SeedPolygon(location));
+        if (prevPgInfo != null && prevPgInfo.hasValidCB()) {
+            int desiredSize = prevPgInfo.getCB().getArea().getSize();
+            cbConstraints.addConstraints(new CellBodyFinder.DesiredSize(Pair.newPair(desiredSize,
+                    CellBodyFinder.SizeEdgeCase.AS_CLOSE_AS_POSSIBLE)));
+        }
+        if (findCB(cbConstraints) && cbCand.isValid()) {
             int newCbSize = cbCand.getArea().getSize();
             if (newCbSize >= (0.75 * prevCbSize) && newCbSize <= (1.5 * prevCbSize)) {
                 return true;
