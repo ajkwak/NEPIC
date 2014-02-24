@@ -192,11 +192,23 @@ public class BackgroundFinder extends RoiFinder<BackgroundConstraint<?>, Backgro
         }
 
         // Check : TODO remove this code!
-        int numUnclearedPixs = getAllPixelsInRoi(roi.getId()).size();
-        Verify.argument(numUnclearedPixs == 0, "Not all pixels in ROI (ID = " + roi.getId()
-                + ") removed! " + numUnclearedPixs
-                + " uncleared pixels remain.  Polygon.innards.size() = "
-                + roi.getArea().getInnards().size());// + "\n\n" + img.printDraw());
+        List<Point> unclearedPixs = getAllPixelsInRoi(roi.getId());
+        if (!unclearedPixs.isEmpty()) {
+            List<Point> currentInnards = roi.getArea().getInnards();
+            int numContainedInInnards = 0;
+            for (Point unclearedPix : unclearedPixs) {
+                if (currentInnards.contains(unclearedPix)) {
+                    numContainedInInnards++;
+                }
+            }
+
+            Nepic.log(EventType.ERROR, "Clearing current background region failed.",
+                    "Not all pixels in Background (ID =", roi.getId(),
+                    ") removed!", unclearedPixs.size(),
+                    "uncleared pixels remain.  Current innards contain", numContainedInInnards,
+                    " of these uncleared pixels:\r\n",
+                            img.printDraw());
+        }
     }
 
     private boolean setRoiBackground(Background roi, Polygon bkArea) {

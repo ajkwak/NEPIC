@@ -268,7 +268,7 @@ public class ImagePage implements IdTaggedImage {
         StringBuilder builder = new StringBuilder();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < height; x++) {
-                builder.append(Integer.toHexString(getId(x, y)));
+                builder.append(Integer.toHexString(getId(x, y))).append(" ");
             }
             builder.append("\r\n");
         }
