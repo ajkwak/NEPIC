@@ -2,10 +2,12 @@ package nepic.gui;
 
 import java.awt.image.BufferedImage;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.border.EtchedBorder;
 
 import nepic.io.Label;
 import nepic.data.Histogram;
@@ -79,7 +81,7 @@ public class HistogramViewPanel extends JPanel {
         }
 
         setLayout(null);
-        setBorder(UtilityMethods.PANEL_BORDERS);
+        setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
         setSize(width + 3, histHeight + 20 + histInfoTAHeight);
         this.setMinimumSize(getSize());
         this.setPreferredSize(getSize());
