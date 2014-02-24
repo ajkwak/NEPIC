@@ -339,7 +339,8 @@ public class Tracker {
                 return;
             }
             ConstraintMap<CellBodyConstraint<?>> cbConstraints = new ConstraintMap<CellBodyConstraint<?>>();
-            if (clickLoc == null || dragLoc == null) {
+            if (clickLoc == null || dragLoc == null || !currPg.contains(clickLoc) ||
+                    !currPg.contains(dragLoc)) {
                 cbConstraints.addConstraints(new CellBodyFinder.SeedPolygon(
                         new Polygon(new Point[] {
                                 new Point(0, 0),
@@ -881,6 +882,9 @@ public class Tracker {
     }
 
     private void redrawMouseAction() {
+        if (clickLoc == null || dragLoc == null) {
+            return; // No mouse actions to redraw.
+        }
         Dimension picDims = currPg.getDimensions();
         if (clickLoc.x != dragLoc.x && clickLoc.y != dragLoc.y && dragLoc.x >= 0
                 && dragLoc.y >= 0 && dragLoc.x < picDims.width && dragLoc.y < picDims.height) {
