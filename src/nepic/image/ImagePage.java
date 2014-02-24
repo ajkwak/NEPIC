@@ -1,5 +1,6 @@
 package nepic.image;
 
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import nepic.data.Histogram;
@@ -253,8 +254,8 @@ public class ImagePage implements IdTaggedImage {
         return imgHistBuilder.build();
     }
 
-    public int[] getDimensions() {
-        return new int[] { width, height };
+    public Dimension getDimensions() {
+        return new Dimension(width, height);
     }
 
     public boolean contains(Point pt) {

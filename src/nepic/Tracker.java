@@ -2,6 +2,7 @@ package nepic;
 
 import java.awt.Component;
 import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -97,7 +98,7 @@ public class Tracker {
         myGui.respondToInfo("Please select image to analyze.");
     }
 
-    private Interface setUpInterface() { // TODO
+    private Interface setUpInterface() {
         Interface gui = new Interface();
         gui.getChooseFileMenuItem().addActionListener(new ChooseFileHandler());
         gui.getSaveDataMenuItem().addActionListener(new SaveDataHandler());
@@ -337,9 +338,9 @@ public class Tracker {
                 myGui.respondToInfo("Unable to find cell body until image chosen.");
                 return;
             }
-            boolean redrawBK; // TODO: what if CB doesn't exist
+            boolean foundCellBody;
             if (clickLoc == null || dragLoc == null) {
-                redrawBK = findCB();
+                foundCellBody = findCB();
             } else {
                 myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
                 Polygon secCorners = new Polygon(new Point[] {
@@ -347,13 +348,18 @@ public class Tracker {
                         new Point(dragLoc.x, clickLoc.y),
                         dragLoc,
                         new Point(clickLoc.x, dragLoc.y) });
-                redrawBK = findCB(secCorners);
+                foundCellBody = findCB(secCorners);
             }
-            if (redrawBK) {
-                Nepic.log(EventType.INFO, "Found CellBody candidate.  MinPi = "
-                        + cbCand.getMinPi());
+            if (foundCellBody) {
+                Nepic.log(EventType.INFO, "Found CellBody candidate.",
+                        "MinPi =", cbCand.getMinPi());
                 redrawCbCand();
-                redrawBkCand();
+                if (!bkAccepted) {
+                    if (canTrackFromPrevPage()) {
+                        trackBackground();
+                        redrawBkCand();
+                    }
+                }
             } else {
                 myGui.respondToError("Unable to find cell body in indicated region.");
             }
@@ -388,15 +394,10 @@ public class Tracker {
         if (cbCand != null) { // Then must edit the current cand
             myGui.getImageLabel().eraseImageAnnotation(cbCand.getId());
             cbFinder.removeFeature(cbCand);
-            cbCand.release(); // TODO: also release bkCand when necessary.
+            cbCand.release();
         }
         cbCand = cbFinder.createFeature(cbConstraints);
 
-        if (!bkAccepted) {
-            if (canTrackFromPrevPage()) {
-                trackBackground();
-            }
-        }
         return cbCandValid();
     }
 
@@ -490,7 +491,7 @@ public class Tracker {
     }
 
     private boolean acceptRoiCandidates() {
-        if (bkAccepted && cbCand.isValid()) { // TODO: is this right?
+        if (bkAccepted && cbCand.isValid()) {
             LineSegment cbLength = cbCand.getArea().getMaxDiameter();
 
             ConstraintMap<BackgroundConstraint<?>> bkConstraints = new ConstraintMap<BackgroundConstraint<?>>()
@@ -581,7 +582,7 @@ public class Tracker {
      * @return true if the CellBody was successfully tracked from the last page; otherwise false
      * @throws IllegalStateException if the previous page did not have valid ROIs
      */
-    private boolean trackFromPrevPage() {
+    private boolean trackFromPrevPage() { // TODO
         Verify.state(canTrackFromPrevPage(),
                 "Unable to track ROIs.  ROIs from previous page were not indicated or invalid.");
 
@@ -628,7 +629,13 @@ public class Tracker {
     private boolean trackCbInGivenArea(Polygon location, int prevCbSize) {
         if (findCB(location) && cbCand.isValid()) {
             int newCbSize = cbCand.getArea().getSize();
-            return newCbSize >= (0.75 * prevCbSize) && newCbSize <= (1.5 * prevCbSize);
+            if (newCbSize >= (0.75 * prevCbSize) && newCbSize <= (1.5 * prevCbSize)) {
+                return true;
+            } else {
+                cbFinder.removeFeature(cbCand);
+                cbCand.release();
+                cbCand = null;
+            }
         }
         return false;
     }
@@ -791,6 +798,7 @@ public class Tracker {
         public void actionPerformed(ActionEvent e) {
             if (currPg != null) {
                 paintCurrentPage();
+                redrawMouseAction();
             }
         }
     }
@@ -873,26 +881,30 @@ public class Tracker {
         public void mouseDragged(MouseEvent e) {
             if (currPg != null) {
                 dragLoc = e.getPoint();
-                int[] picDims = currPg.getDimensions();
-                if (clickLoc.x != dragLoc.x && clickLoc.y != dragLoc.y && dragLoc.x >= 0
-                        && dragLoc.y >= 0 && dragLoc.x < picDims[0] && dragLoc.y < picDims[1]) {
-                    Polygon newRec = new Polygon(new Point[] {
-                            clickLoc,
-                            new Point(clickLoc.x, dragLoc.y),
-                            dragLoc,
-                            new Point(dragLoc.x, clickLoc.y) });
-                    DataSet mouseActionPixels = new MutableDataSet();
-                    mouseActionPixels.addAll(newRec.getEdges());
-                    mouseActionPixels.setRgb(Nepic.MOUSE_ACTION_COLOR);
-                    myGui.getImageLabel().annotateImage(Nepic.MOUSE_ACTION_ID, mouseActionPixels);
-                } else {
-                    myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
-                }
+                redrawMouseAction();
             }
         }
 
         @Override
         public void mouseMoved(MouseEvent e) {}
+    }
+
+    private void redrawMouseAction() {
+        Dimension picDims = currPg.getDimensions();
+        if (clickLoc.x != dragLoc.x && clickLoc.y != dragLoc.y && dragLoc.x >= 0
+                && dragLoc.y >= 0 && dragLoc.x < picDims.width && dragLoc.y < picDims.height) {
+            Polygon newRec = new Polygon(new Point[] {
+                    clickLoc,
+                    new Point(clickLoc.x, dragLoc.y),
+                    dragLoc,
+                    new Point(dragLoc.x, clickLoc.y) });
+            DataSet mouseActionPixels = new MutableDataSet();
+            mouseActionPixels.addAll(newRec.getEdges());
+            mouseActionPixels.setRgb(Nepic.MOUSE_ACTION_COLOR);
+            myGui.getImageLabel().annotateImage(Nepic.MOUSE_ACTION_ID, mouseActionPixels);
+        } else {
+            myGui.getImageLabel().eraseImageAnnotation(Nepic.MOUSE_ACTION_ID);
+        }
     }
 
     // *********************************************************************************************
