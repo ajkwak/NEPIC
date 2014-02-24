@@ -99,6 +99,7 @@ public class Interface extends JFrame implements LoggerObserver {
         Preferences prefs = Nepic.getPrefs();
         setLocation(prefs.getWindowX(), prefs.getWindowY());
         setSize(prefs.getWindowWidth(), prefs.getWindowHeight());
+        splitPane.setDividerLocation(prefs.getWindowHeight() - 150);
     }
 
     public void close() {
