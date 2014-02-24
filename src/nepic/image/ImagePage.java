@@ -160,8 +160,8 @@ public class ImagePage implements IdTaggedImage {
             Verify.argument(caller != null && handle != null,
                     "Handle to release cannot be null, and null caller cannot release a handle");
             if (caller != handle.owner) {
-                throw new IllegalAccessException(
-                        "Only the owner of the RoiIdHandle can release the handle.");
+                throw new IllegalAccessException("Only the owner of the RoiIdHandle ("
+                        + handle.owner + ") can release the handle.");
             }
             handle.owner = null;
             nxtAvailable--;

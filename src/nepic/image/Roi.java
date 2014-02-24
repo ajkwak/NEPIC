@@ -49,7 +49,8 @@ public abstract class Roi<C extends Constraint<?>> implements CsvFormattable, Va
             idHandle.release(this);
         } catch (IllegalAccessException e) {
             Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "Unable to release handle with id =",
-                    idHandle.id, EventLogger.formatException(e));
+                    idHandle.id, this, "is NOT the owner of the handle",
+                    EventLogger.formatException(e));
         }
     }
 
