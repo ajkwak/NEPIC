@@ -78,13 +78,20 @@ public abstract class Roi<C extends Constraint<?>> implements CsvFormattable, Va
         }
     }
 
-    public void invalidate() {
+    public boolean invalidate() {
         try {
             idHandle.release(this);
+            return true;
         } catch (IllegalAccessException e) {
             Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "Unable to invalidate ROI with id",
                     idHandle, EventLogger.formatException(e));
+            return false;
         }
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getName() + "(" + getId() + ")";
     }
 
 }
