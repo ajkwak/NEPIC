@@ -337,8 +337,8 @@ public class Tracker {
                 return;
             }
             ConstraintMap cbConstraints = new ConstraintMap();
-            if (clickLoc == null || dragLoc == null || !currPg.contains(clickLoc) ||
-                    !currPg.contains(dragLoc)) {
+            if (clickLoc == null || dragLoc == null || !currPg.contains(clickLoc.x, clickLoc.y)
+                    || !currPg.contains(dragLoc.x, dragLoc.y)) {
                 cbConstraints.addConstraint(CellBodyFinder.SEED_POLYGON,
                         new Polygon(new Point[] {
                                 new Point(0, 0),
@@ -810,9 +810,9 @@ public class Tracker {
 
             if (e.getButton() == MouseEvent.BUTTON3) {
                 Point clickPt = e.getPoint();
-                if (currPg != null && currPg.contains(clickPt)) {
+                if (currPg != null && currPg.contains(clickPt.x, clickPt.y)) {
                     int roiId = currPg.getId(clickPt.x, clickPt.y);
-                    if (ImagePage.candNumLegal(roiId)) {
+                    if (roiId > 0) { // TODO: use value from ImagePage for this?
                         if (cbCand != null && roiId == cbCand.getId()) {
                             openJPopupMenu(e.getComponent(), e.getX(), e.getY(),
                                     new ViewHistHandler("View CB Hist", cbCand.getPiHist()),

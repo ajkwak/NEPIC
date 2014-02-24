@@ -192,7 +192,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
     // Does NOT clear or invalidate the roi
     private void removeFeatureFromImage(Background roi) {
         for (Point innardPix : roi.getArea().getInnards()) {
-            if (img.contains(innardPix)) {
+            if (img.contains(innardPix.x, innardPix.y)) {
                 img.noLongerCand(innardPix.x, innardPix.y);
             }
         }
