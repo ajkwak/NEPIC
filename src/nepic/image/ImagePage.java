@@ -10,11 +10,11 @@ import nepic.util.Verify;
 
 // assumes 32-bit processor
 public class ImagePage implements IdTaggedImage {
-    // private static final int NOT_CAND_ID = 0; // This MUST remain 0
-    public static final int MIN_CAND_ID = 1;
-    public static final int MAX_CAND_ID = 15;
-    public static final int MIN_PIXEL_INTENSITY = 0;
-    public static final int MAX_PIXEL_INTENSITY = 255;
+    private static final int ID_LENGTH = 4;
+    private static final int ID_OFFSET = 28;
+    private static final int MAX_ID = (1 << ID_LENGTH) - 1;
+    private static final int PI_LENGTH = 8;
+    private static final int MAX_PI = (1 << PI_LENGTH) - 1;
 
     /**
      * The width of this {@link ImagePage}.
@@ -53,7 +53,7 @@ public class ImagePage implements IdTaggedImage {
         if (equalizeHistogram) {
             Histogram imgHist = makeHistogram();
             offset = imgHist.getMin();
-            multiplier = 255.0 / (imgHist.getMax() - offset);
+            multiplier = ((double) MAX_PI) / (imgHist.getMax() - offset);
         }
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -77,10 +77,6 @@ public class ImagePage implements IdTaggedImage {
         return x >= 0 && x < width && y >= 0 && y < height;
     }
 
-    public static boolean candNumLegal(int candNum) {
-        return candNum >= MIN_CAND_ID && candNum <= MAX_CAND_ID;
-    }
-
     @Override
     public boolean contains(int x, int y) {
         return boundsContain(x, y);
@@ -96,7 +92,7 @@ public class ImagePage implements IdTaggedImage {
 
     @Override
     public int getId(int x, int y) {
-        return (15 & imgToAnal[x][y] >> 28);
+        return MAX_ID & (imgToAnal[x][y] >> ID_OFFSET);
     }
 
     @Override
@@ -124,11 +120,11 @@ public class ImagePage implements IdTaggedImage {
     }
 
     public int getPixelIntensity(int x, int y) {
-        return (255 & imgToAnal[x][y]);
+        return MAX_PI & imgToAnal[x][y];
     }
 
     public Histogram makeHistogram() {
-        Histogram.Builder imgHistBuilder = new Histogram.Builder(0, 255);
+        Histogram.Builder imgHistBuilder = new Histogram.Builder(0, MAX_PI);
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 imgHistBuilder.addValues(getPixelIntensity(x, y));
@@ -159,7 +155,9 @@ public class ImagePage implements IdTaggedImage {
     public void dissociatePixelWithRoi(int x, int y, Roi roi){
         int id = roi.getId();
         if (getId(x, y) == id) {
-            imgToAnal[x][y] = (imgToAnal[x][y] & 0x0fffffff);
+            // Assumes ID includes most significant bit.
+            int setIdToZeroMask = -1 >>> (32 - ID_OFFSET);
+            imgToAnal[x][y] = imgToAnal[x][y] & setIdToZeroMask;
         }
     }
 
@@ -183,15 +181,15 @@ public class ImagePage implements IdTaggedImage {
                     .append(").")
                     .toString());
         }
-        imgToAnal[x][y] = (imgToAnal[x][y] | (newRoiNum << 28));// set new cand num
+        imgToAnal[x][y] = (imgToAnal[x][y] | (newRoiNum << ID_OFFSET));// set new cand num
     }
 
     public void setRGB(int x, int y, byte relLum) {
-        imgToAnal[x][y] = 255 & relLum;
+        imgToAnal[x][y] = MAX_PI & relLum;
     }
 
     private int piToRgb(int pi) {
-        pi = pi > 255 ? 255 : pi < 0 ? 0 : pi;
+        pi = pi > MAX_PI ? MAX_PI : pi < 0 ? 0 : pi;
         int rgbVal = 0;// sets alpha of RGB
         rgbVal = (rgbVal << 8) | pi;// sets red of rgb
         rgbVal = (rgbVal << 8) | pi;// sets green of rgb
@@ -225,9 +223,9 @@ public class ImagePage implements IdTaggedImage {
         private final RoiIdHandle[] handles;
 
         private RoiIds() {
-            handles = new RoiIdHandle[MAX_CAND_ID - MIN_CAND_ID + 1];
-            for (int id = MIN_CAND_ID; id <= MAX_CAND_ID; id++) {
-                int pos = id - MIN_CAND_ID;
+            handles = new RoiIdHandle[MAX_ID];
+            for (int id = 1; id <= MAX_ID; id++) {
+                int pos = id - 1;
                 handles[pos] = new RoiIdHandle(id, pos);
             }
             nxtAvailable = 0;
