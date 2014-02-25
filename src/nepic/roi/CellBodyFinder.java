@@ -329,10 +329,10 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
      */
     private void removeFeatureFromImage(CellBody roi) {
         for (Point edgePix : roi.getEdges()) {
-            img.noLongerCand(edgePix.x, edgePix.y);
+            img.dissociatePixelWithRoi(edgePix.x, edgePix.y, roi);
         }
         for (Point innardPix : roi.getInnards()) {
-            img.noLongerCand(innardPix.x, innardPix.y);
+            img.dissociatePixelWithRoi(innardPix.x, innardPix.y, roi);
         }
 
         // Check : TODO remove this code!
@@ -559,7 +559,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
         } catch (ConflictingRoisException e) {
             // If enlarge into another ROI
             for (Point pt : extendedBy) {
-                img.noLongerCand(pt.x, pt.y);
+                img.dissociatePixelWithRoi(pt.x, pt.y, roi);
             }
             Nepic.log(EventType.VERBOSE, "Unable to extend CellBody edges to " + minPi, ":",
                     e.getMessage());

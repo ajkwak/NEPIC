@@ -137,10 +137,6 @@ public class ImagePage implements IdTaggedImage {
         return imgHistBuilder.build();
     }
 
-    public void noLongerCand(int x, int y) {
-        imgToAnal[x][y] = (imgToAnal[x][y] & 0x0fffffff);// set cand num back to zero
-    }
-
     public String printDraw() {
         StringBuilder builder = new StringBuilder();
         for (int y = 0; y < height; y++) {
@@ -154,6 +150,17 @@ public class ImagePage implements IdTaggedImage {
 
     RoiIdHandle requestIdHandle(Roi caller) {
         return roiIds.requestIdHandle(caller);
+    }
+
+    public void associatePixelWithRoi(int x, int y, Roi roi){
+        //
+    }
+
+    public void dissociatePixelWithRoi(int x, int y, Roi roi){
+        int id = roi.getId();
+        if (getId(x, y) == id) {
+            imgToAnal[x][y] = (imgToAnal[x][y] & 0x0fffffff);
+        }
     }
 
     public void setId(int x, int y, Roi roi) throws ConflictingRoisException {

@@ -179,11 +179,12 @@ public class BackgroundFinder extends RoiFinder<Background> {
         try {
             for (Point innardPt : bkInnards) {
                 img.setId(innardPt.x, innardPt.y, validRoi);
+                restoredBkPts.add(innardPt);
             }
             return true;
         } catch (ConflictingRoisException e) {
             for (Point invalidRestoredPt : restoredBkPts) {
-                img.noLongerCand(invalidRestoredPt.x, invalidRestoredPt.y);
+                img.dissociatePixelWithRoi(invalidRestoredPt.x, invalidRestoredPt.y, validRoi);
             }
             return false;
         }
@@ -193,7 +194,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
     private void removeFeatureFromImage(Background roi) {
         for (Point innardPix : roi.getArea().getInnards()) {
             if (img.contains(innardPix.x, innardPix.y)) {
-                img.noLongerCand(innardPix.x, innardPix.y);
+                img.dissociatePixelWithRoi(innardPix.x, innardPix.y, roi);
             }
         }
 
@@ -246,7 +247,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
                         + "Please indicate a new background.");
                 return false;
             } catch (ConflictingRoisException e) { // if overlap with another ROI
-                removeFeatureFromImage(roi);
+                removeFeatureFromImage(roi); // TODO: THIS SCREWS UP OTHER ROI CONFLICTED WITH!!!!
                 roi.setArea(prevBkArea);
                 if (prevBkArea != null) {
                     restoreFeature(roi);
