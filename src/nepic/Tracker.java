@@ -310,14 +310,18 @@ public class Tracker {
                         .addConstraint(BackgroundFinder.CURR_THETA, cbLength.getAngleFromX());
             }
             bkCand = bkFinder.createFeature(map);
+
+            if (bkCand != null && bkCand.getArea() != null) {
+                bkAccepted = true;
+                return true;
+            }
         } else {
-            bkFinder.editFeature(bkCand, map);
+            if (bkFinder.editFeature(bkCand, map)) {
+                bkAccepted = true;
+                return true;
+            }
         }
 
-        if (bkCand != null && bkCand.getArea() != null) {
-            bkAccepted = true;
-            return true;
-        }
         return false;
     }
 
