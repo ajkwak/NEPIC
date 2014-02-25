@@ -172,7 +172,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
     @Override
     public boolean restoreFeature(Background validRoi) {
         Verify.notNull(validRoi, "ROI to restore cannot be null.");
-        Verify.argument(validRoi.isValid(), "ROI to restore must be valid");
+        Verify.argument(validRoi.getArea() != null, "ROI to restore must have a non-null area");
         validRoi.revalidate(img); // Give valid ROI an Id handle for this image
         List<Point> bkInnards = validRoi.getInnards();
         List<Point> restoredBkPts = Lists.newArrayListWithCapacity(bkInnards.size());
