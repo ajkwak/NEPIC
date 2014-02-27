@@ -2,6 +2,8 @@ package nepic.image;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
+import java.util.Stack;
+
 import nepic.data.Histogram;
 import nepic.geo.BoundedRegion;
 import nepic.geo.BoundingBox;
@@ -10,10 +12,15 @@ import nepic.util.Verify;
 
 // assumes 32-bit processor
 public class ImagePage implements IdTaggedImage {
-    private static final int ID_LENGTH = 4;
+    /**
+     * The ID of pixels that are not associated with a particular {@link Roi}.
+     */
+    public static final int NON_ROI_ID = 0;
+
+    private static final int ID_LENGTH = 4; // The number of bits in the 'ID' field.
     private static final int ID_OFFSET = 28;
     private static final int MAX_ID = (1 << ID_LENGTH) - 1;
-    private static final int PI_LENGTH = 8;
+    private static final int PI_LENGTH = 8; // The number of bits in the 'Pixel Intensity' field.
     private static final int MAX_PI = (1 << PI_LENGTH) - 1;
 
     /**
@@ -25,7 +32,6 @@ public class ImagePage implements IdTaggedImage {
      */
     public final int height;
 
-    private final RoiIds roiIds = new RoiIds();
     /**
      * <pre>
      *  0000 0000 00000000 00000000 00000000
@@ -144,12 +150,24 @@ public class ImagePage implements IdTaggedImage {
         return builder.toString();
     }
 
-    RoiIdHandle requestIdHandle(Roi caller) {
-        return roiIds.requestIdHandle(caller);
-    }
-
-    public void associatePixelWithRoi(int x, int y, Roi roi){
-        //
+    public void associatePixelWithRoi(int x, int y, Roi roi) throws ConflictingRoisException {
+        int newId = roi.getId();
+        int currentId = getId(x, y);
+        if (currentId == newId) {
+            return; // This pixel is already associated with the given Roi.
+        } else if (currentId != 0) { // Then pixel is already associated with a DIFFERENT Roi.
+            throw new ConflictingRoisException(new StringBuilder("Unable to associate pixel (")
+                    .append(x)
+                    .append(", ")
+                    .append(y)
+                    .append(") with Roi ")
+                    .append(roi)
+                    .append(".  This pixel is already associated with Roi (id = ")
+                    .append(currentId)
+                    .append(").")
+                    .toString());
+        }
+        imgToAnal[x][y] = imgToAnal[x][y] | (newId << ID_OFFSET);
     }
 
     public void dissociatePixelWithRoi(int x, int y, Roi roi){
@@ -159,29 +177,6 @@ public class ImagePage implements IdTaggedImage {
             int setIdToZeroMask = -1 >>> (32 - ID_OFFSET);
             imgToAnal[x][y] = imgToAnal[x][y] & setIdToZeroMask;
         }
-    }
-
-    public void setId(int x, int y, Roi roi) throws ConflictingRoisException {
-        RoiIdHandle roiHandle = roi.getIdHandle();
-        Verify.argument(roiHandle.owner == roi, "RoiIdHandle owner is " + roiHandle.owner
-                + ", not " + roi + ".  Unable to set ID.");
-        int newRoiNum = roiHandle.id;
-        int currentRoiNum = getId(x, y);
-        if (newRoiNum == currentRoiNum) {
-            return;
-        } else if (currentRoiNum != 0) {
-            throw new ConflictingRoisException(new StringBuilder("Unable to set roiID of pixel (")
-                    .append(x)
-                    .append(", ")
-                    .append(y)
-                    .append(") in image page to the ROI ")
-                    .append(roi)
-                    .append(".  This point is already part of another ROI (id = ")
-                    .append(currentRoiNum)
-                    .append(").")
-                    .toString());
-        }
-        imgToAnal[x][y] = (imgToAnal[x][y] | (newRoiNum << ID_OFFSET));// set new cand num
     }
 
     public void setRGB(int x, int y, byte relLum) {
@@ -197,73 +192,25 @@ public class ImagePage implements IdTaggedImage {
         return rgbVal;
     }
 
-    public class RoiIdHandle {
-        public final int id;
-        private Roi owner;
-        private int pos;
+    // private Roi[] rois = new Roi[MAX_ID]; // TODO: keep this??
+    private Stack<Integer> availableIds = initializeAvailableIds();
 
-        private RoiIdHandle(int id, int pos) {
-            this.id = id;
-            this.pos = pos;
-            owner = null;
-        }
-
-        public void release(Roi caller) throws IllegalAccessException {
-            roiIds.releaseIdHandle(caller, this);
-        }
-
-        public boolean isOwnedBy(Roi caller) {
-            Verify.notNull(caller, "Owner of RoiIdHandle cannot be null.");
-            return caller == owner;
-        }
+    int requestId() {
+        Verify.state(!availableIds.isEmpty(), "No more Roi IDs available on this ImagePage.");
+        return availableIds.pop();
     }
 
-    private class RoiIds {
-        private int nxtAvailable; // First available ID handle
-        private final RoiIdHandle[] handles;
+    void releaseId(int id) {
+        Verify.argument(id >= 1 && id <= MAX_ID, "Cannot release invalid ID " + id);
+        Verify.state(!availableIds.contains(id), "ID is already released");
+        availableIds.push(id);
+    }
 
-        private RoiIds() {
-            handles = new RoiIdHandle[MAX_ID];
-            for (int id = 1; id <= MAX_ID; id++) {
-                int pos = id - 1;
-                handles[pos] = new RoiIdHandle(id, pos);
-            }
-            nxtAvailable = 0;
+    private Stack<Integer> initializeAvailableIds() {
+        Stack<Integer> availableIds = new Stack<Integer>();
+        for (int id = 1; id <= MAX_ID; id++) {
+            availableIds.push(id);
         }
-
-        private RoiIdHandle requestIdHandle(Roi caller) {
-            Verify.state(nxtAvailable < handles.length, "No more ROI ID handles available!");
-            RoiIdHandle requestedHandle = handles[nxtAvailable];
-            requestedHandle.owner = caller;
-            nxtAvailable++;
-            return requestedHandle;
-        }
-
-        private void releaseIdHandle(Object caller, RoiIdHandle handle)
-                throws IllegalAccessException {
-            Verify.argument(caller != null && handle != null,
-                    "Handle to release cannot be null, and null caller cannot release a handle");
-            if (caller != handle.owner) {
-                throw new IllegalAccessException("Only the owner of the RoiIdHandle ("
-                        + handle.owner + ") can release the handle.");
-            }
-            handle.owner = null;
-            nxtAvailable--;
-            swap(handle, handles[nxtAvailable]);
-        }
-
-        private void swap(RoiIdHandle h1, RoiIdHandle h2) {
-            int pos1 = h1.pos;
-            int pos2 = h2.pos;
-            Verify.state(handles[pos1] == h1, "Handle at position of h1.pos (=" + pos1
-                    + ") is NOT " + h1 + ".  Instead, is " + handles[pos1]);
-            Verify.state(handles[pos2] == h2, "Handle at position of h2.pos (=" + pos2
-                    + ") is NOT " + h2 + ".  Instead, is " + handles[pos2]);
-
-            handles[pos1] = h2;
-            h2.pos = pos1;
-            handles[pos2] = h1;
-            h1.pos = pos2;
-        }
+        return availableIds;
     }
 }

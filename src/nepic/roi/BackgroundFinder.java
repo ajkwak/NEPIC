@@ -178,7 +178,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
         List<Point> restoredBkPts = Lists.newArrayListWithCapacity(bkInnards.size());
         try {
             for (Point innardPt : bkInnards) {
-                img.setId(innardPt.x, innardPt.y, validRoi);
+                img.associatePixelWithRoi(innardPt.x, innardPt.y, validRoi);
                 restoredBkPts.add(innardPt);
             }
             return true;
@@ -239,7 +239,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
                 edgeHistBuilder.addValues(rl - img.getPixelIntensity(x + 1, y), rl
                         - img.getPixelIntensity(x, y + 1));
 
-                img.setId(x, y, roi);
+                img.associatePixelWithRoi(x, y, roi);
             } catch (ArrayIndexOutOfBoundsException e) {
                 removeFeatureFromImage(roi);
                 roi.setArea(null);

@@ -3,41 +3,30 @@ package nepic.image;
 import java.awt.Point;
 import java.util.List;
 
-import nepic.Nepic;
 import nepic.image.ImagePage;
-import nepic.image.ImagePage.RoiIdHandle;
-import nepic.logging.EventLogger;
-import nepic.logging.EventType;
 import nepic.util.CsvFormattable;
 import nepic.util.Validatable;
 import nepic.util.Verify;
 
 /**
- *
  * @author AJ Parmidge
- * @since AutoCBFinder_ALpha_v0-9_122212
- * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- *
- * @param <C>
  */
 public abstract class Roi implements CsvFormattable, Validatable {
     /**
      * The unique ID number of this {@link Roi}.
      */
-    private RoiIdHandle idHandle; // should correspond to candNum
+    private int id; // should correspond to candNum
     private boolean modifiedSinceAccepted = true;
+    private ImagePage img;
 
     protected Roi(ImagePage img) {
         Verify.notNull(img, "Cannot make ROI for null image page.");
-        idHandle = img.requestIdHandle(this);
+        this.img = img;
+        id = img.requestId();
     }
 
     public int getId() {
-        return idHandle.id;
-    }
-
-    RoiIdHandle getIdHandle() {
-        return idHandle;
+        return id;
     }
 
     /**
@@ -45,12 +34,10 @@ public abstract class Roi implements CsvFormattable, Validatable {
      * done when the ROI is about to be deleted.
      */
     public void release() {
-        try {
-            idHandle.release(this);
-        } catch (IllegalAccessException e) {
-            Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "Unable to release handle with id =",
-                    idHandle.id, this, "is NOT the owner of the handle",
-                    EventLogger.formatException(e));
+        if (img != null) {
+            img.releaseId(id);
+            id = 0; // Invalid value.
+            img = null;
         }
     }
 
@@ -66,27 +53,13 @@ public abstract class Roi implements CsvFormattable, Validatable {
 
     public abstract List<Point> getInnards();
 
-    /**
-     *
-     * @param img
-     * @since AutoCBFinder_Alpha_v0-9-2013-02-10
-     */
     public void revalidate(ImagePage img) {
-        // Revalidate only if the ROI currently has an invalid handle.
-        if (!idHandle.isOwnedBy(this)) {
-            idHandle = img.requestIdHandle(this);
-        }
-    }
+        // Release this ROI on its old ImagePage, if applicable.
+        release();
 
-    public boolean invalidate() {
-        try {
-            idHandle.release(this);
-            return true;
-        } catch (IllegalAccessException e) {
-            Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "Unable to invalidate ROI with id",
-                    idHandle, EventLogger.formatException(e));
-            return false;
-        }
+        // Get an ID for the current image.
+        this.img = img;
+        id = img.requestId();
     }
 
     @Override

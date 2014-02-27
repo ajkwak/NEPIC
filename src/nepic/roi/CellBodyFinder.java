@@ -129,11 +129,11 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
         List<Point> restoredPts = new LinkedList<Point>();
         try {
             for (Point edgePt : roiArea.getEdges()) {
-                img.setId(edgePt.x, edgePt.y, validRoi);
+                img.associatePixelWithRoi(edgePt.x, edgePt.y, validRoi);
                 restoredPts.add(edgePt);
             }
             for (Point innardPt : roiArea.getInnards()) {
-                img.setId(innardPt.x, innardPt.y, validRoi);
+                img.associatePixelWithRoi(innardPt.x, innardPt.y, validRoi);
                 restoredPts.add(innardPt);
             }
             return true;
@@ -145,9 +145,12 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
     private void adjustToSeedPolygon(CellBody roi, Polygon seedPolygon)
             throws ConflictingRoisException {
         Pixel seedPixel = getMostIntensePixel(seedPolygon);
+        if (seedPixel == null) {
+            throw new ConflictingRoisException("Entire seedPolygon is within another Roi");
+        }
 
         // Set seed pixel
-        img.setId(seedPixel.x, seedPixel.y, roi);
+        img.associatePixelWithRoi(seedPixel.x, seedPixel.y, roi);
         roi.setSeedPixel(seedPixel);
         roi.setMinPi(seedPixel.color);
 
@@ -227,7 +230,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
                 removeFeatureFromImage(roi);
                 minPi += changePiIncrement;
                 roi.setSeedPixel(prevSeedPixel); // Don't retain seed pixel from latest enlargement.
-                img.setId(prevSeedPixel.x, prevSeedPixel.y, roi);
+                img.associatePixelWithRoi(prevSeedPixel.x, prevSeedPixel.y, roi);
                 roi.setEdges(new Blob(Lists.newArrayList(prevSeedPixel)));
                 if (prevSize > 1) {
                     extendEdges(roi, minPi);
@@ -263,7 +266,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
             while (size > desiredSize) {
                 // Remove feature so can extend to shrink
                 removeFeatureFromImage(roi);
-                img.setId(seedPix.x, seedPix.y, roi);
+                img.associatePixelWithRoi(seedPix.x, seedPix.y, roi);
                 roi.setEdges(new Blob(Lists.newArrayList(seedPix)));
 
                 // Extend cell body edges to a higher minPi (net shrink action)
@@ -375,6 +378,9 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
                     cDiff = nDiff;
                 }// if found new possible max
             }// if not already in a previous candidate
+        }
+        if (maxLum < 0) { // If no seed pixel found.
+            return null;
         }
         return new Pixel(xPos, yPos, maxLum);
     }// findMostIntensePixClump
@@ -608,7 +614,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
             Nepic.log(EventType.ERROR, EventLogger.LOG_ONLY, "CB Cand already contains", toAdd);
             numErrors += 1;
         } else {
-            img.setId(toAdd.x, toAdd.y, roi);
+            img.associatePixelWithRoi(toAdd.x, toAdd.y, roi);
         }
 
         if (candEdges.contains(toAdd)) {
