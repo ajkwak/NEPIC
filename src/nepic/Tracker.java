@@ -293,6 +293,8 @@ public class Tracker {
             } else {
                 myGui.respondToInfo("Background not chosen.  Unable to accept.");
             }
+            clickLoc = null;
+            dragLoc = null;
         }
     }
 
@@ -371,6 +373,8 @@ public class Tracker {
             } else {
                 myGui.respondToError("Unable to find cell body in indicated region.");
             }
+            clickLoc = null;
+            dragLoc = null;
         }
     }
 
