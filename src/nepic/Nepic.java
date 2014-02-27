@@ -12,9 +12,9 @@ import nepic.logging.EventType;
  */
 public class Nepic {
     private static final String NAME = "NEPIC";
-    private static final String VERSION = "v1.1";
-    private static final String SUB_VERSION = "20141402";
-    private static final String RELEASE_DATE = null;
+    private static final String VERSION = "v1.2";
+    private static final String SUB_VERSION = "20140228";
+    private static final String RELEASE_DATE = "28 February 2014";
     private static final String DEVELOPER_CONTACT_INFO = "aparmidge@mills.edu";
     private static Preferences prefs;
     private static EventLogger eventLogger;
