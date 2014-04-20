@@ -16,6 +16,7 @@ import nepic.geo.BoundingBox;
 import nepic.geo.Line;
 import nepic.geo.LineSegment;
 import nepic.geo.Polygon;
+import nepic.geo.RoiEdgeTracer;
 import nepic.image.ConstraintMap;
 import nepic.image.Roi;
 import nepic.image.RoiFinder;
@@ -88,7 +89,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
         } catch (NoSuchFieldException e) {
             Nepic.log(EventType.WARNING, "Edges of CellBody not found.");
             // TODO: in future, simply return null, but for now, have this workaround
-            roi.setEdges(new Blob(edges)); // Does NOT make a valid CellBody object
+            roi.setEdges(Blob.newBlobFromTracedEdges(edges)); // Only includes the seed pixel.
         } catch (ConflictingRoisException e) {
             return roi;
         }
@@ -157,7 +158,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
         // Set edges
         List<Point> initEdges = new LinkedList<Point>();
         initEdges.add(seedPixel);
-        roi.setEdges(new Blob(initEdges)); // sets edges without setting up histogram, etc
+        roi.setEdges(Blob.newBlobFromTracedEdges(initEdges));
     }
 
     /**
@@ -174,7 +175,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
         if (roi.getArea() == null) {
             List<Point> edges = new LinkedList<Point>();
             edges.add(seedPix);
-            roi.setEdges(new Blob(edges));
+            roi.setEdges(Blob.newBlobFromTracedEdges(edges));
         }
 
         int currSize = roi.getArea().getSize();
@@ -231,7 +232,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
                 minPi += changePiIncrement;
                 roi.setSeedPixel(prevSeedPixel); // Don't retain seed pixel from latest enlargement.
                 img.associatePixelWithRoi(prevSeedPixel.x, prevSeedPixel.y, roi);
-                roi.setEdges(new Blob(Lists.newArrayList(prevSeedPixel)));
+                roi.setEdges(Blob.newBlobFromTracedEdges(Lists.newArrayList(prevSeedPixel)));
                 if (prevSize > 1) {
                     extendEdges(roi, minPi);
                 }
@@ -267,7 +268,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
                 // Remove feature so can extend to shrink
                 removeFeatureFromImage(roi);
                 img.associatePixelWithRoi(seedPix.x, seedPix.y, roi);
-                roi.setEdges(new Blob(Lists.newArrayList(seedPix)));
+                roi.setEdges(Blob.newBlobFromTracedEdges(Lists.newArrayList(seedPix)));
 
                 // Extend cell body edges to a higher minPi (net shrink action)
                 prevSize = size;
@@ -342,7 +343,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
         List<Point> unclearedPixs = getAllPixelsInRoi(roi.getId());
         int numUnclearedPixs = unclearedPixs.size();
         if (numUnclearedPixs > 0) {
-            roi.getArea().printDraw(unclearedPixs);
+            System.out.println(roi.getArea().toString());
         }
         Verify.argument(numUnclearedPixs == 0, "Not all pixels in ROI (ID = " + roi.getId()
                 + ") removed! " + numUnclearedPixs + " uncleared pixels remain:\n\t"
@@ -558,7 +559,8 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
                         "Unable to extend edges of candidate; too many errors detected.");
             }
             if (!extendedBy.isEmpty()) {
-                roi.setEdges(new Blob(Blob.traceOuterEdges(img, maxXPix, roiId)));
+                roi.setEdges(Blob.newBlobFromTracedEdges((RoiEdgeTracer.traceOuterEdges(img, roiId,
+                        maxXPix))));
                 roi.setModified(true); // CellBody is ONLY modified if edges were extended.
             }
             roi.setMinPi(minPi);
