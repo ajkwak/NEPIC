@@ -6,6 +6,8 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Properties;
 
+import nepic.testing.util.StringsUtil;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +35,7 @@ public class PreferencesTest {
         String[] expectedPropertyKeys = new String[preferencesFields.length];
 
         for (int i = 0; i < preferencesFields.length; i++) {
-            expectedPropertyKeys[i] = toConstantName(preferencesFields[i].getName());
+            expectedPropertyKeys[i] = StringsUtil.toUpperSnakeCase(preferencesFields[i].getName());
         }
 
         List<Object> unexpectedPropertyKeys = Lists.newArrayList(props.keySet());
@@ -70,18 +72,5 @@ public class PreferencesTest {
         assertEquals(prefs.getWindowHeight(), createdPrefs.getWindowHeight());
         assertEquals(prefs.isHistogramEqualizationDesired(),
                 createdPrefs.isHistogramEqualizationDesired());
-    }
-
-    // Convert CamelCase to uppercase snake_case
-    private String toConstantName(String variableName) {
-        StringBuilder builder = new StringBuilder(); // TODO: max num snake_case chars?
-        for (char ch : variableName.toCharArray()) {
-            if (Character.isUpperCase(ch)) {
-                builder.append('_').append(ch);
-            } else {
-                builder.append(Character.toUpperCase(ch));
-            }
-        }
-        return builder.toString();
     }
 }
