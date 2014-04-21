@@ -1,15 +1,11 @@
 package nepic.geo;
 
 import java.awt.Point;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import nepic.geo.test.ExemplarBlobs;
-import nepic.geo.test.ExemplarPolygons;
-import nepic.testing.util.StringsUtil;
 
 public class BlobTestsManual {
 
@@ -43,28 +39,12 @@ public class BlobTestsManual {
         System.out.println("\n\n" + this);
     }
 
-    public static void main(String[] args) throws IllegalArgumentException, IllegalAccessException,
-            InvocationTargetException {
+    public static void main(String[] args) throws IllegalAccessException {
         // Test all Blob exemplars.
-        for (Method method : ExemplarBlobs.class.getMethods()) {
-            String methodName = method.getName();
-            if (methodName.startsWith("make")) {
-                String blobDesignation = StringsUtil.toUpperSnakeCase(methodName.substring(4));
-                System.out.println("\n\n" + blobDesignation);
-                Blob blob = (Blob) method.invoke(null);
-                System.out.println(blob);
-            }
-        }
-
-        // Test all Polygon exemplars as Blobs.
-        for (Method method : ExemplarPolygons.class.getMethods()) {
-            String methodName = method.getName();
-            if (methodName.startsWith("make")) {
-                String blobDesignation = StringsUtil.toUpperSnakeCase(methodName.substring(4));
-                System.out.println("\n\n" + blobDesignation);
-                Blob blob = Blob.newBlobFromTracedEdges(((Polygon) method.invoke(null)).getEdges());
-                System.out.println(blob);
-            }
+        for (ExemplarBlobs.Builder blobBldr : ExemplarBlobs.getExemplarBlobBuilders()) {
+            System.out.println("\n\n" + blobBldr.getBlobName());
+            Blob blob = blobBldr.buildBlob();
+            System.out.println(blob);
         }
     }
 }
