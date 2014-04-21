@@ -35,7 +35,7 @@ public class Background extends Roi {
 
     @Override
     public List<Point> getInnards() {
-        return backgroundArea.getInnards();
+        return backgroundArea.asBlob().getInnards();
     }
 
     public Histogram getPiHist() {

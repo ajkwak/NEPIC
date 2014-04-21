@@ -357,7 +357,7 @@ public class CellBodyFinder extends RoiFinder<CellBody> {
      * @return the most intense pixel in the innards of the polygon
      */
     private Pixel getMostIntensePixel(Polygon secCorners) {
-        List<Point> pixs = secCorners.getInnards();
+        List<Point> pixs = secCorners.asBlob().getInnards();
         int centerPosX = (secCorners.getMaxX() + secCorners.getMinX()) / 2;
         int centerPosY = (secCorners.getMaxY() + secCorners.getMinY()) / 2;
         int cDiff = -1;

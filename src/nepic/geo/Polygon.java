@@ -2,35 +2,109 @@ package nepic.geo;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.TreeSet;
+
+import com.google.common.collect.Lists;
 
 import nepic.util.Verify;
 
 /**
- * 
+ * Class that represents a two-dimensional polygon in Cartesian space.
+ *
  * @author AJ Parmidge
- * @since ???
- * @version AutoCBFinder_Alpha_v0-9-2013-02-10
- * 
  */
 public class Polygon implements BoundedRegion {
     private final Point[] vertices;
     private final BoundingBox boundaries;
 
-    public Polygon(Point[] vertexPts) {
-        Verify.notNull(vertexPts, "Polygon vertices cannot be null");
-        int numVertices = vertexPts.length;
+    /**
+     * Creates a polygon with the given vertices.
+     * <p>
+     * Note that the order of the vertices is important. An edge of the {@link Polygon} is assumed
+     * to exist between two adjacent vertices, and between the first and last vertices.
+     * <p>
+     * For example, assume you want to make a polygon with the vertices (0, 0), (5, 0), (0, 4), and
+     * (5, 4). If you constructed the {@link Polygon} as:
+     *
+     * <pre>
+     * Polygon polygon = new Polygon(
+     *         new Point(0, 0),
+     *         new Point(5, 0),
+     *         new Point(5, 4),
+     *         new Point(0, 4));
+     * </pre>
+     *
+     * Then you would get the following polygon:
+     *
+     * <pre>
+     * ******
+     * *----*
+     * *----*
+     * *----*
+     * ******
+     * </pre>
+     *
+     * However, if you constructed your {@link Polygon} as:
+     *
+     * <pre>
+     * Polygon polygon = new Polygon(
+     *         new Point(0, 0),
+     *         new Point(5, 4),
+     *         new Point(5, 0),
+     *         new Point(0, 4));
+     * </pre>
+     *
+     * Then you would get the following polygon:
+     *
+     * <pre>
+     * *----*
+     * **--**
+     * *-**-*
+     * **--**
+     * *----*
+     * </pre>
+     *
+     * Note that these two {@link Polygon} objects were created using precisely the same vertices,
+     * but in a different order.
+     *
+     * @param vertices the vertices of the polygon to create
+     */
+    public Polygon(Point... vertices) {
+        int numVertices = vertices.length;
         Verify.argument(numVertices > 2, "Polygon must have at least 3 vertices");
-        vertices = new Point[numVertices];
-        boundaries = new BoundingBox(vertexPts[0], vertexPts[0]);
+        this.vertices = new Point[numVertices];
+        boundaries = new BoundingBox(vertices[0], vertices[0]);
         for (int i = 0; i < numVertices; i++) {
-            Point vertex = vertexPts[i];
-            Verify.notNull(vertex, "Vertex " + i + " cannot be null");
-            vertices[i] = vertex;
+            Point vertex = vertices[i];
+            this.vertices[i] = vertex;
             boundaries.update(vertex.x, vertex.y);
+        }
+    }
+
+    /**
+     * Creates a polygon with the given collection of vertices. Note that the order of the given
+     * vertices is important. These should be passed to this constructor such that there is an edge
+     * between all adjacent vertices in the given collection of vertices. See
+     * {@link #Polygon(Point...)} for details.
+     *
+     * @param vertices the vertices of the polygon to create
+     */
+    public Polygon(Collection<Point> vertices) {
+        int numVertices = vertices.size();
+        Verify.argument(numVertices > 2, "Polygon must have at least 3 vertices");
+        this.vertices = new Point[numVertices];
+        boundaries = new BoundingBox(0, 0, 0, 0); // These boundaries will never be used.
+        int i = 0;
+        for (Point vertex : vertices) {
+            if (i == 0) {
+                boundaries.resetBounds(vertex.x, vertex.x, vertex.y, vertex.y);
+            } else {
+                boundaries.update(vertex.x, vertex.y);
+            }
+            this.vertices[i] = vertex;
+            i++;
         }
     }
 
@@ -64,25 +138,40 @@ public class Polygon implements BoundedRegion {
         return boundaries.boundsContain(x, y);
     }
 
-    public boolean needToCropToBoundsOf(BoundedRegion region) {
-        return !region.boundsContain(this);
-    }
-
+    /**
+     * Gets the bounds of the polygon. The maximum x-value of the returned {@link BoundingBox} is
+     * the same as the maximum x-value of this {@link Polygon}. Ditto with the minimum x-value,
+     * minimum y-value, and maximum y-value of this {@link Polygon}.
+     *
+     * @return the bounds of the polygon
+     */
     public BoundingBox getBoundingBox() {
         return boundaries.deepCopy();
     }
 
-    public Point[] getVertices() {
-        int numVertices = vertices.length;
-        Point[] verticesCopy = new Point[numVertices];
-        for (int i = 0; i < numVertices; i++) {
-            verticesCopy[i] = vertices[i];
+    /**
+     * Gets a copy of the vertices in this {@link Polygon}, given in the order in which the vertices
+     * were specified in the {@link Polygon#Polygon(Point[]) Polygon constructor}.
+     *
+     * @return the vertices of this polygon
+     */
+    public ArrayList<Point> getVertices() {
+        ArrayList<Point> verticesCopy = Lists.newArrayListWithCapacity(vertices.length);
+        for (Point vertex : vertices) {
+            // Need to create a new point because Point objects are mutable, and we don't want the
+            // user to mutate the Polygon's vertices by mutating the result of this method.
+            verticesCopy.add(new Point(vertex.x, vertex.y));
         }
         return verticesCopy;
     }
 
-    public List<Point> getEdges() {
-        List<Point> edges = new LinkedList<Point>();
+    /**
+     * Gets all of the points (integer-precision) that are in the edges of this polygon.
+     *
+     * @return a list of the points in this polygon's edges
+     */
+    public LinkedList<Point> getEdges() {
+        LinkedList<Point> edges = new LinkedList<Point>();
         Point lastPoint = vertices[vertices.length - 1];
         for (int i = 0; i < vertices.length; i++) {
             Point currentPoint = vertices[i];
@@ -93,167 +182,15 @@ public class Polygon implements BoundedRegion {
         return edges;
     }
 
-    public boolean intersects(Polygon other) {
-        // If bounding boxes of polygons don't touch, can't intersect
-        BoundingBox intersection = boundaries.getIntersectionWith(other.boundaries);
-        if (intersection == null) { // Bounding boxes don't intersect
-            return false;
-        }
-
-        int iMinX = intersection.getMinX(); // iMinX --> intersectionMinX
-        int iMaxX = intersection.getMaxX();
-        int iMinY = intersection.getMinY();
-        int iMaxY = intersection.getMaxY();
-
-        // Make hashmap to look for possible intersections
-        int hashLength = iMaxX - iMinX + 1;
-        ArrayList<LinkedList<Integer>> intersectionHash = new ArrayList<LinkedList<Integer>>(iMaxX
-                - iMinX + 1);
-        for (int i = 0; i < hashLength; i++) {
-            intersectionHash.add(new LinkedList<Integer>());
-        }
-
-        // Put this polygon in hash
-        for (Point edgePt : getEdges()) {
-            if (edgePt.x >= iMinX && edgePt.x <= iMaxX && edgePt.y >= iMinY && edgePt.y <= iMaxY) {
-                intersectionHash.get(edgePt.x - iMinX).add(edgePt.y);
-            } // if edge point within range of bounding box
-        }
-
-        // Check for intersections
-        for (Point edgePt : other.getEdges()) {
-            if (edgePt.x >= iMinX && edgePt.x <= iMaxX && edgePt.y >= iMinY && edgePt.y <= iMaxY
-                    && intersectionHash.get(edgePt.x - iMinX).contains(edgePt.y)) {
-                return true; // intersection found
-            } // if edge point within range of bounding box
-        }
-        return false; // No intersections found
-    }
-
-    public List<Point> getInnards() {
-        ArrayList<LinkedList<Integer>> edges = makeEdgesForScanlineFill();
-        LinkedList<Point> toReturn = new LinkedList<Point>();
-        if (edges != null) {
-            int rowNum = 0;
-            int minY = boundaries.getMinY();
-            while (rowNum < edges.size()) {
-                LinkedList<Integer> currentRow = edges.get(rowNum);
-                Collections.sort(currentRow);
-                Iterator<Integer> currRowItr = currentRow.iterator();
-                while (currRowItr.hasNext()) {
-                    int start = currRowItr.next();
-                    int end = currRowItr.next();
-                    for (int x = start + 1; x < end; x++) {
-                        toReturn.add(new Point(x, rowNum + minY + 1));
-                    }
-                }
-                rowNum++;
-            }
-        }
-        return toReturn;
-    }
-
-    private ArrayList<LinkedList<Integer>> makeEdgesForScanlineFill() {
-        // Initialize edge lists
-        int minY = boundaries.getMinY();
-        int maxY = boundaries.getMaxY();
-        int numRows = maxY - minY - 1; // Exclude top, bottom points of polygon
-        if (numRows < 1) {
-            return null;
-        }
-        ArrayList<LinkedList<Integer>> scanlineEdgePts = new ArrayList<LinkedList<Integer>>(numRows);
-        ArrayList<LinkedList<HorizEdge>> horizEdges = new ArrayList<LinkedList<HorizEdge>>(numRows);
-        for (int i = 0; i < numRows; i++) { // Initialize all linked lists
-            scanlineEdgePts.add(new LinkedList<Integer>());
-            horizEdges.add(new LinkedList<HorizEdge>());
-        }
-
-        // Fill edge lists (in place)
-        int numVertices = vertices.length;
-        for (int i = 0; i < numVertices; i++) {
-            Point prevPt = vertices[(i + numVertices - 1) % numVertices];
-            Point currPt = vertices[i];
-            Point nextPt = vertices[(i + 1) % numVertices];
-            int prevY = prevPt.y;
-            int currY = currPt.y;
-            int nextY = nextPt.y;
-
-            // Focus on currPt
-            if (currY == nextY) { // currPt precedes horizontal edge
-                if (currY > minY && currY < maxY) {
-                    horizEdges.get(currY - minY - 1).add(new HorizEdge(currPt.x, nextPt.x));
-                }
-            } else {
-                if (prevY != currY && (prevY < currY ^ nextY < currY)) {
-                    // If side vertex (i.e. not top or bottom): include currPt once
-                    scanlineEdgePts.get(currY - minY - 1).add(currPt.x);
-                }
-
-                // Include all pts in edge until nextPt once
-                List<Point> nextLine = new LineSegment(currPt, nextPt).drawByY(
-                        LineSegment.IncludeStart.NO, LineSegment.IncludeEnd.NO); // Draws 1 value
-                                                                                 // per y
-                                                                                 // coordinate,
-                                                                                 // excludes end
-                                                                                 // points
-                for (Point linePt : nextLine) {
-                    scanlineEdgePts.get(linePt.y - minY - 1).add(linePt.x);
-                    // System.out.println("ERROR: " + e.getMessage());
-                    // System.out.println("minX = " + minX + ", minY = " + minY + ", maxX = "
-                    // + maxX + ", maxY = " + maxY);
-                    // System.out.println("currPt = " + currPt + ", nextPt = " + nextPt);
-                    // System.out.println("nextLine = " + nextLine);
-                    // System.out.println("linePt = " + linePt);
-                    // System.out.println("linePt.y - minY - 1 = " + linePt.y + " - " + minY
-                    // + " - " + "1 = " + (linePt.y - minY - 1));
-                    // System.out.println("numRows = " + numRows + ", actual num rows = "
-                    // + scanlineEdgePts.size());
-                }
-            }
-        }
-
-        // Put in horizEdge, if necessary
-        for (int i = 0; i < horizEdges.size(); i++) { // Assume horizEdges don't overlap
-            LinkedList<HorizEdge> hEdgesAtX = horizEdges.get(i);
-            if (!hEdgesAtX.isEmpty()) { // if have horizontal edge at this x value
-                Collections.sort(hEdgesAtX);
-                LinkedList<Integer> ptsAtX = scanlineEdgePts.get(i);
-                Collections.sort(ptsAtX);
-                int numPts = ptsAtX.size();
-                Iterator<Integer> ptsAtItr = ptsAtX.iterator();
-
-                // Include hEdge.startPt if numPixs to the left of hEdge.startPt is odd
-                // Include hEdge.endPt if numPixs to the right of hEdge.endPt is odd
-                int numPtsPassed = 0;
-                int numHEdgesRemaining = hEdgesAtX.size();
-                List<Integer> ptsToAdd = new LinkedList<Integer>();
-                for (HorizEdge hEdge : hEdgesAtX) {
-                    numHEdgesRemaining--;
-                    int toAdd = hEdge.startPt;
-                    while (ptsAtItr.hasNext() && ptsAtItr.next() < toAdd) {
-                        numPtsPassed++;
-                    }
-                    if (numPtsPassed % 2 == 1) {
-                        ptsToAdd.add(hEdge.startPt);
-                        numPtsPassed++;
-                        numPts++;
-                    }
-                    toAdd = hEdge.endPt;
-                    while (ptsAtItr.hasNext() && ptsAtItr.next() < toAdd) {
-                        numPtsPassed++;
-                    }
-                    if ((numPts - numPtsPassed) % 2 == 1 || numHEdgesRemaining > 0) {
-                        ptsToAdd.add(hEdge.endPt);
-                        numPtsPassed++;
-                        numPts++;
-                    }
-                }
-                ptsAtX.addAll(ptsToAdd);
-            }
-        }
-        return scanlineEdgePts;
-    }
-
+    /**
+     * Translates (moves) this polygon the given amount in the x and y directions. Note that this
+     * function is done to the polygon <i> in place </i>.
+     *
+     * @param x the amount to move this polygon in the x-direction (negative values will move the
+     *        polygon to the left, while positive values will move the polygon to the right)
+     * @param y the amount to move this polygon in the y-direction (negative values will move the
+     *        polygon up, while positive values will move the polygon down)
+     */
     public void translate(int x, int y) {
         // Translate vertices
         for (Point vertex : vertices) {
@@ -269,16 +206,17 @@ public class Polygon implements BoundedRegion {
         boundaries.resetBounds(newMinX, newMaxX, newMinY, newMaxY);
     }
 
-    // Gets the midpoint of the boundaries of the polygon
-    public Point getMidpoint() {
-        return boundaries.getMidPoint();
-    }
-
-    // NOT in place!
-    // Enlarges / shrinks the polygon to the given factor (enlarges around the midpoint of the
-    // polygon's boundaries)
-    public Polygon changeSize(double factor) {
-        Point midpoint = getMidpoint();
+    /**
+     * Creates a new polygon with the same basic shape as this polygon, but which has been resized
+     * by the given factor.
+     *
+     * @param factor the factor by which to change the polygon's size. A factor < 1 will shrink the
+     *        polygon, while a factor > 1 will enlarge the polygon
+     * @return the resized polygon
+     */
+    public Polygon resize(double factor) {
+        // Enlarge the polygon around the midpoint of the current polygon's boundaries.
+        Point midpoint = boundaries.getMidPoint();
         int midX = midpoint.x;
         int midY = midpoint.y;
 
@@ -294,10 +232,12 @@ public class Polygon implements BoundedRegion {
     }
 
     /**
-     * Creates an identical polygon that has been rotated the given angle about the given origin.
-     * 
-     * @param phi angle through which to rotate the polygon (in radians)
-     * @param origin
+     * Creates a new polygon with the same basic shape as this polygon, but which has been rotated
+     * by the given amount around the given origin.
+     *
+     * @param phi the angle (in radians) through which to rotate the polygon
+     * @param origin the point around which to rotate the polygon
+     * @return the rotated polygon
      */
     public Polygon rotate(double phi, Point origin) {
         int numVertices = vertices.length;
@@ -308,18 +248,15 @@ public class Polygon implements BoundedRegion {
         for (int i = 0; i < numVertices; i++) {
             int x = vertices[i].x - origin.x;
             int y = vertices[i].y - origin.y;
-            // System.out.println("vertex initially (" + x + ", " + y + ")");
 
-            // Convert Cartesian to polar
+            // Convert Cartesian point to polar coordinates.
             r = Math.sqrt(x * x + y * y);
             theta = Math.atan2(y, x);
-            // System.out.println("r = " + r + ", theta = " + theta);
 
             // Rotate
             theta += phi;
-            // System.out.println("After rotate, theta = " + theta);
 
-            // Convert polar back to Cartesian
+            // Convert polar coordinates back to Cartesian coordinates.
             x = (int) (r * Math.cos(theta) + 0.5) + origin.x;
             y = (int) (r * Math.sin(theta) + 0.5) + origin.y;
             rotatedVertices[i] = new Point(x, y);
@@ -327,6 +264,11 @@ public class Polygon implements BoundedRegion {
         return new Polygon(rotatedVertices);
     }
 
+    /**
+     * Creates an exact copy of the current polygon.
+     *
+     * @return the copy of this polygon
+     */
     public Polygon deepCopy() {
         // Copy vertices
         int numVertices = vertices.length;
@@ -339,24 +281,13 @@ public class Polygon implements BoundedRegion {
         return new Polygon(copiedVertices);
     }
 
-    private class HorizEdge implements Comparable<HorizEdge> {
-        final int startPt;
-        final int endPt;
-
-        HorizEdge(int start, int end) {
-            startPt = Math.min(start, end);
-            endPt = Math.max(start, end);
-        }
-
-        @Override
-        public int compareTo(HorizEdge other) {
-            return startPt - other.startPt;
-        }
-
-        @Override
-        public String toString() {
-            return "hEdge(" + startPt + ", " + endPt + ")";
-        }
+    /**
+     * Creates a {@link Blob} representation of this {@link Polygon}.
+     *
+     * @return the {@link Blob} representation of this {@link Polygon}
+     */
+    public Blob asBlob() {
+        return Blob.newBlobFromTracedEdges(getEdges());
     }
 
     @Override
@@ -369,120 +300,69 @@ public class Polygon implements BoundedRegion {
         return sb.toString();
     }
 
-    /*
-     * ********************************FOR TESTING************************************************
+    /**
+     * Draws this {@link Polygon} using ASCII characters. Each point (integer precision) in this
+     * polygon is represented by a single ASCII character. An edge point in the Polygon is
+     * represented by the '{@code *}' character, while points that are not in the polygon's edges
+     * are represented by the '{@code -}' character.
+     * <p>
+     * For example, the result of
+     *
+     * <pre>
+     * new Polygon(new Point(-3, 0), new Point(3, 0), new Point(0, 3)).drawAsAsciiArt();
+     * </pre>
+     *
+     * would be:
+     *
+     * <pre>
+     * *******
+     * -*---*-
+     * --*-*--
+     * ---*---
+     * </pre>
+     *
+     * @return the ASCII-art representation of this polygon
      */
-    // private void printDrawEdges() {
-    // ArrayList<LinkedList<Integer>> edges = makeEdgesForScanlineFill();
-    // System.out.println("\n\n");
-    // int minX = vertices[0].x; // The minimum y value in the polygon
-    // int maxX = minX; // The maximum y value in the polygon
-    // for (int i = 1; i < vertices.length; i++) {
-    // int x = vertices[i].x;
-    // if (x < minX) {
-    // minX = x;
-    // } else if (x > maxX) {
-    // maxX = x;
-    // }
-    // }
-    // for (LinkedList<Integer> row : edges) {
-    // Collections.sort(row);
-    // Iterator<Integer> rowItr = row.iterator();
-    // int nextEdge = rowItr.hasNext() ? rowItr.next() : minX - 1;
-    // for (int x = minX; x <= maxX; x++) {
-    // if (x == nextEdge) {
-    // printChar(true);
-    // if (rowItr.hasNext()) {
-    // nextEdge = rowItr.next();
-    // }
-    // } else {
-    // printChar(false);
-    // }
-    // }
-    // System.out.print("   " + row + "\n");
-    // }
-    // }
+    public String drawAsAsciiArt() {
+        // Create a map of the rows in the polygon.
+        int minY = getMinY();
+        int numRows = getMaxY() - minY + 1;
+        int minX = getMinX();
+        int numColumns = getMaxX() - minX + 1;
+        ArrayList<TreeSet<Integer>> rowEdgeMap = Lists.newArrayListWithCapacity(numRows);
 
-    public String printDraw() {
-        StringBuilder builder = new StringBuilder();
-        ArrayList<LinkedList<Integer>> edges = makeEdgesForScanlineFill();
-        int minX = vertices[0].x; // The minimum y value in the polygon
-        int maxX = minX; // The maximum y value in the polygon
-        for (int i = 1; i < vertices.length; i++) {
-            int x = vertices[i].x;
-            if (x < minX) {
-                minX = x;
-            } else if (x > maxX) {
-                maxX = x;
-            }
+        // Initialize the rows in the map.
+        for (int i = 0; i < numRows; i++) {
+            rowEdgeMap.add(new TreeSet<Integer>()); // TreeSets are naturally sorted.
         }
-        for (LinkedList<Integer> row : edges) {
-            Collections.sort(row);
-            Iterator<Integer> rowItr = row.iterator();
-            int nextEdge = rowItr.hasNext() ? rowItr.next() : minX - 1;
-            boolean inside = false;
-            for (int x = minX; x <= maxX; x++) {
-                if (inside) {
-                    while (x == nextEdge) {
-                        inside = !inside;
-                        if (rowItr.hasNext()) {
-                            nextEdge = rowItr.next();
-                        } else {
-                            break;
-                        }
-                    }
-                    builder.append("8");
-                } else {
-                    builder.append("-");
-                    while (x == nextEdge) {
-                        inside = !inside;
-                        if (rowItr.hasNext()) {
-                            nextEdge = rowItr.next();
-                        } else {
-                            break;
-                        }
-                    }
+
+        // Add the edge points of the polygon to the map.
+        for(Point edgePt : getEdges()){
+            int row = edgePt.y - minY;
+            int column = edgePt.x - minX;
+            rowEdgeMap.get(row).add(column);
+        }
+
+        // Draw the polygon from the map.
+        StringBuilder builder = new StringBuilder(
+                numRows * (numColumns + 1 /* include carriage returns */));
+        for(TreeSet<Integer> rowEdges : rowEdgeMap){
+            int x = 0;
+            for(int edgeColumn : rowEdges){
+                while(x < edgeColumn){
+                    builder.append('-');
+                    x++;
                 }
+                builder.append('*');
+                x++;
             }
-            builder.append("   ").append(row).append("\n");
+            while (x < numColumns) {
+                builder.append('-');
+                x++;
+            }
+            builder.append('\n');
         }
+
         return builder.toString();
     }
-
-    // private void printDrawInnards() { // Terribly inefficient!
-    // List<Point> innards = getInnards();
-    // int minX = Integer.MAX_VALUE;
-    // int minY = minX;
-    // int maxX = Integer.MIN_VALUE;
-    // int maxY = maxX;
-    //
-    // for (Point innardPt : innards) {
-    // int innardX = innardPt.x;
-    // int innardY = innardPt.y;
-    // if (innardX < minX) {
-    // minX = innardX;
-    // }
-    // if (innardX > maxX) {
-    // maxX = innardX;
-    // }
-    // if (innardY < minY) {
-    // minY = innardY;
-    // }
-    // if (innardY > maxY) {
-    // maxY = innardY;
-    // }
-    // }
-    //
-    // for (int y = minY; y <= maxY; y++) {
-    // for (int x = minX - 1; x <= maxX + 1; x++) {
-    // if (innards.remove(new Point(x, y))) {
-    // printChar(true);
-    // } else {
-    // printChar(false);
-    // }
-    // }
-    // System.out.print("\n");
-    // }
-    //
-    // }
 }

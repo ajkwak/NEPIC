@@ -596,7 +596,7 @@ public class Tracker {
         }
         Nepic.log(EventType.INFO,
                 "Unable to find cell body in previous location.  Enlarging region for search");
-        prevCbLoc = prevCbLoc.changeSize(2).getBoundingBox().getIntersectionWith(
+        prevCbLoc = prevCbLoc.resize(2).getBoundingBox().getIntersectionWith(
                 currPg.getBoundingBox()).asPolygon();
         if (trackCbInGivenArea(prevCbLoc, prevCbSize)) {
             if (!bkCandValid()) {

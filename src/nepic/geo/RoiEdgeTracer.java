@@ -13,7 +13,7 @@ import nepic.util.Verify;
 
 public class RoiEdgeTracer {
     // Used by the goLeft() method when finding the outer edges of a clump of pixels.
-    private static final Point[] dirs = new Point[] {
+    private static final Point[] DIRECTIONS = new Point[] {
             new Point(-1, 0), // W
             new Point(-1, -1), // NW
             new Point(0, -1), // N
@@ -66,8 +66,8 @@ public class RoiEdgeTracer {
                     return null;
                 }
             }// if unable to find which direction to go to find the rest of the outer edges
-            int xToGo = toAdd.x + dirs[dirToGo].x;
-            int yToGo = toAdd.y + dirs[dirToGo].y;
+            int xToGo = toAdd.x + DIRECTIONS[dirToGo].x;
+            int yToGo = toAdd.y + DIRECTIONS[dirToGo].y;
             toAdd = new Point(xToGo, yToGo);
         } while (!toAdd.equals(maxXPoint));
 
@@ -76,10 +76,10 @@ public class RoiEdgeTracer {
 
     private static int goLeft(IdTaggedImage img, int id, Point from, int dirFrom) {
         int dirToCheck = dirFrom;
-        for (int i = 0; i < dirs.length; i++) {
+        for (int i = 0; i < DIRECTIONS.length; i++) {
             dirToCheck = (dirToCheck + 1) % 8;// 8 == dirs.length
-            int xToCheck = from.x + dirs[dirToCheck].x;
-            int yToCheck = from.y + dirs[dirToCheck].y;
+            int xToCheck = from.x + DIRECTIONS[dirToCheck].x;
+            int yToCheck = from.y + DIRECTIONS[dirToCheck].y;
             if (img.contains(xToCheck, yToCheck) && img.getId(xToCheck, yToCheck) == id) {
                 return dirToCheck;
             }

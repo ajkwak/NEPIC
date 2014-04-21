@@ -192,7 +192,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
 
     // Does NOT clear or invalidate the roi
     private void removeFeatureFromImage(Background roi) {
-        for (Point innardPix : roi.getArea().getInnards()) {
+        for (Point innardPix : roi.getArea().asBlob().getInnards()) {
             if (img.contains(innardPix.x, innardPix.y)) {
                 img.dissociatePixelWithRoi(innardPix.x, innardPix.y, roi);
             }
@@ -201,7 +201,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
         // Check : TODO remove this code!
         List<Point> unclearedPixs = getAllPixelsInRoi(roi.getId());
         if (!unclearedPixs.isEmpty()) {
-            List<Point> currentInnards = roi.getArea().getInnards();
+            List<Point> currentInnards = roi.getArea().asBlob().getInnards();
             int numContainedInInnards = 0;
             for (Point unclearedPix : unclearedPixs) {
                 if (currentInnards.contains(unclearedPix)) {
@@ -227,7 +227,7 @@ public class BackgroundFinder extends RoiFinder<Background> {
         Histogram.Builder edgeHistBuilder = new Histogram.Builder(-255, 255);
 
         // Fill histograms
-        List<Point> bkPts = bkArea.getInnards();
+        List<Point> bkPts = bkArea.asBlob().getInnards();
         for (Point bkPt : bkPts) {
             int x = bkPt.x;
             int y = bkPt.y;
