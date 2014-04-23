@@ -114,19 +114,23 @@ public class ExemplarBlobs {
 
     public static class Builder {
         private final String blobName;
-        private final List<Point> blobCtorParams;
+        private final List<Point> tracedEdges;
 
-        private Builder(String polygonName, List<Point> blobCtorParams) {
+        private Builder(String polygonName, List<Point> tracedEdges) {
             this.blobName = polygonName;
-            this.blobCtorParams = blobCtorParams;
+            this.tracedEdges = tracedEdges;
         }
 
         public String getBlobName() {
             return blobName;
         }
 
+        public ImmutableList<Point> getTracedEdges() {
+            return ImmutableList.copyOf(tracedEdges);
+        }
+
         public Blob buildBlob() {
-            return Blob.newBlobFromTracedEdges(blobCtorParams);
+            return Blob.newBlobFromTracedEdges(tracedEdges);
         }
     }
 }

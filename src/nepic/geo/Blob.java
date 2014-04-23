@@ -244,6 +244,11 @@ public class Blob implements BoundedRegion {
         this.size = size;
     }
 
+    /**
+     * Creates an exact copy of the current {@link Blob}.
+     *
+     * @return the copy of this {@link Blob}
+     */
     public Blob deepCopy() {
         // Copy boundingBox
         BoundingBox boundariesCopy = new BoundingBox(boundaries.getMinX(), boundaries.getMaxX(),
@@ -251,8 +256,8 @@ public class Blob implements BoundedRegion {
 
         // Copy horizEdges
         int numRows = horizEdges.size();
-        ArrayList<LinkedList<HorizontalEdge>> horizEdgeCopy = new ArrayList<LinkedList<HorizontalEdge>>(
-                numRows);
+        ArrayList<LinkedList<HorizontalEdge>> horizEdgeCopy =
+                Lists.newArrayListWithCapacity(numRows);
         for (int i = 0; i < numRows; i++) {
             LinkedList<HorizontalEdge> rowCopy = new LinkedList<HorizontalEdge>();
             for (HorizontalEdge horizEdge : horizEdges.get(i)) {
@@ -265,6 +270,12 @@ public class Blob implements BoundedRegion {
         return new Blob(boundariesCopy, horizEdgeCopy, size);
     }
 
+    /**
+     * Gets the maximum diameter of this {@link Blob}. This is the line segment with maximum length
+     * between any two points in the edges of the {@link Blob}.
+     *
+     * @return the line segment representing the maximum diameter of this {@link Blob}
+     */
     public LineSegment getMaxDiameter() { // Equivalent to get length
         // TODO: increase efficiency (same way as before)
         Point startPoint = null;
@@ -313,13 +324,26 @@ public class Blob implements BoundedRegion {
         return boundaries.deepCopy();
     }
 
+    /**
+     * Gets the number of points in this {@link Blob}, including both points located on the
+     * {@link Blob}'s edges, as well as points located in the interior of the {@link Blob}.
+     *
+     * @return the size of (i.e. the number of points in) the blob
+     */
+    // TODO: probably want to remove this method?
     public synchronized int getSize() {
         if (size < 0) {
-            size = getInnards().size() + getEdges().size(); // TODO more efficient
+            size = getAllPoints().size();
         }
         return size;
     }
 
+    /**
+     * Gets all of the points in the interior of the {@link Blob}. In other words, retrieves all of
+     * the points in the {@link Blob} that are not on the edge of the {@link Blob}.
+     *
+     * @return a list of the non-edge points in this blob
+     */
     public List<Point> getInnards() {
         LinkedList<Point> toReturn = new LinkedList<Point>();
         final int minY = boundaries.getMinY();
@@ -345,8 +369,13 @@ public class Blob implements BoundedRegion {
         return toReturn;
     }
 
-    // TODO: test that this returns only points that touch (are flush with?) a point not in the Blob
-    // Order is NOT guaranteed in the returned list (i.e. a new Blob cannot be made from this)
+    /**
+     * Gets all of the points on the edge of the {@link Blob}. The order of the returned edge points
+     * is NOT guaranteed. However, all the points passed in as the original traced edges used when
+     * creating the {@link Blob} are included in the returned list.
+     *
+     * @return the points that define the edges of this blob
+     */
     public List<Point> getEdges() { // Gets the union of the edges
         List<Point> edgePts = new LinkedList<Point>();
         final int minY = boundaries.getMinY();

@@ -1,11 +1,14 @@
 package nepic.geo;
 
+import static org.junit.Assert.fail;
+
 import java.awt.Point;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import nepic.geo.test.ExemplarBlobs;
+import nepic.geo.test.TestIdTaggedImage;
 import nepic.testing.util.Assertions;
 
 import org.junit.Before;
@@ -18,7 +21,7 @@ import com.google.common.collect.Lists;
 
 /**
  * JUnit tests for {@link Blob}.
- * 
+ *
  * @author AJ Parmidge
  */
 @RunWith(Parameterized.class)
@@ -38,6 +41,37 @@ public class BlobTest {
     @Test
     public void testInnardsAndEdgesDistinct() {
         Assertions.assertDistinct(blob.getEdges(), blob.getInnards());
+    }
+
+    @Test
+    public void getEdges_containsSameElementsAsOriginalTracedEdges() {
+        Assertions.assertContainSameElements(blobBldr.getTracedEdges(), blob.getEdges());
+    }
+
+    @Test
+    public void getInnards_noPointsTouchingNonBlobPoint() {
+        // Set up the image to test.
+        TestIdTaggedImage img = new TestIdTaggedImage(
+                blob.getMinX(), blob.getMaxX(), blob.getMinY(), blob.getMaxY());
+        int blobId = 1;
+        img.createId(blobId, '*');
+        for (Point point : blob.getAllPoints()) {
+            img.setIdOrThrow(point.x, point.y, blobId);
+        }
+
+        // Test that no innard points are touching points that are not in the Blob.
+        for (Point point : blob.getInnards()) {
+            int x = point.x;
+            int y = point.y;
+            // To be a true innard point, this point must be FULLY surrounded by other points in the
+            // Blob (which are all contained by img).
+            if (!img.contains(x - 1, y) || img.getId(x - 1, y) != blobId
+                    || !img.contains(x + 1, y) || img.getId(x + 1, y) != blobId
+                    || !img.contains(x, y - 1) || img.getId(x, y - 1) != blobId
+                    || !img.contains(x, y + 1) || img.getId(x, y + 1) != blobId) {
+                fail("(" + x + "," + y + ") is not a true innard point!");
+            }
+        }
     }
 
     @Test
