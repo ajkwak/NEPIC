@@ -8,9 +8,7 @@ import com.google.common.collect.Lists;
 
 import nepic.geo.Polygon;
 
-// TODO: There's gotta be a better way to do this!  Think.
-// 1) Want the polygon remade for each test
-// 2) Want to NOT use reflection.
+// TODO: Javadoc
 public class ExemplarPolygons {
     private static final List<Builder> EXEMPLAR_POLYGONS = Lists.newArrayList(
             new Builder("STAR", new Point[] {

@@ -108,6 +108,10 @@ public class ExemplarBlobs {
         return ImmutableList.copyOf(EXEMPLAR_BLOBS);
     }
 
+    private ExemplarBlobs() {
+        throw new UnsupportedOperationException(); // This class is not instantiable.
+    }
+
     public static class Builder {
         private final String blobName;
         private final List<Point> blobCtorParams;
