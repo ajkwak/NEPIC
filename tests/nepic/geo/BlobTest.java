@@ -16,9 +16,13 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.Lists;
 
+/**
+ * JUnit tests for {@link Blob}.
+ * 
+ * @author AJ Parmidge
+ */
 @RunWith(Parameterized.class)
 public class BlobTest {
-
     private final ExemplarBlobs.Builder blobBldr; // The object that builds the blobs for each test.
     private Blob blob; // The blob to test (remade for each test).
 
