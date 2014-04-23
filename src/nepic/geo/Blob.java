@@ -368,36 +368,29 @@ public class Blob implements BoundedRegion {
         return edgePts;
     }
 
-    ArrayList<LinkedList<Integer>> makeEdgeList() {
+    public List<Point> getAllPoints() {
+        LinkedList<Point> toReturn = new LinkedList<Point>();
         final int minY = boundaries.getMinY();
-        final int numRows = boundaries.getMaxY() - minY + 1;
-        ArrayList<LinkedList<Integer>> edgeList = new ArrayList<LinkedList<Integer>>(numRows);
-
-        // Initialize all linked lists
-        for (int i = 0; i < numRows; i++) {
-            edgeList.add(new LinkedList<Integer>());
+        for (int rowNum = 0; rowNum < horizEdges.size(); rowNum++) {
+            LinkedList<HorizontalEdge> currentRow = horizEdges.get(rowNum);
+            Iterator<HorizontalEdge> currRowItr = currentRow.iterator();
+            int prevEnd = Integer.MIN_VALUE;
+            while (currRowItr.hasNext()) {
+                int start = currRowItr.next().first;
+                int end = currRowItr.next().last;
+                if (start <= prevEnd && end > prevEnd) {
+                    start = prevEnd + 1;
+                }
+                if (start > prevEnd) {
+                    for (int x = start; x <= end; x++) {
+                        toReturn.add(new Point(x, rowNum + minY));
+                    }
+                    prevEnd = Math.max(start - 1, end); // Since sometimes, start > end
+                }
+            }
         }
 
-        for (Point edgePt : getEdges()) {
-            edgeList.get(edgePt.y - minY).add(edgePt.x);
-        }
-        return edgeList;
-    }
-
-    ArrayList<LinkedList<Integer>> makeInnardsList() {
-        final int minY = boundaries.getMinY();
-        final int numRows = boundaries.getMaxY() - minY + 1;
-        ArrayList<LinkedList<Integer>> edgeList = new ArrayList<LinkedList<Integer>>(numRows);
-
-        // Initialize all linked lists
-        for (int i = 0; i < numRows; i++) {
-            edgeList.add(new LinkedList<Integer>());
-        }
-
-        for (Point edgePt : getInnards()) {
-            edgeList.get(edgePt.y - minY).add(edgePt.x);
-        }
-        return edgeList;
+        return toReturn;
     }
 
     @Override
