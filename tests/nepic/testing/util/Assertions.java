@@ -130,6 +130,12 @@ public class Assertions {
         }
     }
 
+    public static <E> void assertContainSameElements(Collection<E> c1, Collection<E> c2) {
+        Set<E> c1Set = Sets.newHashSet(c1);
+        Set<E> c2Set = Sets.newHashSet(c2);
+        assertEquals(c1Set, c2Set);
+    }
+
     /**
      * Asserts that the two given collections contain no equivalent elements.
      *

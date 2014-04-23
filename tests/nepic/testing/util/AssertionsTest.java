@@ -245,6 +245,49 @@ public class AssertionsTest {
     }
 
     @Test
+    public void assertContainSameElements_succeeds() {
+        // CASE: Both collections are empty.
+        Assertions.assertContainSameElements(Lists.newArrayList(), Lists.newArrayList());
+
+        // CASE: The collections have the same number of duplicates and are in the same order.
+        Assertions.assertContainSameElements(Lists.newArrayList(1), Lists.newArrayList(1));
+        Assertions.assertContainSameElements(Lists.newArrayList(1, 2, 3, 3),
+                Lists.newArrayList(1, 2, 3, 3));
+
+        // CASE: The collections have the same elements, but in different orders.
+        Assertions.assertContainSameElements(Lists.newArrayList(3, 2, 1),
+                Lists.newArrayList(2, 1, 3));
+
+        // CASE: The collections have the same elements in the same order, but different numbers of
+        // duplicates.
+        Assertions.assertContainSameElements(Lists.newArrayList(1, 2, 3),
+                Lists.newArrayList(1, 2, 2, 2, 3));
+
+        // CASE: The collections have different numbers of duplicates and are in different orders.
+        Assertions.assertContainSameElements(Lists.newArrayList(1, 2, 3, 3, 3, 3),
+                Lists.newArrayList(3, 2, 2, 1, 1, 1));
+    }
+
+    @Test
+    public void assertContainSameElements_throws() {
+        // CASE: The collections share some elements.
+        try {
+            Assertions.assertContainSameElements(Lists.newArrayList(1, 2), Lists.newArrayList(1));
+            throw new IllegalStateException("Expected AssertionError.");
+        } catch (AssertionError expected) {
+            // Expected.
+        }
+
+        // CASE: The collections are distinct.
+        try {
+            Assertions.assertContainSameElements(Lists.newArrayList(1, 2), Lists.newArrayList(3));
+            throw new IllegalStateException("Expected AssertionError.");
+        } catch (AssertionError expected) {
+            // Expected.
+        }
+    }
+
+    @Test
     public void assertDistinct_succeeds() {
         // CASE: Both collections are empty.
         Assertions.assertDistinct(Lists.newArrayList(), Sets.newHashSet());
