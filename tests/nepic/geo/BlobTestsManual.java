@@ -4,6 +4,17 @@ import java.awt.Point;
 import nepic.geo.test.ExemplarBlobs;
 import nepic.geo.test.TestIdTaggedImage;
 
+/**
+ * Manual tests for {@link Blob}. The contents of this class are not expected to remain constant.
+ * The purpose of this class is to do initial testing on new {@link Blob} methods, before automated
+ * testing is added to the {@link BlobTest} class, and to help debug problems when these automated
+ * tests fail.
+ * <p>
+ * <b><i> IF YOU PUT TESTS HERE, DO NOT EXPECT THEM TO REMAIN HERE. </b></i> After debugging your
+ * code, add all tests to {@link BlobTest}.
+ * 
+ * @author AJ Parmidge
+ */
 public class BlobTestsManual {
 
     private static TestIdTaggedImage displayEdges(Blob blob) {
