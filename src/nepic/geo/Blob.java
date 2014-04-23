@@ -345,6 +345,7 @@ public class Blob implements BoundedRegion {
         return toReturn;
     }
 
+    // TODO: test that this returns only points that touch (are flush with?) a point not in the Blob
     // Order is NOT guaranteed in the returned list (i.e. a new Blob cannot be made from this)
     public List<Point> getEdges() { // Gets the union of the edges
         List<Point> edgePts = new LinkedList<Point>();
@@ -366,11 +367,6 @@ public class Blob implements BoundedRegion {
         }
         return edgePts;
     }
-
-    static final char INNARD_POINT = 'O';
-    static final char EDGE_POINT = '*';
-    static final char OUTSIDE_POINT = '-';
-
 
     ArrayList<LinkedList<Integer>> makeEdgeList() {
         final int minY = boundaries.getMinY();
@@ -405,32 +401,14 @@ public class Blob implements BoundedRegion {
     }
 
     @Override
-    public String toString() { // TODO: make more efficient
-        ArrayList<LinkedList<Integer>> edges = makeEdgeList();
-        ArrayList<LinkedList<Integer>> innards = makeInnardsList();
-        final int minX = boundaries.getMinX();
-        final int maxX = boundaries.getMaxX();
-        final int minY = boundaries.getMinY();
-
-        StringBuilder builder = new StringBuilder("minX = ").append(boundaries.getMinX()).append(
-                ", maxX = ").append(boundaries.getMaxX()).append("\n");
-        for (int i = 0; i < edges.size(); i++) {
-            builder.append((minY + i) + "\t");
-            LinkedList<Integer> edgeRow = edges.get(i);
-            LinkedList<Integer> innardRow = innards.get(i);
-            Collections.sort(edgeRow);
-            Collections.sort(innardRow);
-            for (int x = minX; x <= maxX; x++) {
-                if (edgeRow.contains(x)) {
-                    builder.append(EDGE_POINT);
-                } else if (innardRow.contains(x)) {
-                    builder.append(INNARD_POINT);
-                } else {
-                    builder.append(OUTSIDE_POINT);
-                }
-            }
-            builder.append("  ").append(horizEdges.get(i)).append("\n");
+    public String toString(){
+        List<Point> edgePts = getEdges();
+        StringBuilder builder = new StringBuilder();
+        builder.append("Blob [");
+        for(Point edgePt : edgePts){
+            builder.append('(').append(edgePt.x).append(',').append(edgePt.y).append("),");
         }
+        builder.append(']');
         return builder.toString();
     }
 
