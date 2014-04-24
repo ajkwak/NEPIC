@@ -12,7 +12,7 @@ import nepic.geo.test.TestIdTaggedImage;
  * <p>
  * <b><i> IF YOU PUT TESTS HERE, DO NOT EXPECT THEM TO REMAIN HERE. </b></i> After debugging your
  * code, add all tests to {@link BlobTest}.
- * 
+ *
  * @author AJ Parmidge
  */
 public class BlobTestsManual {
@@ -55,7 +55,13 @@ public class BlobTestsManual {
         return edgeImg;
     }
 
-    public static void main(String[] args) throws IllegalAccessException {
+    /**
+     * Runs the manual tests of the {@link Blob} class. Results of these tests will be printed using
+     * {@link System#out}.
+     * 
+     * @param args these are not used
+     */
+    public static void main(String[] args) {
         // Test all Blob exemplars.
         for (ExemplarBlobs.Builder blobBldr : ExemplarBlobs.getExemplarBlobBuilders()) {
             System.out.println("\n\n" + blobBldr.getBlobName());
