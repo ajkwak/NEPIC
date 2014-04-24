@@ -8,9 +8,21 @@ import com.google.common.collect.Lists;
 
 import nepic.geo.Polygon;
 
-// TODO: Javadoc
+/**
+ * A class in which all of the exemplar {@link Polygon}s used for testing the {@link Polygon} class
+ * are defined. The builders of the exemplar polygons can be retrieved using the
+ * {@link #getExemplarPolygonBuilders()} method.
+ * <p>
+ * A {@link ExemplarPolygons.Builser} is returned for each polygon rather than returning the
+ * polygons directly so that new instances of each exemplar polygon can be created at will (making
+ * sure that different tests on the same exemplar polygon use different {@link Polygon} instances,
+ * for example). This is important, because {@link Polygon} objects are mutable.
+ *
+ * @author AJ Parmidge
+ */
 public class ExemplarPolygons {
-    private static final List<Builder> EXEMPLAR_POLYGONS = Lists.newArrayList(
+    // Add new exemplar polygons here.
+    private static final List<Builder> EXEMPLAR_POLYGON_BUILDERS = Lists.newArrayList(
             new Builder("STAR", new Point[] {
                     new Point(12, 0),
                     new Point(15, 7),
@@ -189,10 +201,28 @@ public class ExemplarPolygons {
                     new Point(10, 6),
                     new Point(-6, 14) }));
 
+    /**
+     * Retrieves the {@link ExemplarPolygons.Builder} for every exemplar polygon defined in this
+     * class.
+     *
+     * @return the list of the exemplar polygon builders
+     */
     public static ImmutableList<ExemplarPolygons.Builder> getExemplarPolygonBuilders() {
-        return ImmutableList.copyOf(EXEMPLAR_POLYGONS);
+        return ImmutableList.copyOf(EXEMPLAR_POLYGON_BUILDERS);
     }
 
+    // This class is uninstantiable.
+    private ExemplarPolygons() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * A class designed to build a single exemplar polygon. This allows a new {@link Polygon}
+     * instance to be built at will, which is important for testing, since {@link Polygon} objects
+     * are mutable.
+     *
+     * @author AJ Parmidge
+     */
     public static class Builder {
         private final String polygonName;
         private final Point[] polygonCtorParams;
@@ -202,10 +232,21 @@ public class ExemplarPolygons {
             this.polygonCtorParams = polygonCtorParams;
         }
 
+        /**
+         * Gets the name of the exemplar polygon that this {@link Builder} was designed to build.
+         *
+         * @return the name of the exemplar polygon
+         */
         public String getPolygonName() {
             return polygonName;
         }
 
+        /**
+         * Builds a new instance of the exemplar polygon that this {@link Builder} was designed to
+         * build.
+         * 
+         * @return the new {@link Polygon} instance
+         */
         public Polygon buildPolygon() {
             return new Polygon(polygonCtorParams);
         }

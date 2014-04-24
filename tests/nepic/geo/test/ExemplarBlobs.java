@@ -118,7 +118,7 @@ public class ExemplarBlobs {
     }
 
     /**
-     * Retrieves the {@link ExemplarBlobs.Builder}s for every exemplar blob in this class.
+     * Retrieves the {@link ExemplarBlobs.Builder} for every exemplar blob defined in this class.
      *
      * @return the list of the exemplar blob builders
      */
@@ -133,8 +133,8 @@ public class ExemplarBlobs {
 
     /**
      * A class designed to build a single exemplar blob. This allows a new {@link Blob} to be built
-     * for every test, allowing the tests to be fully distinct from each other.
-     *
+     * at will.
+     * 
      * @author AJ Parmidge
      */
     public static class Builder {
