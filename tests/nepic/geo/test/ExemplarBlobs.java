@@ -8,10 +8,23 @@ import com.google.common.collect.Lists;
 
 import nepic.geo.Blob;
 
+/**
+ * A class in which all of the exemplar {@link Blob}s used for testing the {@link Blob} class are
+ * defined. The builders of the exemplar blobs can be retrieved using the
+ * {@link #getExemplarBlobBuilders()} method.
+ * <p>
+ * A {@link ExemplarBlobs.Builder} is returned for each blob rather than returning the blobs
+ * directly so that new instances of each exemplar blob can be created at will (making sure that
+ * different tests that test the same exemplar blob use different {@link Blob} instances, for
+ * example).
+ *
+ * @author AJ Parmidge
+ */
 public class ExemplarBlobs {
-    private static final List<Builder> EXEMPLAR_BLOBS = makeExemplarBlobs();
+    private static final List<Builder> EXEMPLAR_BLOB_BUILDERS = makeExemplarBlobBuilders();
 
-    private static final List<ExemplarBlobs.Builder> makeExemplarBlobs() {
+    // Add new exemplar blobs here.
+    private static final List<ExemplarBlobs.Builder> makeExemplarBlobBuilders() {
         List<ExemplarBlobs.Builder> exemplarBlobs = Lists.newArrayList(
                 new Builder("SHALLOW_HEART", Lists.newArrayList(
                         new Point(1, 0),
@@ -104,31 +117,61 @@ public class ExemplarBlobs {
         return exemplarBlobs;
     }
 
+    /**
+     * Retrieves the {@link ExemplarBlobs.Builder}s for every exemplar blob in this class.
+     *
+     * @return the list of the exemplar blob builders
+     */
     public static ImmutableList<ExemplarBlobs.Builder> getExemplarBlobBuilders() {
-        return ImmutableList.copyOf(EXEMPLAR_BLOBS);
+        return ImmutableList.copyOf(EXEMPLAR_BLOB_BUILDERS);
     }
 
+    // This class is uninstantiable.
     private ExemplarBlobs() {
-        throw new UnsupportedOperationException(); // This class is not instantiable.
+        throw new UnsupportedOperationException();
     }
 
+    /**
+     * A class designed to build a single exemplar blob. This allows a new {@link Blob} to be built
+     * for every test, allowing the tests to be fully distinct from each other.
+     *
+     * @author AJ Parmidge
+     */
     public static class Builder {
         private final String blobName;
         private final List<Point> tracedEdges;
 
+        // Used in the makeExemplarBlobs() method.
         private Builder(String polygonName, List<Point> tracedEdges) {
             this.blobName = polygonName;
             this.tracedEdges = tracedEdges;
         }
 
+        /**
+         * Gets the name of the exemplar blob that this {@link Builder} was designed to build.
+         *
+         * @return the name of the exemplar blob
+         */
         public String getBlobName() {
             return blobName;
         }
 
+        /**
+         * Gets the traced edges of the exemplar blob that this {@link Builder} was designed to
+         * build, as they would be passed to the
+         * {@link Blob#newBlobFromTracedEdges(java.util.Collection)} method.
+         *
+         * @return the traced edges used to build the exemplar blob
+         */
         public ImmutableList<Point> getTracedEdges() {
             return ImmutableList.copyOf(tracedEdges);
         }
 
+        /**
+         * Builds a new instance of the exemplar blob.
+         *
+         * @return the new {@link Blob} instance
+         */
         public Blob buildBlob() {
             return Blob.newBlobFromTracedEdges(tracedEdges);
         }
