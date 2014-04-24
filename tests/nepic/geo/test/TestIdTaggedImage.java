@@ -108,7 +108,6 @@ public class TestIdTaggedImage implements IdTaggedImage {
      */
     public void createIdOrThrow(int id, char idChar) {
         Character displacedChar = createId(id, idChar);
-        System.out.println("displacedChar = " + displacedChar);
         Verify.state(displacedChar == null, "Displacing non-null character " + displacedChar
                 + " for ID " + id);
     }
